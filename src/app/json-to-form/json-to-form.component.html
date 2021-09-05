@@ -1,0 +1,81 @@
+<div class="container">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="card">
+            <div class="card-body">
+                <fieldset>
+                    <div class="row">
+                        <div class="form-group col-md-12">
+                            <label for="__json">JSON</label>
+                            <textarea formControlName="json" [class.is-invalid]="isFieldValid('json')" id="__json" class="form-control"
+                                cols="30" rows="10">{{ form_data | json}}</textarea>
+                            <div *ngIf="isFieldValid('json')" class="invalid-feedback">
+                                <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
+                                <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
+                                <div *ngIf="getField('json')!.errors?.jsonIsEmpty">JSON must be not empty</div>
+                            </div>
+                            <div *ngIf="errors.length > 0" class="text-danger">
+                                <ul>
+                                    <li>Key accepts only words, numbers and white spaces are not allowed.</li>
+                                    <li *ngFor="let error of errors; let indexError = index;">
+                                        {{ error }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="form-group col-md-12">
+                            <label for="__component-name">Component Name</label>
+                            <input type="text" id="__component-name" formControlName="componentName" class="form-control" [class.is-invalid]="isFieldValid('componentName')">
+                            <div *ngIf="isFieldValid('componentName')" class="invalid-feedback">
+                                <div *ngIf="getField('componentName')!.errors?.required">COMPONENTNAME is required</div>
+                                <div *ngIf="getField('componentName')!.errors?.pattern">
+                                    <ul>
+                                        <li>Only the characters [a-zA-Z0-9] and hyphen (-)</li>
+                                        <li>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</li>
+                                        <li>White Spaces are not allowed.</li>
+                                        <li>For example: user-post</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!--
+                        <div class="form-group col-md-12">
+                            <label id="options">options</label>
+                            <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--module"> --module</div>
+                            <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--routing"> --routing</div>
+                            <div *ngIf="isFieldValid('options')" class="invalid-feedback">
+                                <div *ngIf="getField('options')!.errors?.required">OPTIONS is required</div>
+                            </div>
+                        </div>
+                        -->
+                    </div>
+                </fieldset>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">
+                    Generate
+                </button>
+            </div>
+        </div>
+    </form>
+    <ng-container *ngIf="errors.length <= 0 && form.valid">
+        <fieldset class="card mt-5">
+            <div class="card-header">
+                <ul>
+                    <li>ng g component {{ form.get('componentName')!.value }}</li>
+                    <li>ng g module {{ form.get('componentName')!.value }} --routing</li>
+                    <li>You need to import ReactiveFormsModule in order to create reactive forms</li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="__form-html">HTML</label>
+                    <textarea id="__form-html" class="form-control" cols="30" rows="10">{{ formHtml }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label for="__form-component">COMPONENT</label>
+                    <textarea id="__form-component" class="form-control" cols="30" rows="10">{{ formData }}</textarea>
+                </div>
+            </div>
+        </fieldset>
+    </ng-container>
+</div>
