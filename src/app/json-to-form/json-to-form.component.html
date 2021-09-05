@@ -14,12 +14,10 @@
                                 <div *ngIf="getField('json')!.errors?.jsonIsEmpty">JSON must be not empty</div>
                             </div>
                             <div *ngIf="errors.length > 0" class="text-danger">
-                                <ul>
-                                    <li>Key accepts only words, numbers and white spaces are not allowed.</li>
-                                    <li *ngFor="let error of errors; let indexError = index;">
-                                        {{ error }}
-                                    </li>
-                                </ul>
+                                    <div><small>Key accepts only words, numbers and white spaces are not allowed.</small></div>
+                                    <div *ngFor="let error of errors; let indexError = index;">
+                                        <small>{{ error }}</small>
+                                    </div>
                             </div>
                         </div>
                         <div class="form-group col-md-12">
