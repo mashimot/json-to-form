@@ -4,7 +4,7 @@ import { JsonToFormComponent } from './json-to-form.component';
 
 const routes: Routes = [
   {
-    path: 'json-to-form',
+    path: '',
     component: JsonToFormComponent
   }
 ];
