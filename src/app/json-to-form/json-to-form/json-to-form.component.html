@@ -1,0 +1,21 @@
+<div class="container">
+    <a class="btn btn-primary btn-sm" [routerLink]="['/json-to-form', 'create']">
+        Create
+    </a>
+    <div class="row">
+        <div
+            *ngFor="let formExample of formExamples; let formExampleIndex = index;"
+            class="col-md-6"
+            [style]="{ 'cursor': 'pointer' }"
+        >
+            <div [routerLink]="['/json-to-form', formExampleIndex, 'edit']" class="card card-dark">
+                <div class="card-header">
+                    <h1>{{ formExample.name }}</h1>
+                </div>
+                <div class="card-body">
+                    <pre>{{ formExample.data | json }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>     
+</div>
