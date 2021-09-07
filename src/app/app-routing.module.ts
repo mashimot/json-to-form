@@ -5,10 +5,6 @@ const routes: Routes = [
   {
     path: 'json-to-form',
     loadChildren: () => import ("./json-to-form/json-to-form.module").then(m => m.JsonToFormModule)
-  },
-  {
-    path: 'test-form',
-    loadChildren: () => import ("./test-form/test-form.module").then(m => m.TestFormModule)
   }
 ];
 
