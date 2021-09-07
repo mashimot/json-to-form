@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn, ValidationErrors } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { js_beautify, html_beautify } from 'js-beautify';
-import { of } from 'rxjs';
+import { JsonToFormExampleService } from './../json-to-form-example.service';
 
 class JsonValidators {
     static startsWithCurlyBrackets(): ValidatorFn {
@@ -33,19 +34,6 @@ class JsonValidators {
             control.setErrors(null);
             return null;
         };
-    }
-    
-    public static jsonLength(): ValidatorFn {
-        return (control:AbstractControl): ValidationErrors | null => {
-            const error: ValidationErrors = { jsonIsEmpty: true };
-            let json = JSON.parse(control.value);
-            if(Object.keys(json).length <= 0){
-                return error;
-            }
-        
-            control.setErrors(null);
-            return null;
-        }
     }
 }
 
@@ -130,6 +118,24 @@ class ValidatorRuleHelper {
         return id;
     }
     public static validateObject(obj: any, names: string = '', errors:string[] = []): any{
+        if(typeof obj == 'undefined'){
+          return [
+            'WOO'
+          ];
+        }
+
+        let isArray = Array.isArray(obj);
+
+        if(isArray){
+          return [
+            'JSON should start with curly brackets'
+          ];
+        }
+        if(Object.keys(obj).length <= 0){
+          return [
+            'JSON must be not empty'
+          ];
+        }
 
         return Object.keys(obj).map((k: any) => {
             let v = obj[k];
@@ -998,95 +1004,49 @@ class ReactiveDrivenValidator {
     }
 }
 
-
 @Component({
-    selector: 'app-json-to-form',
-    templateUrl: './json-to-form.component.html',
-    styleUrls: ['./json-to-form.component.css']
+    selector: 'app-json-to-form-form',
+    templateUrl: './json-to-form-form.component.html',
+    styleUrls: ['./json-to-form-form.component.css']
 })
-export class JsonToFormComponent implements OnInit {
-    public form_data = {
-        "user": {
-            "first_name": "required|min:30",
-            "last_name": "required|min:2",
-            "birthday_date": "required|html:date",
-            "favorite_fruits.*": "required|min:30",
-            "comments": "html:select|required",
-        },
-        "password": "html:password|required|max:10",
-        "rank": "html:text|required|numeric|",
-        "is_new": "html:text|required|boolean",
-        "is_active": "html:text|required|boolean",
-        "type": "html:text|string|max:255",
-        "tag": {
-            "id": "html:hidden|required|numeric",
-            "name": "html:text|string|max:255",
-            "coin_counter": "html:number|required|numeric",
-            "ico_counter": "html:number|required|min:3"
-        },
-        "favorite_bass_player": [
-            "html:select",
-            "required",
-            [
-                "Les Claypool",
-                "Geddy Lee",
-                "Flea",
-                "Victor Wooten",
-                "Jaco Pastorius"
-            ]            
-        ],
-        "favorite_fruits.*": [
-            "html:radio",
-            "required",
-            [{
-                id: 1,
-                name: "Banana"
-            },{
-                id: 2,
-                name: "Apple"
-            },{
-                id: 3,
-                name: "Pear"
-            },{
-                id: 4,
-                name: "Pineapple"
-            }] 
-        ]
-    };
-
-
-    formHtml: string = '';
-    formData: string = '';
+export class JsonToFormFormComponent implements OnInit {
+    public formExample!: any;
+    formHtml: string | null = null;
+    formData: string | null = null;
     form!: FormGroup;
     formSubmitAttempt: boolean = false;
     errors: string[] = [];
 
     constructor(
-        private formBuilder: FormBuilder
+        private formBuilder: FormBuilder,
+        private jsonToFormExampleService: JsonToFormExampleService,
+        private route: ActivatedRoute
     ) {}
 
     ngOnInit(): void {
-        this.form = this.formBuilder.group({
-            "json": [js_beautify(JSON.stringify(this.form_data)), [Validators.required, JsonValidators.isJson(), JsonValidators.jsonLength(), JsonValidators.startsWithCurlyBrackets()]],
-            //"json": [JSON.stringify(this.form_data), [Validators.required, JsonValidators.isJson(), JsonValidators.jsonLength()]],
-            "componentName": ['test-form', [Validators.required, Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
-            //"options": ['', [Validators.required]],
-        });
-        this.generate();
+      this.route.params.subscribe(params => {
+        this.formExample = this.jsonToFormExampleService.getExampleByNumber(params.id) == null
+          ? {}
+          : this.jsonToFormExampleService.getExampleByNumber(params.id).data;
+      }); 
+      this.form = this.formBuilder.group({
+          "json": [js_beautify(JSON.stringify(this.formExample)), [Validators.required, JsonValidators.isJson(), JsonValidators.startsWithCurlyBrackets()]],
+          "componentName": ['test-form', [Validators.required, Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
+          //"options": ['', [Validators.required]],
+      });
+      this.generate();
     }
 
     generate(){
         let json = JSON.parse(this.form.get('json')!.value);
         this.errors = ValidatorRuleHelper.validateObject(json);
+        console.log('this.errors', this.errors);
         if(this.errors.length <= 0){
             let component = (new ReactiveDrivenValidator(json, this.form.get('componentName')!.value)).generateComponent();
-            //let component = (new ReactiveDrivenValidator(this.form_data, 'test-form')).generateComponent();
             let html  = (new ReactiveDrivenHtml(json)).generate();
 
             this.formData = js_beautify(component.join("\n"));
             this.formHtml = html_beautify(html.join("\n"));
-            //this.formData = (component.join("\n"));
-            //this.formHtml = (html.join("\n"));
         }
     }
 

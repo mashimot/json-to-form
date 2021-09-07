@@ -3,15 +3,14 @@
         <div class="card">
             <div class="card-body">
                 <fieldset>
-                    <div class="row">
+                    <div class="row">                                                                        
                         <div class="form-group col-md-12">
                             <label for="__json">JSON</label>
                             <textarea formControlName="json" [class.is-invalid]="isFieldValid('json')" id="__json" class="form-control"
-                                cols="30" rows="10">{{ form_data | json}}</textarea>
+                                cols="30" rows="10">{{ formExample | json}}</textarea>
                             <div *ngIf="isFieldValid('json')" class="invalid-feedback">
                                 <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
                                 <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
-                                <div *ngIf="getField('json')!.errors?.jsonIsEmpty">JSON must be not empty</div>
                             </div>
                             <div *ngIf="errors.length > 0" class="text-danger">
                                     <div><small>Key accepts only words, numbers and white spaces are not allowed.</small></div>

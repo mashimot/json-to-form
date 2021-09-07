@@ -4,6 +4,7 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { JsonToFormModule } from './json-to-form/json-to-form.module';
 import { RouterModule } from '@angular/router';
+import { TestFormComponent } from './test-form/test-form.component';
 
 @NgModule({
   declarations: [
@@ -12,8 +13,7 @@ import { RouterModule } from '@angular/router';
   imports: [
     RouterModule.forRoot([]),
     BrowserModule,
-    AppRoutingModule,
-    JsonToFormModule
+    AppRoutingModule
   ],
   providers: [],
   bootstrap: [AppComponent]
