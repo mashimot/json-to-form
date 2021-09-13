@@ -1,4 +1,38 @@
 <div class="container">
+    <div class="card">
+        <div class="card-body">
+            <h3>Rules for Key Names</h3>
+            <ul>
+                <li>Keys have to be surrounded by double quotes.</li>
+                <li>White Spaces are not allowed.</li>            
+                <li>Key accepts only words, underscore (_), numbers and can end or not with a dot followed by an asterisk (<b>.*</b>)</li>
+            </ul>
+            <h3>Form controls for Array of Objects</h3>
+            <ul>
+                <li>
+                    If the key name ends with a dot followed by an asterisk (<b>.*</b>): It's going to be a HTML of an Array of Objects or Elements.
+                    <ul> 
+                        <li>Ex: "users.*" Array of users.</li>
+                        <li>Ex: "users.*.*" 2 level deep nested array.</li>
+                    </ul>
+                </li>
+            </ul>
+            <ul>
+                <li>
+                    <h6 class="text-success">It's Valid</h6>
+                    <div>"users.*.*"</div>
+                    <div>"random_key_name"</div>
+                </li>
+                <li>
+                    <h6 class="text-danger">It's not Valid</h6>
+                    <div>"users.*d "</div>
+                    <div>"random_key _name"</div>
+                    <div>" .*random_key"</div>
+                    <div>"user.*.id"</div>
+                </li>
+            </ul>
+        </div>
+    </div>
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="card">
             <div class="card-body">
@@ -13,10 +47,10 @@
                                 <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
                             </div>
                             <div *ngIf="errors.length > 0" class="text-danger">
-                                    <div><small>Key accepts only words, numbers and white spaces are not allowed.</small></div>
-                                    <div *ngFor="let error of errors; let indexError = index;">
-                                        <small>{{ error }}</small>
-                                    </div>
+                                <div><small>Key accepts only words, numbers and white spaces are not allowed.</small></div>
+                                <div *ngFor="let error of errors; let indexError = index;">
+                                    <small>{{ error }}</small>
+                                </div>
                             </div>
                         </div>
                         <div class="form-group col-md-12">
