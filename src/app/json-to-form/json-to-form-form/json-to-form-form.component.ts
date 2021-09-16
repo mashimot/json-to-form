@@ -1016,6 +1016,14 @@ export class JsonToFormFormComponent implements OnInit {
     form!: FormGroup;
     formSubmitAttempt: boolean = false;
     errors: string[] = [];
+    examples!: {
+        valid: {
+            [key: string]: string
+        },
+        invalid: {
+            [key: string]: string
+        }
+    };
 
     constructor(
         private formBuilder: FormBuilder,
@@ -1024,17 +1032,48 @@ export class JsonToFormFormComponent implements OnInit {
     ) {}
 
     ngOnInit(): void {
-      this.route.params.subscribe(params => {
-        this.formExample = this.jsonToFormExampleService.getExampleByNumber(params.id) == null
-          ? {}
-          : this.jsonToFormExampleService.getExampleByNumber(params.id).data;
-      }); 
-      this.form = this.formBuilder.group({
-          "json": [js_beautify(JSON.stringify(this.formExample)), [Validators.required, JsonValidators.isJson(), JsonValidators.startsWithCurlyBrackets()]],
-          "componentName": ['test-form', [Validators.required, Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
-          //"options": ['', [Validators.required]],
-      });
-      this.generate();
+        console.log('d', this.examples);
+        this.examples = {
+            valid: {
+                "users.*.*": JSON.stringify({
+                    "users.*.*": {
+                        first_name: "required|min:3|max:255",
+                        last_name: "required|min:3|max:255"
+                    },                
+                })
+            },
+            invalid: {
+                "users.*.id": JSON.stringify({
+                    "users.*.id": {
+                        first_name: "required|min:3|max:255",
+                        last_name: "required|min:3|max:255"
+                    },                
+                }),
+                ".*users": JSON.stringify({
+                    ".*users": {
+                        first_name: "required|min:3|max:255",
+                        last_name: "required|min:3|max:255"
+                    },                
+                }),
+                "  users ": JSON.stringify({
+                    "  users ": {
+                        first_name: "required|min:3|max:255",
+                        last_name: "required|min:3|max:255"
+                    },                
+                })
+            }
+        }
+        this.route.params.subscribe(params => {
+            this.formExample = this.jsonToFormExampleService.getExampleByNumber(params.id) == null
+            ? {}
+            : this.jsonToFormExampleService.getExampleByNumber(params.id).data;
+        }); 
+        this.form = this.formBuilder.group({
+            "json": [js_beautify(JSON.stringify(this.formExample)), [Validators.required, JsonValidators.isJson(), JsonValidators.startsWithCurlyBrackets()]],
+            "componentName": ['test-form', [Validators.required, Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
+            //"options": ['', [Validators.required]],
+        });
+        this.generate();
     }
 
     generate(){

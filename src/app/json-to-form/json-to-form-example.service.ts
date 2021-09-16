@@ -10,9 +10,10 @@ export class JsonToFormExampleService {
   getExamples(){
     let examples: any[] = [
       this.userMedications(),
+      this.bigAssArrayOfObjects(),
+      this.user(),
       this.randomJson(),
       this.usersJson(),
-      
     ];
 
     return examples;
@@ -27,6 +28,43 @@ export class JsonToFormExampleService {
       ? examples[id]
       : null;
   }
+
+  public bigAssArrayOfObjects(){
+    return {
+      "name": "Big Ass Array of Objects",
+      "data": {
+        "big_ass_array_of_objects.*.*.*.*.*.*.*.*": {
+          first_name: "required|min:3|max:255",
+          last_name: "required|min:3|max:255"
+        }
+      }
+    }
+  }
+
+  public user(){
+    return {
+      "name": "User",
+      "data": {
+        "user": {
+          "first_name": "required|min:30",
+          "surname": "required|min:2",
+          "cell": "required|html:number",
+          "location.*": "required|min:30",
+          "profession.*":  "required|min:3|max:255",
+          "cars.*": {
+            "model": "required|min:2",
+            "year": "required|html:number|min:4|max:4",
+            "value": "required|min:2|max:10"
+          },
+          "medications.*": {
+            "medication_name": "required|min:3|max:255",
+            "medication_details": "html:textarea|nullable|min:3|max:4000"
+          }
+        }
+      }
+    }
+  }
+
 
   public userMedications(){
     return {
@@ -60,7 +98,7 @@ export class JsonToFormExampleService {
 
   public usersJson(){
     return {
-        'name': "User Form",
+        'name': "Users Form",
         'data' : {
           'users.*': {
           'email': 'email|unique:users',
