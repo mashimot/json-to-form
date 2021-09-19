@@ -117,6 +117,7 @@ class ValidatorRuleHelper {
 
         return id;
     }
+
     public static validateObject(obj: any, names: string = '', errors:string[] = []): any{
         if(typeof obj == 'undefined'){
           return [
@@ -143,8 +144,7 @@ class ValidatorRuleHelper {
             var  re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
 
             if (!re.test(k)) {
-                errors.push('errors at: ' + names + rest);
-                console.log('errors', errors)
+                errors.push(`Errors at:  "${names + rest}"`);
             }
 
             if (Object.prototype.toString.call(v) == '[object Object]') {
@@ -518,7 +518,7 @@ class ReactiveDrivenHtml {
             }
             
             if (Array.isArray(value)) {
-                let messages = [];
+                let messages: string[] = [];
                 let rules = value;
                 let obj_name = complete_name.join(".");
                 let formControlName = 'formControlName';
@@ -542,7 +542,8 @@ class ReactiveDrivenHtml {
                 }
 
                 let ngClass = `[class.is-invalid]="${isFieldValid}"`
-                let input_html = `<input type="text" ${formControlName}="${index}" class="form-control" ${ngClass}>`;
+                let defaultInput = `<input type="text" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`;
+                let input_html = defaultInput;
 
                 for (var i = 0; i < rules.length; i++) {
                     let rule = rules[i];
@@ -557,16 +558,16 @@ class ReactiveDrivenHtml {
                         let input: {
                             [key:string]: string
                         } = {
-                            'file': `<input type="file" ${formControlName}="${index}" class="form-control" ${ngClass}>`,
-                            'password': `<input type="password" ${formControlName}="${index}" class="form-control" ${ngClass}>`,
-                            'email': `<input type="email" ${formControlName}="${index}" class="form-control" ${ngClass}>`,
-                            'number': `<input type="number" ${formControlName}="${index}" class="form-control" ${ngClass}>`,
-                            'date': `<input type="date" ${formControlName}="${index}" class="form-control" ${ngClass}>`,
-                            'textarea': `<textarea ${formControlName}="${index}" id="" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`
+                            'file': `<input type="file" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
+                            'password': `<input type="password" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
+                            'email': `<input type="email" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
+                            'number': `<input type="number" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
+                            'date': `<input type="date" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
+                            'textarea': `<textarea ${formControlName}="${index}" id="${obj_name}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`
                         };
                         input_html = typeof input[this.parameters[0]] != 'undefined'
                             ? input[this.parameters[0]]
-                            : `<input type="text" ${formControlName}="${index}" class="form-control" ${ngClass}>`;
+                            : defaultInput;
 
                         let hue = this.dot_notation.filter((el:string) => el != '*').join("");
                         if (this.parameters[0] == 'select') {
@@ -582,7 +583,6 @@ class ReactiveDrivenHtml {
                                 index = `{{ ${index} }}`;
                             }
                             input_html = [
-                                //radios.join("\n")
                                 `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(hue, true)}$ | async) as data$">`,
                                     `<div *ngFor="let data of data$; let index${ValidatorRuleHelper.camelCasedString(hue, true)} = index;">`,
                                         `<div class="form-check">`,
@@ -606,23 +606,16 @@ class ReactiveDrivenHtml {
                     }                   
                 }
 
-                let divFormArray: {
-                    open: string[],
-                    close: string[]
-                } = {
-                    open: [],
-                    close: []
-                }
                 if (definition != null) {
                     parameters = ValidatorRuleHelper.removeParameters(keySplit, parameters);
                     lastDefinition.pop();
-
+                    let formArray: string[] = [];
                     definition.get.forEach((item: any, i: number) => {
                         let formArrayName: string = i <= 0
                             ? `formArrayName="${firstNameBeforeDot}"`
                             : `[formArrayName]="${item.second_to_last_index}"`;
 
-                        divFormArray.open.push(
+                        formArray.push(
                             `<div class="d-grid gap-2 d-md-flex justify-content-md-end">
                                 <button type="button" (click)="${item.get_with_parameters}.push(create${item.function_name}())" class="btn btn-primary btn-sm">add ${item.function_name}</button>
                             </div>
@@ -630,24 +623,33 @@ class ReactiveDrivenHtml {
                                 ${formArrayName}
                                 *ngFor="let h of ${item.get_with_parameters}!.controls; let ${item.last_index} = index;"
                             >
-                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                    <button type="button" (click)="${item.delete}" class="btn btn-danger btn-sm">delete ${item.function_name}</button>
-                                </div>`
+                                <div class="form-group col-md-12">
+                                    <label id="${id}">${obj_name}</label>
+                                    <div class="input-group mb-3">
+                                        ${input_html}
+                                        <button type="button" (click)="${item.delete}" class="btn btn-danger btn-sm">
+                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete
+                                        </button>
+                                        <div *ngIf="${isFieldValid}" class="invalid-feedback">
+                                            ${messages.join("")}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>`
                         );
-                        divFormArray.close.push("</div>");
                     });
+
+                    return formArray.join("\n");
                 }
 
                 return [
-                    divFormArray.open.join("\n"),
                     `<div class="form-group col-md-12">`,
                         `<label id="${id}">${obj_name}</label>`,
-                            `${input_html}`,
+                        `${input_html}`,
                         `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
                             `${messages.join("")}`,
                         `</div>`,
                     `</div>`,
-                    divFormArray.close.join("\n"),
                 ].join("");
             }
 
@@ -939,8 +941,6 @@ class ReactiveDrivenValidator {
                     })
                 }
                 
-                console.log('values', values);
-
                 parameters = ValidatorRuleHelper.removeParameters(n, parameters);
         
                 if(definition != null){ //key has asterisk
@@ -1035,32 +1035,32 @@ export class JsonToFormFormComponent implements OnInit {
         console.log('d', this.examples);
         this.examples = {
             valid: {
-                "users.*.*": JSON.stringify({
+                "users.*.*": js_beautify(JSON.stringify({
                     "users.*.*": {
                         first_name: "required|min:3|max:255",
                         last_name: "required|min:3|max:255"
                     },                
-                })
+                }))
             },
             invalid: {
-                "users.*.id": JSON.stringify({
+                "users.*.id": js_beautify(JSON.stringify({
                     "users.*.id": {
                         first_name: "required|min:3|max:255",
                         last_name: "required|min:3|max:255"
                     },                
-                }),
-                ".*users": JSON.stringify({
+                })),
+                ".*users": js_beautify(JSON.stringify({
                     ".*users": {
                         first_name: "required|min:3|max:255",
                         last_name: "required|min:3|max:255"
                     },                
-                }),
-                "  users ": JSON.stringify({
+                })),
+                "  users ": js_beautify(JSON.stringify({
                     "  users ": {
                         first_name: "required|min:3|max:255",
                         last_name: "required|min:3|max:255"
                     },                
-                })
+                }))
             }
         }
         this.route.params.subscribe(params => {
@@ -1074,6 +1074,10 @@ export class JsonToFormFormComponent implements OnInit {
             //"options": ['', [Validators.required]],
         });
         this.generate();
+    }
+
+    copy(text: string){
+        
     }
 
     generate(){

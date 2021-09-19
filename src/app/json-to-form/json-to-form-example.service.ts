@@ -10,10 +10,10 @@ export class JsonToFormExampleService {
   getExamples(){
     let examples: any[] = [
       this.userMedications(),
+      this.usersJson(),
       this.bigAssArrayOfObjects(),
       this.user(),
       this.randomJson(),
-      this.usersJson(),
     ];
 
     return examples;
@@ -100,10 +100,10 @@ export class JsonToFormExampleService {
     return {
         'name': "Users Form",
         'data' : {
-          'users.*': {
-          'email': 'email|unique:users',
+          'users': {
           'first_name': 'required|min:3|max:255',
           'last_name': 'required|min:3|max:255',
+          'email.*': 'email|unique:users',
           'nickname': "nullable|min:3|max:255", 
           'description': "html:textarea|required|min:3|max:4000",
           'birthdate': "html:date|required"

@@ -10,10 +10,10 @@
         >
             <div [routerLink]="['/json-to-form', formExampleIndex, 'edit']" class="card card-dark">
                 <div class="card-header">
-                    <h1>{{ formExample.name }}</h1>
+                    <h2>{{ formExample.name }}</h2>
                 </div>
                 <div class="card-body">
-                    <pre>{{ formExample.data | json }}</pre>
+                    <pre><small>{{ formExample.data | json }}</small></pre>
                 </div>
             </div>
         </div>
