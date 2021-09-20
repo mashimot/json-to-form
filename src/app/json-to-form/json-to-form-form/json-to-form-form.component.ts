@@ -699,7 +699,7 @@ class ReactiveDrivenValidator {
         container: 'container'
     };
     componentName!: string;
-
+    
     constructor(rules: any, componentName: string) {
         this.componentName = componentName;
         this.setRules(rules);
@@ -1011,6 +1011,13 @@ class ReactiveDrivenValidator {
 })
 export class JsonToFormFormComponent implements OnInit {
     public formExample!: any;
+    hoverEffect: {
+        valid: string[],
+        invalid: string[]
+    } = {
+        valid: [],
+        invalid: []
+    };
     formHtml: string | null = null;
     formData: string | null = null;
     form!: FormGroup;
@@ -1077,7 +1084,7 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     copy(text: string){
-        
+        alert('still working on it!')
     }
 
     generate(){

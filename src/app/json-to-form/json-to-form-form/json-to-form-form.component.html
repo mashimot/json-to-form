@@ -1,130 +1,141 @@
-<div class="container">
+<div class="card">
+    <div class="card-body">
+        <h3>Rules for Key Names</h3>
+        <ul>
+            <li>Keys have to be surrounded by double quotes.</li>
+            <li>White Spaces are not allowed.</li>            
+            <li>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</li>
+        </ul>
+        <h3>Form controls for Array of Objects</h3>
+        <ul>
+            <li>
+                If the key name ends with a dot followed by an asterisk (<b>.*</b>): It's going to be a HTML of an Array of Objects or Elements.
+                <ul> 
+                    <li>Ex: "users.*" Array of users.</li>
+                    <li>Ex: "users.*.*" 2 level deep nested Array of users.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+    <div class="card-footer">
+        <section class="examples">
+            <h3>Examples</h3>
+            <h6 class="text-success">Valid (Click below for examples)</h6>
+            <div *ngFor="let valid of examples.valid | keyvalue; let exampleValidIndex = index;">
+                <span
+                    [ngStyle]="{ cursor: 'pointer' }"
+                    (click)="form.patchValue({json: valid.value}); onSubmit();"
+                    class=" badge bg-success btn-sm col-8"
+                    [ngClass]="hoverEffect.valid[exampleValidIndex]"
+                    (mouseover)="hoverEffect.valid[exampleValidIndex] = 'animate__animated animate__headShake border border-primary'" 
+                    (mouseout)="hoverEffect.valid[exampleValidIndex] = ''" 
+                >"{{ valid.key }}"</span>
+            </div>
+            <div class="mt-3"></div>
+            <h6 class="text-danger">Not Valid (Click below for examples)</h6>
+            <div *ngFor="let valid of examples.invalid | keyvalue; let exampleValidIndex = index;">
+                <span
+                    [ngStyle]="{ cursor: 'pointer' }"
+                    (click)="form.patchValue({json: valid.value}); onSubmit();" 
+                    class="badge bg-danger btn-sm col-8"
+                    [ngClass]="hoverEffect.invalid[exampleValidIndex]"
+                    (mouseover)="hoverEffect.invalid[exampleValidIndex] = 'animate__animated animate__headShake border border-primary'" 
+                    (mouseout)="hoverEffect.invalid[exampleValidIndex] = ''" 
+                >"{{ valid.key }}"</span>
+            </div>
+        </section>
+    </div>
+</div>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="card">
         <div class="card-body">
-            <h3>Rules for Key Names</h3>
-            <ul>
-                <li>Keys have to be surrounded by double quotes.</li>
-                <li>White Spaces are not allowed.</li>            
-                <li>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</li>
-            </ul>
-            <h3>Form controls for Array of Objects</h3>
-            <ul>
-                <li>
-                    If the key name ends with a dot followed by an asterisk (<b>.*</b>): It's going to be a HTML of an Array of Objects or Elements.
-                    <ul> 
-                        <li>Ex: "users.*" Array of users.</li>
-                        <li>Ex: "users.*.*" 2 level deep nested Array of users.</li>
-                    </ul>
-                </li>
-            </ul>
+            <fieldset>
+                <div class="row">                                                                        
+                    <div class="form-group col-md-12">
+                        <label for="__json">JSON</label>
+                        <textarea formControlName="json" [class.is-invalid]="isFieldValid('json')" id="__json" class="form-control"
+                            cols="30" rows="10">{{ formExample | json}}</textarea>
+                        <div *ngIf="isFieldValid('json')" class="invalid-feedback">
+                            <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
+                            <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
+                        </div>
+                        <div *ngIf="errors.length > 0" class="text-danger">
+                            <div>
+                                <small>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</small>
+                            </div>
+                            <div *ngFor="let error of errors; let indexError = index;">
+                                <small><b>{{ error }}</b></small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group col-md-12">
+                        <label for="__component-name">Component Name</label>
+                        <input type="text" id="__component-name" formControlName="componentName" class="form-control" [class.is-invalid]="isFieldValid('componentName')">
+                        <div *ngIf="isFieldValid('componentName')" class="invalid-feedback">
+                            <div *ngIf="getField('componentName')!.errors?.required">Component Name is required</div>
+                            <div *ngIf="getField('componentName')!.errors?.pattern">
+                                <ul>
+                                    <li>Only the characters [a-zA-Z0-9] and hyphen (-)</li>
+                                    <li>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</li>
+                                    <li>White Spaces are not allowed.</li>
+                                    <li>For example: user-post</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <!--
+                    <div class="form-group col-md-12">
+                        <label id="options">options</label>
+                        <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--module"> --module</div>
+                        <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--routing"> --routing</div>
+                        <div *ngIf="isFieldValid('options')" class="invalid-feedback">
+                            <div *ngIf="getField('options')!.errors?.required">OPTIONS is required</div>
+                        </div>
+                    </div>
+                    -->
+                </div>
+            </fieldset>
         </div>
         <div class="card-footer">
-            <section class="example">
-                <h3>Examples</h3>
-                <h6 class="text-success">Valid (Click below for examples)</h6>
-                <div *ngFor="let valid of examples.valid | keyvalue; let exampleValidIndex = index;">
-                    <span [ngStyle]="{ cursor: 'pointer' }" (click)="form.patchValue({json: valid.value}); onSubmit();" class="badge bg-success col-8">"{{ valid.key }}"</span>
-                </div>
-                <div class="mt-3"></div>
-                <h6 class="text-danger">Not Valid (Click below for examples)</h6>
-                <div *ngFor="let valid of examples.invalid | keyvalue; let exampleValidIndex = index;">
-                    <span [ngStyle]="{ cursor: 'pointer' }" (click)="form.patchValue({json: valid.value}); onSubmit();" class="badge bg-danger col-8">"{{ valid.key }}"</span>
-                </div>
-            </section>
+            <button type="submit" class="btn btn-primary btn-sm">
+                Generate
+            </button>
         </div>
-        
     </div>
-
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="card">
-            <div class="card-body">
-                <fieldset>
-                    <div class="row">                                                                        
-                        <div class="form-group col-md-12">
-                            <label for="__json">JSON</label>
-                            <textarea formControlName="json" [class.is-invalid]="isFieldValid('json')" id="__json" class="form-control"
-                                cols="30" rows="10">{{ formExample | json}}</textarea>
-                            <div *ngIf="isFieldValid('json')" class="invalid-feedback">
-                                <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
-                                <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
-                            </div>
-                            <div *ngIf="errors.length > 0" class="text-danger">
-                                <div>
-                                    <small>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</small>
-                                </div>
-                                <div *ngFor="let error of errors; let indexError = index;">
-                                    <small><b>{{ error }}</b></small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group col-md-12">
-                            <label for="__component-name">Component Name</label>
-                            <input type="text" id="__component-name" formControlName="componentName" class="form-control" [class.is-invalid]="isFieldValid('componentName')">
-                            <div *ngIf="isFieldValid('componentName')" class="invalid-feedback">
-                                <div *ngIf="getField('componentName')!.errors?.required">COMPONENTNAME is required</div>
-                                <div *ngIf="getField('componentName')!.errors?.pattern">
-                                    <ul>
-                                        <li>Only the characters [a-zA-Z0-9] and hyphen (-)</li>
-                                        <li>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</li>
-                                        <li>White Spaces are not allowed.</li>
-                                        <li>For example: user-post</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <!--
-                        <div class="form-group col-md-12">
-                            <label id="options">options</label>
-                            <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--module"> --module</div>
-                            <div class="form-check"><input type="checkbox" name="options" formControlName="options" class="form-check-input" [class.is-invalid]="isFieldValid('options')" value="--routing"> --routing</div>
-                            <div *ngIf="isFieldValid('options')" class="invalid-feedback">
-                                <div *ngIf="getField('options')!.errors?.required">OPTIONS is required</div>
-                            </div>
-                        </div>
-                        -->
+</form>
+<ng-container *ngIf="errors.length <= 0 && form.valid">
+    <fieldset class="card mt-5">
+        <div class="card-header">
+            <ul>
+                <li>ng g component {{ form.get('componentName')!.value }}</li>
+                <li>ng g module {{ form.get('componentName')!.value }} --routing</li>
+                <li>You need to import ReactiveFormsModule in order to create reactive forms</li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="card">
+                <div class="card-header">
+                    <h4>HTML</h4>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <button class="btn btn-outline-primary btn-sm" (click)="formHtml">Copy</button>
+                        <textarea id="__form-html" class="form-control" cols="30" rows="10">{{ formHtml }}</textarea>
                     </div>
-                </fieldset>
+                </div>
             </div>
-            <div class="card-footer">
-                <button type="submit" class="btn btn-primary btn-sm">
-                    Generate
-                </button>
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h4>COMPONENT</h4>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <button class="btn btn-outline-primary btn-sm">Copy</button>
+                        <textarea id="__form-component" class="form-control" cols="30" rows="10">{{ formData }}</textarea>
+                    </div>
+                </div>
             </div>
         </div>
-    </form>
-    <ng-container *ngIf="errors.length <= 0 && form.valid">
-        <fieldset class="card mt-5">
-            <div class="card-header">
-                <ul>
-                    <li>ng g component {{ form.get('componentName')!.value }}</li>
-                    <li>ng g module {{ form.get('componentName')!.value }} --routing</li>
-                    <li>You need to import ReactiveFormsModule in order to create reactive forms</li>
-                </ul>
-            </div>
-            <div class="card-body">
-                <div class="card">
-                    <div class="card-header">
-                        <button class="btn btn-outline-primary btn-sm" (click)="formHtml">Copy</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="__form-html">HTML</label>
-                            <textarea id="__form-html" class="form-control" cols="30" rows="10">{{ formHtml }}</textarea>
-                        </div>
-                    </div>
-                </div>
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <button class="btn btn-outline-primary btn-sm">Copy</button>
-                    </div>
-                    <div class="card-body">
-                        <div class="form-group">
-                            <label for="__form-component">COMPONENT</label>
-                            <textarea id="__form-component" class="form-control" cols="30" rows="10">{{ formData }}</textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </fieldset>
-    </ng-container>
-</div>
+    </fieldset>
+</ng-container>

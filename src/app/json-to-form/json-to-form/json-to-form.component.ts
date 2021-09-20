@@ -11,6 +11,11 @@ export class JsonToFormComponent implements OnInit {
     formRandomJsonExample: any;
     formUserJsonExample: any;
     formExamples: any;
+    isHover: string = '';
+    /*jazz: string[] = [
+      '','','','',''
+    ];*/
+    hoverEffect: string[] = [];
     
     constructor(
       private jsonToFormExample: JsonToFormExampleService
@@ -24,7 +29,8 @@ export class JsonToFormComponent implements OnInit {
     }
 
 
-    onSubmit(): void {
+    changeStyle($event: any){
+      this.isHover = $event.type == 'mouseover' ? 'animate__animated animate__bounce' : '';
     }
 
 }
