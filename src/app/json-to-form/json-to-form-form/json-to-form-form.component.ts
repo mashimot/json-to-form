@@ -249,6 +249,12 @@ class ValidatorRuleHelper {
         let asObject = Object.assign({}, ...rules);
         return asObject;
     }
+}
+
+class ValidatorDefinition {
+    private static CREATE: string = 'create';
+    private static DELETE = 'delete';
+    private static FORM_BUILDER = 'formBuilder';
 
     public static getDefinitions(element: any): any {
         let definition: any = {
@@ -308,7 +314,7 @@ class ValidatorRuleHelper {
                 _return.splice(-1, 1);
 
                 definition.completeName = completeName.join(".");
-                definition.formBuilderArray.open.push(`this.formBuilder.array([`);
+                definition.formBuilderArray.open.push(`this.${this.FORM_BUILDER}.array([`);
                 definition.formBuilderArray.close.push(`])`);
 
                 let parametersWithLastIndex = [..._parameters];
@@ -331,23 +337,23 @@ class ValidatorRuleHelper {
                     `}`
                 ].join("\n");
                 data.delete_function = [
-                    `delete${data.function_name}${data.parameters_with_last_index_typed}:void {`,
+                    `${this.DELETE}${data.function_name}${data.parameters_with_last_index_typed}:void {`,
                         `this.${data.get_with_parameters}.removeAt(${lastIndex})`,
                     `}`
                 ].join("\n");
                 data.delete = [
-                    `delete${data.function_name}${data.parameters_with_last_index}`
+                    `${this.DELETE}${data.function_name}${data.parameters_with_last_index}`
                 ].join("\n");
         
                 if (isValueAnArray) {
                     data.create_function = [
-                        `create${data.function_name}(){`,
+                        `${this.CREATE}${data.function_name}(){`,
                             `return ${
                                 i == counterAsterisk - 1
                                     ? formBuilderGroup
                                     : [
                                         definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                        `this.create${functionName}${i + 1}()`,
+                                        `this.${this.CREATE}${functionName}${i + 1}()`,
                                         definition.formBuilderArray.close.splice(-1, 1).join(",\n")
                                     ].join("\n")
                             }`,
@@ -355,13 +361,13 @@ class ValidatorRuleHelper {
                     ].join("\n");
                 } else {
                     data.create_function = [
-                        `create${data.function_name}(){`,
+                        `${this.CREATE}${data.function_name}(){`,
                             `return ${
                                 i == counterAsterisk - 1
                                     ? formBuilderGroup
                                     : [
                                         definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                        `this.create${functionName}${i + 1}()`,
+                                        `this.${this.CREATE}${functionName}${i + 1}()`,
                                         definition.formBuilderArray.close.splice(-1, 1).join(",\n")
                                     ].join("\n")
                             }`,
@@ -370,14 +376,14 @@ class ValidatorRuleHelper {
                 }
                 
                 data.create = [
-                    `${data.get_with_parameters}.push(create${data.function_name}())`
+                    `${data.get_with_parameters}.push(${this.CREATE}${data.function_name}())`
                 ].join("\n");
                 get.unshift(data);
             }
 
             definition.formBuilder = [
-                `this.formBuilder.array([`,
-                `this.create${get[0].function_name}()`,
+                `this.${this.FORM_BUILDER}.array([`,
+                `this.${this.CREATE}${get[0].function_name}()`,
                 `]),`
             ];
             
@@ -389,8 +395,8 @@ class ValidatorRuleHelper {
 
         return definition;
     }
-
 }
+
 class ReactiveDrivenHtml {
     rules!: any;
     attribute!: string;
@@ -452,7 +458,7 @@ class ReactiveDrivenHtml {
                     index++;
                 }
                 
-                definition = ValidatorRuleHelper.getDefinitions({
+                definition = ValidatorDefinition.getDefinitions({
                     completeName: complete_name,
                     name: firstNameBeforeDot,
                     parameters: parameters
@@ -858,7 +864,7 @@ class ReactiveDrivenValidator {
                     ];
                 }
 
-                definition = ValidatorRuleHelper.getDefinitions({
+                definition = ValidatorDefinition.getDefinitions({
                     completeName: complete_name,
                     name: firstNameBeforeDot,
                     parameters: parameters,
