@@ -63,22 +63,14 @@ interface Options {
 }
 
 interface IGetterDefinition {
-    completeName: string[];
+    completeKeyName: string[];
     name: string;
     parameters: string[];
     formBuilderGroup?: string[];
     arrayValidators?: string[];
 }
 
-class ParseValidatorRule {
-
-}
-
 class ValidatorRuleHelper {
-
-    public static defineParameters(complete_name: string[], parameters: string[]){
-     
-    }
 
     public static removeParameters(n: string[], parameters: string[]):string[]{
         
@@ -102,9 +94,9 @@ class ValidatorRuleHelper {
         return true;
     }
 
-    public static bracketsNotation(completeName: string[]): string[] {
+    public static bracketsNotation(string: string[]): string[] {
         let id:any = []
-        completeName.forEach((v, index) => {
+        string.forEach((v, index) => {
             //let v = item.split(".");
             if(v.trim() == "*"){
                 v = '';;    
@@ -120,22 +112,22 @@ class ValidatorRuleHelper {
 
     public static validateObject(obj: any, names: string = '', errors:string[] = []): any{
         if(typeof obj == 'undefined'){
-          return [
-            'WOO'
-          ];
+            return [
+                'WOO'
+            ];
         }
 
         let isArray = Array.isArray(obj);
 
         if(isArray){
-          return [
-            'JSON should start with curly brackets'
-          ];
+            return [
+                'JSON should start with curly brackets'
+            ];
         }
         if(Object.keys(obj).length <= 0){
-          return [
-            'JSON must be not empty'
-          ];
+            return [
+                'JSON must be not empty'
+            ];
         }
 
         return Object.keys(obj).map((k: any) => {
@@ -205,12 +197,25 @@ class ValidatorRuleHelper {
                 return word[0].toUpperCase() + word.slice(1); // return newly formed string
             })
             .join("");
-        let firstLetter = isFirstLetterLowerCase ? camelCase[0].toLowerCase() : camelCase[0].toUpperCase();
-        return firstLetter + camelCase.slice(1);
+
+        let firstLetter = isFirstLetterLowerCase
+            ? camelCase[0].toLowerCase()
+            : camelCase[0].toUpperCase();
+
+        return `${firstLetter}${camelCase.slice(1)}`;
     }
 
+    //['users', '*', 'address', 'number']
+    //users.*.address.number
+    //['users.', '*', '.address.number']
+    //['users', '*', 'address.number']
+    //'users|*|address.number'
+    //['users', '*', 'address.number']
     public static dotNotation(string: string[]): string[] {
-
+        if(string.length <= 0){
+            return [];
+        }
+        
         return string.join(".")
             .split('*')
             .map(str => {
@@ -256,143 +261,153 @@ class ValidatorDefinition {
     private static DELETE = 'delete';
     private static FORM_BUILDER = 'formBuilder';
 
-    public static getDefinitions(element: any): any {
+    public constructor(){
+
+    }
+
+    public static get(element: any): any {
         let definition: any = {
             get: [],
             lastDefinition: {},
-            parameters: [],
+            /*parameters: [],
             formArrayName: {
                 open: [],
                 close: []
-            },
+            },*/
             formBuilderArray: {
                 open: [],
                 close: []
             }
         };
-        let _parameters = [...element.parameters] ?? [];
-        let completeName = [...element.completeName]
-        let dotNotation = [...ValidatorRuleHelper.dotNotation(completeName)];
+        let parameters = [...element.parameters] ?? [];
+        let completeKeyName = [...element.completeKeyName]
+        let keyNameDotNotation = [...ValidatorRuleHelper.dotNotation(completeKeyName)];
         let isValueAnArray = element.isValueAnArray ? element.isValueAnArray : false;
         let formBuilderGroup = '';
         if (typeof element.formBuilderGroup != 'undefined') {
             formBuilderGroup = element.formBuilderGroup.join("");
         }
-        if (_parameters.length > 0) {
-            let _return = [...dotNotation];
-            let counterAsterisk = 0;
-            for (var i = dotNotation.length - 1; i >= 0; i--) {
-                if (dotNotation[i] != '*') {
-                    break;
-                }
-                counterAsterisk++;
-            }
-            
-            let count = 0;
-            for (var i = 0; i < dotNotation.length; i++) {
-                let item = dotNotation[i];
-                if (item == '*') {
-                    let param = _parameters[count];
-                    _return[i] = ` as FormArray).at(${param})`
-                    count++;
-                } else {
-                    _return[i] = `.get('${item}')`;
-                    if (i == 0) {
-                        _return[i] = `this.form${_return[i]}`;
-                    }
-                }
-            }
-            let functionName = ValidatorRuleHelper.camelCasedString(dotNotation.join(""));
-            let get = [];
 
-            for (var i = counterAsterisk - 1; i >= 0; i--) {
-                let data: any = {};
-                let getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
-                let lastIndex = _parameters[_parameters.length - 1];
-
-                _parameters.splice(-1, 1);
-                _return.splice(-1, 1);
-
-                definition.completeName = completeName.join(".");
-                definition.formBuilderArray.open.push(`this.${this.FORM_BUILDER}.array([`);
-                definition.formBuilderArray.close.push(`])`);
-
-                let parametersWithLastIndex = [..._parameters];
-                parametersWithLastIndex.push(lastIndex);
-                data.function_name = functionName;
-                data.parameters = `(${_parameters.map((p: any) => `${p}`).join(",")})`;
-                data.parameters_typed = `(${_parameters.map((p: any) => `${p}:number`).join(",")})`;
-                data.parameters_with_last_index = `(${parametersWithLastIndex.map((p: any) => `${p}`).join(",")})`;
-                data.parameters_with_last_index_typed = `(${parametersWithLastIndex.map((p: any) => `${p}:number`).join(",")})`;
-                data.function_name = `${functionName}${i > 0 ? i : ''}`;
-                data.get = getFunctionName;
-                data.get_with_parameters = `${getFunctionName}(${_parameters.map((p: any) => `${p}`).join(",")})`;
-                data.get_at = `${data.get_with_parameters}.at(${lastIndex})`;
-                data.index = _parameters[i];
-                data.second_to_last_index = _parameters[_parameters.length - 1];
-                data.last_index = lastIndex;
-                data.get_function = [
-                    `${getFunctionName}${data.parameters_typed}: FormArray {`,
-                        `return ${_parameters.map(() => '(').join("")}${_return.join("")} as FormArray;`,
-                    `}`
-                ].join("\n");
-                data.delete_function = [
-                    `${this.DELETE}${data.function_name}${data.parameters_with_last_index_typed}:void {`,
-                        `this.${data.get_with_parameters}.removeAt(${lastIndex})`,
-                    `}`
-                ].join("\n");
-                data.delete = [
-                    `${this.DELETE}${data.function_name}${data.parameters_with_last_index}`
-                ].join("\n");
-        
-                if (isValueAnArray) {
-                    data.create_function = [
-                        `${this.CREATE}${data.function_name}(){`,
-                            `return ${
-                                i == counterAsterisk - 1
-                                    ? formBuilderGroup
-                                    : [
-                                        definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                        `this.${this.CREATE}${functionName}${i + 1}()`,
-                                        definition.formBuilderArray.close.splice(-1, 1).join(",\n")
-                                    ].join("\n")
-                            }`,
-                        `}`
-                    ].join("\n");
-                } else {
-                    data.create_function = [
-                        `${this.CREATE}${data.function_name}(){`,
-                            `return ${
-                                i == counterAsterisk - 1
-                                    ? formBuilderGroup
-                                    : [
-                                        definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                        `this.${this.CREATE}${functionName}${i + 1}()`,
-                                        definition.formBuilderArray.close.splice(-1, 1).join(",\n")
-                                    ].join("\n")
-                            }`,
-                        `}`
-                    ].join("\n");
-                }
-                
-                data.create = [
-                    `${data.get_with_parameters}.push(${this.CREATE}${data.function_name}())`
-                ].join("\n");
-                get.unshift(data);
-            }
-
-            definition.formBuilder = [
-                `this.${this.FORM_BUILDER}.array([`,
-                `this.${this.CREATE}${get[0].function_name}()`,
-                `]),`
-            ];
-            
-            if (get.length > 0) {
-                definition.get = get;
-                definition.lastDefinition = get[get.length - 1];
-            }
+        if (parameters.length <= 0) {
+            return definition;
         }
 
+        let returnFunction = [...keyNameDotNotation];
+
+        let counterAsterisk = 0;
+        for (var i = keyNameDotNotation.length - 1; i >= 0; i--) {
+            if (keyNameDotNotation[i] != '*') {
+                break;
+            }
+            counterAsterisk++;
+        }
+        
+        let count = 0;
+        for (var i = 0; i < keyNameDotNotation.length; i++) {
+            let item = keyNameDotNotation[i];
+            if (item == '*') {
+                let currentParameter = parameters[count];
+                returnFunction[i] = ` as FormArray).at(${currentParameter})`
+                count++;
+            } else {
+                returnFunction[i] = `.get('${item}')`;
+                if (i == 0) {
+                    returnFunction[i] = `this.form${returnFunction[i]}`;
+                }
+            }
+        }
+        
+        let functionName = ValidatorRuleHelper.camelCasedString(keyNameDotNotation.join(""));
+        let get = [];
+
+        for (var i = counterAsterisk - 1; i >= 0; i--) {
+            let data: any = {};
+            let getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
+            let lastIndex = parameters[parameters.length - 1];
+
+            parameters.splice(-1, 1);
+            returnFunction.splice(-1, 1);
+
+            definition.completeKeyName = completeKeyName.join(".");
+            definition.formBuilderArray.open.push(`this.${this.FORM_BUILDER}.array([`);
+            definition.formBuilderArray.close.push(`])`);
+
+            let parametersWithLastIndex = [...parameters];
+            parametersWithLastIndex.push(lastIndex);
+            data.function_name = functionName;
+            data.parameters = `(${parameters.map((p: any) => `${p}`).join(",")})`;
+            data.parameters_typed = `(${parameters.map((p: any) => `${p}:number`).join(",")})`;
+            data.parameters_with_last_index = `(${parametersWithLastIndex.map((p: any) => `${p}`).join(",")})`;
+            data.parameters_with_last_index_typed = `(${parametersWithLastIndex.map((p: any) => `${p}:number`).join(",")})`;
+            data.function_name = `${functionName}${i > 0 ? i : ''}`;
+            data.get_function_name = getFunctionName;
+            data.get_with_parameters = `${getFunctionName}(${parameters.map((p: any) => `${p}`).join(",")})`;
+            data.get_at = `${data.get_with_parameters}.at(${lastIndex})`;
+            data.index = parameters[i];
+            data.second_to_last_index = parameters[parameters.length - 1];
+            data.last_index = lastIndex;
+            data.get_function = [
+                `${getFunctionName}${data.parameters_typed}: FormArray {`,
+                    `return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
+                `}`
+            ].join("\n");
+            data.delete_function = [
+                `${this.DELETE}${data.function_name}${data.parameters_with_last_index_typed}:void {`,
+                    `this.${data.get_with_parameters}.removeAt(${lastIndex})`,
+                `}`
+            ].join("\n");
+            data.delete = [
+                `${this.DELETE}${data.function_name}${data.parameters_with_last_index}`
+            ].join("\n");
+    
+            if (isValueAnArray) {
+                data.create_function = [
+                    `${this.CREATE}${data.function_name}(){`,
+                        `return ${
+                            i == counterAsterisk - 1
+                                ? formBuilderGroup
+                                : [
+                                    definition.formBuilderArray.open.splice(-1, 1).join("\n"),
+                                    `this.${this.CREATE}${functionName}${i + 1}()`,
+                                    definition.formBuilderArray.close.splice(-1, 1).join(",\n")
+                                ].join("\n")
+                        }`,
+                    `}`
+                ].join("\n");
+            } else {
+                data.create_function = [
+                    `${this.CREATE}${data.function_name}(){`,
+                        `return ${
+                            i == counterAsterisk - 1
+                                ? formBuilderGroup
+                                : [
+                                    definition.formBuilderArray.open.splice(-1, 1).join("\n"),
+                                    `this.${this.CREATE}${functionName}${i + 1}()`,
+                                    definition.formBuilderArray.close.splice(-1, 1).join(",\n")
+                                ].join("\n")
+                        }`,
+                    `}`
+                ].join("\n");
+            }
+            
+            data.create = [
+                `${data.get_with_parameters}.push(${this.CREATE}${data.function_name}())`
+            ].join("\n");
+            get.unshift(data);
+        }
+
+        definition.formBuilder = [
+            `this.${this.FORM_BUILDER}.array([`,
+            `this.${this.CREATE}${get[0].function_name}()`,
+            `]),`
+        ];
+        
+        if (get.length > 0) {
+            definition.get = get;
+            definition.lastDefinition = get[get.length - 1];
+        }
+
+        console.log(definition);
         return definition;
     }
 }
@@ -439,17 +454,17 @@ class ReactiveDrivenHtml {
             let firstNameBeforeDot = keySplit[0];
             let definition:any = null;
             let rest = names.length > 0 ? '.' + key : key;
-            let complete_name = (names + rest).split('.');
-            this.dot_notation = ValidatorRuleHelper.dotNotation((names + rest).split('.'));
+            let completeKeyName = (names + rest).split('.');
+            this.dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
 
             if (key.trim().startsWith('$')) {
                 return '';
             }
             
-            if (complete_name[complete_name.length - 1] == '*') {
+            if (completeKeyName[completeKeyName.length - 1] == '*') {
                 let index = 0;
-                for (var i = complete_name.length - 1; i >= 0; i--) {
-                    if (complete_name[i] != '*') {
+                for (var i = completeKeyName.length - 1; i >= 0; i--) {
+                    if (completeKeyName[i] != '*') {
                         break;
                     }
                     let rand = ValidatorRuleHelper.camelCasedString(keySplit.join(""));
@@ -458,8 +473,8 @@ class ReactiveDrivenHtml {
                     index++;
                 }
                 
-                definition = ValidatorDefinition.getDefinitions({
-                    completeName: complete_name,
+                definition = ValidatorDefinition.get({
+                    completeKeyName: completeKeyName,
                     name: firstNameBeforeDot,
                     parameters: parameters
                 });
@@ -470,9 +485,12 @@ class ReactiveDrivenHtml {
             }
 
             if (Object.prototype.toString.call(value) == '[object Object]') {
-                if (complete_name[complete_name.length - 1] == '*') {
+                if (completeKeyName[completeKeyName.length - 1] == '*') {
 
-                    let formArray: any = {
+                    let formArray: {
+                        open: string[],
+                        close: string[]
+                    } = {
                         open: [],
                         close: []
                     }
@@ -526,7 +544,7 @@ class ReactiveDrivenHtml {
             if (Array.isArray(value)) {
                 let messages: string[] = [];
                 let rules = value;
-                let obj_name = complete_name.join(".");
+                let obj_name = completeKeyName.join(".");
                 let formControlName = 'formControlName';
                 let getField = `getField('${obj_name}')`;
                 let isFieldValid = `isFieldValid('${obj_name}')`;
@@ -818,8 +836,8 @@ class ReactiveDrivenValidator {
         return Object.keys(object).map((key: any) => {
             let value = object[key];
             let rest = names.length ? '.' + key : key;
-            let complete_name = (names + rest).split('.');
-            let dot_notation = ValidatorRuleHelper.dotNotation(complete_name);
+            let completeKeyName = (names + rest).split('.');
+            let dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
             let definition = null;
             let n = key.split('.');
             let firstNameBeforeDot = n[0];
@@ -827,10 +845,10 @@ class ReactiveDrivenValidator {
             let isValueAnArray = Array.isArray(value) ? true : false;
 
             //key has asterisk, so must turn into an array
-            if (complete_name[complete_name.length - 1] == '*') {
+            if (completeKeyName[completeKeyName.length - 1] == '*') {
                 let index = 0;
-                for (var i = complete_name.length - 1; i >= 0; i--) {
-                    if (complete_name[i] != '*') {
+                for (var i = completeKeyName.length - 1; i >= 0; i--) {
+                    if (completeKeyName[i] != '*') {
                         break;
                     }
                     let rand = ValidatorRuleHelper.camelCasedString(n.join(""));
@@ -864,8 +882,8 @@ class ReactiveDrivenValidator {
                     ];
                 }
 
-                definition = ValidatorDefinition.getDefinitions({
-                    completeName: complete_name,
+                definition = ValidatorDefinition.get({
+                    completeKeyName: completeKeyName,
                     name: firstNameBeforeDot,
                     parameters: parameters,
                     formBuilderGroup: formBuilderGroup,
@@ -878,7 +896,7 @@ class ReactiveDrivenValidator {
             //key: { any: [], any2.*: [] }
             if (Object.prototype.toString.call(value) == '[object Object]') {
                 //key has asterisk
-                if (complete_name[complete_name.length - 1] == '*') {
+                if (completeKeyName[completeKeyName.length - 1] == '*') {
                     parameters = ValidatorRuleHelper.removeParameters(n, parameters);
 
                     return [

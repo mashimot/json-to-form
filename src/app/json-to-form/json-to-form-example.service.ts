@@ -33,7 +33,7 @@ export class JsonToFormExampleService {
     return {
       "name": "Big Ass Array of Objects",
       "data": {
-        "big_ass_array_of_objects.*.*.*.*.*.*.*.*": {
+        "big_ass_array_of_objects.*.*.*": {
           first_name: "required|min:3|max:255",
           last_name: "required|min:3|max:255"
         }
