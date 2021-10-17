@@ -10,6 +10,7 @@ export class JsonToFormExampleService {
   getExamples(){
     let examples: any[] = [
       this.userMedications(),
+      this.getMoviesDetails(),
       this.usersJson(),
       this.bigAssArrayOfObjects(),
       this.user(),
@@ -37,6 +38,66 @@ export class JsonToFormExampleService {
           first_name: "required|min:3|max:255",
           last_name: "required|min:3|max:255"
         }
+      }
+    }
+  }
+
+  public getMoviesDetails(){
+    return {
+      "name": "https://developers.themoviedb.org/3/movies/get-movie-details",
+      "data": {
+        "adult": "nullable|boolean",
+        "backdrop_path": "nullable|string",
+        "belongs_to_collection": "nullable",
+        "budget": "nullable|html:number|integer",
+        "genres.*": {
+          "id": "nullable|html:number|integer",
+          "name": "nullable|html:text|min:2|max:255"
+        },
+        "homepage": "nullable|html:text|string",
+        "id": "nullable|html:number|integer|min:2|max:25",
+        "imdb_id": "nullable|string|min:9|max:9",
+        "original_language": "nullable|string|min:2|max:2",
+        "original_title": "nullable|string|min:2|max:255",
+        "overview": "nullable|html:textarea|string|min:2|max:4000",
+        "popularity": "nullable|html:number|numeric",
+        "poster_path": "nullable|html:text|string",
+        "production_companies.*": [
+          {
+            "id": "html:number|nullable",
+            "logo_path": "nullable|string",
+            "name": "nullable|min:2|max:255",
+            "origin_country": "nullable|min:2|max:2"
+          }
+        ],
+        "production_countries.*": {
+          "iso_3166_1": "nullable|min:2|max:2",
+          "name": "nullable|min:2|max:255"
+        },
+        "release_date": "html:date|nullable|date_format:Y-m-d",
+        "revenue": "html:number|nullable",
+        "runtime": "html:number|nullable",
+        "spoken_languages.*": {
+          "iso_639_1": "nullable|min:2|max:2",
+          "name": "nullable|min:2|max:255"
+        },
+        "status": [
+          "nullable",
+          "html:radio",
+          [
+            "Rumored", 
+            "Planned", 
+            "In Production", 
+            "Post Production", 
+            "Released", 
+            "Canceled"
+          ]
+        ],
+        "tagline": "nullable|min:2|max:255",
+        "title": "nullable|min:2|max:255",
+        "video": "nullable|boolean",
+        "vote_average": "nullable|html:number|number|min:2|max:255",
+        "vote_count": "nullable|html:number|integer|min:2|max:255"
       }
     }
   }
