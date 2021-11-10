@@ -47,15 +47,18 @@
     </div>
 </div>
 
-<form [formGroup]="form" (ngSubmit)="onSubmit()">
+<form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-3">
     <div class="card">
         <div class="card-body">
             <fieldset>
                 <div class="row">                                                                        
                     <div class="form-group col-md-12">
                         <label for="__json">JSON</label>
-                        <textarea formControlName="json" [class.is-invalid]="isFieldValid('json')" id="__json" class="form-control"
-                            cols="30" rows="10">{{ formExample | json}}</textarea>
+                        <json-editor
+                            [options]="editorOptions"
+                            formControlName="json"
+                            [class.is-invalid]="isFieldValid('json')"
+                        ></json-editor>
                         <div *ngIf="isFieldValid('json')" class="invalid-feedback">
                             <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
                             <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
@@ -97,49 +100,61 @@
                 </div>
             </fieldset>
         </div>
+        <!--
         <div class="card-footer">
             <button type="submit" class="btn btn-primary btn-sm">
                 Generate
             </button>
         </div>
+        -->
     </div>
 </form>
-<ng-container *ngIf="errors.length <= 0 && form.valid">
-    <fieldset class="card mt-5">
-        <div class="card-header">
-            <ul>
-                <li>ng g component {{ form.get('componentName')!.value }}</li>
-                <li>ng g module {{ form.get('componentName')!.value }} --routing</li>
-                <li>
-                    <strong>
-                        You need to import ReactiveFormsModule in order to create reactive forms
-                    </strong>
-                </li>
-            </ul>
-        </div>
-        <div class="card-body">
-            <div class="card">
+
+<ng-container *ngIf="(isLoadingAction$ | async)">
+    <div class="bg-dark">
+        <p class="animate__animated animate__headShake text-white">Loading...</p>
+    </div>
+</ng-container>
+<ng-container *ngIf="(formBuilder$ | async) as formBuilder">
+    <div *ngIf="!(isLoadingAction$ | async )">
+        <ng-container *ngIf="errors.length <= 0 && form.valid ">
+            <fieldset class="card mt-5">
                 <div class="card-header">
-                    <h4>HTML</h4>
+                    <ul>
+                        <li>ng g component {{ form.get('componentName')!.value }}</li>
+                        <li>ng g module {{ form.get('componentName')!.value }} --routing</li>
+                        <li>
+                            <strong>
+                                You need to import ReactiveFormsModule in order to create reactive forms
+                            </strong>
+                        </li>
+                    </ul>
                 </div>
                 <div class="card-body">
-                    <div class="form-group">
-                        <button class="btn btn-outline-primary btn-sm" (click)="formHtml">Copy</button>
-                        <textarea id="__form-html" class="form-control" cols="30" rows="10">{{ formHtml }}</textarea>
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>HTML</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <button class="btn btn-outline-primary btn-sm">Copy</button>
+                                <textarea id="__form-html" class="form-control" cols="30" rows="10">{{ formBuilder.html }}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h4>COMPONENT</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <button class="btn btn-outline-primary btn-sm">Copy</button>
+                                <textarea id="__form-component" class="form-control" cols="30" rows="10">{{ formBuilder.component }}</textarea>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="card mt-3">
-                <div class="card-header">
-                    <h4>COMPONENT</h4>
-                </div>
-                <div class="card-body">
-                    <div class="form-group">
-                        <button class="btn btn-outline-primary btn-sm">Copy</button>
-                        <textarea id="__form-component" class="form-control" cols="30" rows="10">{{ formData }}</textarea>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </fieldset>
+            </fieldset>
+        </ng-container>
+    </div>        
 </ng-container>

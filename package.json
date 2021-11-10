@@ -1,7 +1,7 @@
 {
   "name": "json-to-form",
   "version": "0.0.0",
-  "scripts": {    
+  "scripts": {
     "ng": "ng",
     "start": "node server.js",
     "build": "ng build",
@@ -21,8 +21,10 @@
     "@angular/platform-browser": "~12.1.1",
     "@angular/platform-browser-dynamic": "~12.1.1",
     "@angular/router": "~12.1.1",
+    "ang-jsoneditor": "^1.10.5",
     "express": "^4.17.1",
     "js-beautify": "^1.14.0",
+    "jsoneditor": "^9.5.7",
     "path": "^0.12.7",
     "rxjs": "~6.6.0",
     "tslib": "^2.2.0",

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { js_beautify, html_beautify } from 'js-beautify';
@@ -8,7 +8,7 @@ class JsonValidators {
     static startsWithCurlyBrackets(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const error: ValidationErrors = { startsWithCurlyBrackets: true };
-            let isArray = Array.isArray(JSON.parse(control.value));
+            const isArray = Array.isArray(control.value);
 
             if(isArray){
                 control.setErrors(error);
@@ -124,27 +124,29 @@ class ValidatorRuleHelper {
                 'JSON should start with curly brackets'
             ];
         }
+        
         if(Object.keys(obj).length <= 0){
             return [
                 'JSON must be not empty'
             ];
         }
 
-        return Object.keys(obj).map((k: any) => {
-            let v = obj[k];
-            let rest = names.length > 0 ? '.' + k : k;
-            var  re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
+        return Object.keys(obj)
+            .map((k: any) => {
+                let v = obj[k];
+                let rest = names.length > 0 ? '.' + k : k;
+                var  re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
 
-            if (!re.test(k)) {
-                errors.push(`Errors at:  "${names + rest}"`);
-            }
+                if (!re.test(k)) {
+                    errors.push(`Errors at:  "${names + rest}"`);
+                }
 
-            if (Object.prototype.toString.call(v) == '[object Object]') {
-                ValidatorRuleHelper.validateObject(v, names + rest, errors);
-            }
+                if (Object.prototype.toString.call(v) == '[object Object]') {
+                    ValidatorRuleHelper.validateObject(v, names + rest, errors);
+                }
 
-            return errors;
-        })[0];
+                return errors;
+            })[0];
     }
 
     public static parseStringRule(rule: string | any[]): Array<any>
@@ -242,11 +244,13 @@ class ValidatorRuleHelper {
                     [k]: v.split("|")
                 };
             }
+
             if (Array.isArray(v)) {
                 return {
                     [k]: v
                 }
             }
+
             return null;
             
         });
@@ -258,8 +262,8 @@ class ValidatorRuleHelper {
 
 class ValidatorDefinition {
     private static CREATE: string = 'create';
-    private static DELETE = 'delete';
-    private static FORM_BUILDER = 'formBuilder';
+    private static DELETE: string = 'delete';
+    private static FORM_BUILDER: string = 'formBuilder';
 
     public constructor(){
 
@@ -269,11 +273,6 @@ class ValidatorDefinition {
         let definition: any = {
             get: [],
             lastDefinition: {},
-            /*parameters: [],
-            formArrayName: {
-                open: [],
-                close: []
-            },*/
             formBuilderArray: {
                 open: [],
                 close: []
@@ -295,7 +294,7 @@ class ValidatorDefinition {
         let returnFunction = [...keyNameDotNotation];
 
         let counterAsterisk = 0;
-        for (var i = keyNameDotNotation.length - 1; i >= 0; i--) {
+        for (let i = keyNameDotNotation.length - 1; i >= 0; i--) {
             if (keyNameDotNotation[i] != '*') {
                 break;
             }
@@ -303,7 +302,7 @@ class ValidatorDefinition {
         }
         
         let count = 0;
-        for (var i = 0; i < keyNameDotNotation.length; i++) {
+        for (let i = 0; i < keyNameDotNotation.length; i++) {
             let item = keyNameDotNotation[i];
             if (item == '*') {
                 let currentParameter = parameters[count];
@@ -320,10 +319,10 @@ class ValidatorDefinition {
         let functionName = ValidatorRuleHelper.camelCasedString(keyNameDotNotation.join(""));
         let get = [];
 
-        for (var i = counterAsterisk - 1; i >= 0; i--) {
+        for (let i = counterAsterisk - 1; i >= 0; i--) {
             let data: any = {};
-            let getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
-            let lastIndex = parameters[parameters.length - 1];
+            const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
+            const lastIndex = parameters[parameters.length - 1];
 
             parameters.splice(-1, 1);
             returnFunction.splice(-1, 1);
@@ -332,7 +331,7 @@ class ValidatorDefinition {
             definition.formBuilderArray.open.push(`this.${this.FORM_BUILDER}.array([`);
             definition.formBuilderArray.close.push(`])`);
 
-            let parametersWithLastIndex = [...parameters];
+            const parametersWithLastIndex = [...parameters];
             parametersWithLastIndex.push(lastIndex);
             data.function_name = functionName;
             data.parameters = `(${parameters.map((p: any) => `${p}`).join(",")})`;
@@ -407,7 +406,7 @@ class ValidatorDefinition {
             definition.lastDefinition = get[get.length - 1];
         }
 
-        console.log(definition);
+        //console.log(definition);
         return definition;
     }
 }
@@ -431,7 +430,7 @@ class ReactiveDrivenHtml {
         this.triggerValidationOnSubmit = triggerValidationOnSubmit;
     }
 
-    public generate() {
+    public generate() : string[] {
         return [
             `<div class="container">`,
             `<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
@@ -448,245 +447,245 @@ class ReactiveDrivenHtml {
     public dot_notation: any = [];
 
     public reactiveDrivenHtml(object: any, names: string = '', parameters: any = [], lastDefinition: any = []): string {
-        let drivenHtml = Object.keys(object).map((key: any) => {
-            let value = object[key];
-            let keySplit = key.split('.');
-            let firstNameBeforeDot = keySplit[0];
-            let definition:any = null;
-            let rest = names.length > 0 ? '.' + key : key;
-            let completeKeyName = (names + rest).split('.');
-            this.dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
+        let drivenHtml = Object.keys(object)
+            .map((key: any) => {
+                let value = object[key];
+                let keyNameSplit = key.split('.');
+                let firstNameBeforeDot = keyNameSplit[0];
+                let definition:any = null;
+                let rest = names.length > 0 ? '.' + key : key;
+                let completeKeyName = (names + rest).split('.');
+                this.dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
 
-            if (key.trim().startsWith('$')) {
-                return '';
-            }
-            
-            if (completeKeyName[completeKeyName.length - 1] == '*') {
-                let index = 0;
-                for (var i = completeKeyName.length - 1; i >= 0; i--) {
-                    if (completeKeyName[i] != '*') {
-                        break;
-                    }
-                    let rand = ValidatorRuleHelper.camelCasedString(keySplit.join(""));
-                    rand = `index${rand}${index == 0 ? '' : index}`;
-                    parameters.push(rand);
-                    index++;
+                if (key.trim().startsWith('$')) {
+                    return '';
                 }
                 
-                definition = ValidatorDefinition.get({
-                    completeKeyName: completeKeyName,
-                    name: firstNameBeforeDot,
-                    parameters: parameters
-                });
-                
-                if (Object.keys(definition.lastDefinition).length > 0) {
-                    lastDefinition.push(definition);
-                }
-            }
-
-            if (Object.prototype.toString.call(value) == '[object Object]') {
                 if (completeKeyName[completeKeyName.length - 1] == '*') {
+                    let index = 0;
+                    for (let i = completeKeyName.length - 1; i >= 0; i--) {
+                        if (completeKeyName[i] != '*') {
+                            break;
+                        }
+                        let rand = ValidatorRuleHelper.camelCasedString(keyNameSplit.join(""));
+                        rand = `index${rand}${index == 0 ? '' : index}`;
+                        parameters.push(rand);
+                        index++;
+                    }
+                    
+                    definition = ValidatorDefinition.get({
+                        completeKeyName: completeKeyName,
+                        name: firstNameBeforeDot,
+                        parameters: parameters
+                    });
+                    
+                    if (Object.keys(definition.lastDefinition).length > 0) {
+                        lastDefinition.push(definition);
+                    }
+                }
 
-                    let formArray: {
-                        open: string[],
-                        close: string[]
-                    } = {
-                        open: [],
-                        close: []
+                if (Object.prototype.toString.call(value) == '[object Object]') {
+                    if (completeKeyName[completeKeyName.length - 1] == '*') {
+
+                        let formArray: {
+                            open: string[],
+                            close: string[]
+                        } = {
+                            open: [],
+                            close: []
+                        }
+
+                        definition.get.forEach((item: any, i: number) => {
+                            const formArrayName: string = i <= 0
+                                ? `formArrayName="${firstNameBeforeDot}"`
+                                : `[formArrayName]="${item.second_to_last_index}"`;
+
+                            formArray.open.push(
+                                `<fieldset ${formArrayName} class="border border-dark p-2">
+                                    <pre>{{ ${item.get_with_parameters}.errors | json }}</pre>
+                                    <div class="d-grid gap-2">
+                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.create}">ADD ${item.function_name}</button>
+                                    </div>
+                                    <div 
+                                        *ngFor="let ${item.function_name}${i + 1} of ${item.get_with_parameters}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.last_index} = index;"
+                                        class="border border-dark p-2"
+                                        ${i == definition.get.length - 1? `[formGroupName]="${item.last_index}"`: ``}
+                                    >
+                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                            <button type="button" class="btn btn-danger btn-sm" (click)="${item.delete}">DELETE ${item.function_name}</button>
+                                        </div>`
+                            );
+
+                            formArray.close.push('</div>');
+                            formArray.close.push('</fieldset>');
+                        });
+
+                        const FORM_ARRAY: string[] = [
+                            formArray.open.join("\n"),
+                                `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
+                            formArray.close.join("\n"),
+                        ];
+                        
+                        //refresh the parameters list
+                        parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
+                        lastDefinition.pop();
+
+                        return FORM_ARRAY.join("\n");
                     }
 
-                    definition.get.forEach((item: any, i: number) => {
-                        let formArrayName: string = i <= 0
-                            ? `formArrayName="${firstNameBeforeDot}"`
-                            : `[formArrayName]="${item.second_to_last_index}"`;
+                    return [
+                        `<div formGroupName="${key}">`,
+                        `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
+                        `</div>`
+                    ]
+                    .join('\n');
+                }
+                
+                if (Array.isArray(value)) {
+                    let messages: string[] = [];
+                    const rules = value;
+                    let keyNameDotNotation = completeKeyName.join(".");
+                    let formControlName = 'formControlName';
+                    let getField = `getField('${keyNameDotNotation}')`;
+                    let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
+                    let get:any = lastDefinition[lastDefinition.length - 1];
+                    let id = this.dot_notation[this.dot_notation.length - 1];
+                    var index = firstNameBeforeDot;
+                    
+                    //key has asterisk
+                    if (lastDefinition.length > 0) {
+                        let getId = `.get('${id}')`;
 
-                        formArray.open.push(
-                            `<fieldset ${formArrayName} class="border border-dark p-2">
-                                <pre>{{ ${item.get_with_parameters}.errors | json }}</pre>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.create}">ADD ${item.function_name}</button>
-                                </div>
-                                <div 
-                                    *ngFor="let ${item.function_name}${i + 1} of ${item.get_with_parameters}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.last_index} = index;"
-                                    class="border border-dark p-2"
-                                    ${i == definition.get.length - 1? `[formGroupName]="${item.last_index}"`: ``}
-                                >
-                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                        <button type="button" class="btn btn-danger btn-sm" (click)="${item.delete}">DELETE ${item.function_name}</button>
-                                    </div>`
+                        if(id == '*'){
+                            getId = ''
+                            formControlName = '[formControlName]';
+                            index = get.lastDefinition.last_index;
+                        } 
+                        getField = `${get.lastDefinition.get_at}${getId}`;
+                        isFieldValid = `!${getField}?.valid`
+                    }
+
+                    const ngClass = `[class.is-invalid]="${isFieldValid}"`
+                    const defaultInput = [`<input type="text" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`].join('\n');
+                    let input_html = defaultInput;
+
+                    for (let i = 0; i < rules.length; i++) {
+                        const rule = rules[i];
+                        const parsed = ValidatorRuleHelper.parseStringRule(rule);
+                        this.attribute = parsed[0];
+                        this.parameters = parsed[1];
+                        messages.push(
+                            this.getErrorsMessages(getField, keyNameDotNotation)
                         );
 
-                        formArray.close.push('</div>');
-                        formArray.close.push('</fieldset>');
-                    });
+                        if (this.attribute == 'html') {
+                            let input: {
+                                [key:string]: string
+                            } = {
+                                'file': `<input type="file" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+                                'password': `<input type="password" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+                                'email': `<input type="email" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+                                'number': `<input type="number" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+                                'date': `<input type="date" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+                                'textarea': `<textarea ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`
+                            };
+                            input_html = typeof input[this.parameters[0]] != 'undefined'
+                                ? input[this.parameters[0]]
+                                : defaultInput;
 
-                    let FORM_ARRAY: string[] = [
-                        formArray.open.join("\n"),
-                            `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
-                        formArray.close.join("\n"),
-                    ];
-                    
-                    //refresh the parameters list
-                    parameters = ValidatorRuleHelper.removeParameters(keySplit, parameters);
-                    lastDefinition.pop();
-
-                    return FORM_ARRAY.join("\n");
-                }
-
-                return [
-                    `<div formGroupName="${key}">`,
-                    `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
-                    `</div>`
-                ]
-                .join('\n');
-            }
-            
-            if (Array.isArray(value)) {
-                let messages: string[] = [];
-                let rules = value;
-                let obj_name = completeKeyName.join(".");
-                let formControlName = 'formControlName';
-                let getField = `getField('${obj_name}')`;
-                let isFieldValid = `isFieldValid('${obj_name}')`;
-                let get:any = lastDefinition[lastDefinition.length - 1];
-                let id = this.dot_notation[this.dot_notation.length - 1];
-                var index = firstNameBeforeDot;
-                
-                //key has asterisk
-                if (lastDefinition.length > 0) {
-                    let getId = `.get('${id}')`;
-
-                    if(id == '*'){
-                        getId = ''
-                        formControlName = '[formControlName]';
-                        index = get.lastDefinition.last_index;
-                    } 
-                    getField = `${get.lastDefinition.get_at}${getId}`;
-                    isFieldValid = `!${getField}?.valid`
-                }
-
-                let ngClass = `[class.is-invalid]="${isFieldValid}"`
-                let defaultInput = `<input type="text" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`;
-                let input_html = defaultInput;
-
-                for (var i = 0; i < rules.length; i++) {
-                    let rule = rules[i];
-                    let parsed = ValidatorRuleHelper.parseStringRule(rule);
-                    this.attribute = parsed[0];
-                    this.parameters = parsed[1];
-                    messages.push(
-                        this.html(getField, obj_name)
-                    );
-
-                    if (this.attribute == 'html') {
-                        let input: {
-                            [key:string]: string
-                        } = {
-                            'file': `<input type="file" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
-                            'password': `<input type="password" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
-                            'email': `<input type="email" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
-                            'number': `<input type="number" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
-                            'date': `<input type="date" ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>`,
-                            'textarea': `<textarea ${formControlName}="${index}" id="${obj_name}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`
-                        };
-                        input_html = typeof input[this.parameters[0]] != 'undefined'
-                            ? input[this.parameters[0]]
-                            : defaultInput;
-
-                        let hue = this.dot_notation.filter((el:string) => el != '*').join("");
-                        if (this.parameters[0] == 'select') {
-                            let options = [
-                                `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(hue, true)}$ | async)" [ngValue]="data">`,
-                                `{{ data | json }}`,
-                                `</option>`
-                            ]
-                            input_html = `<select ${formControlName}="${index}" id="${obj_name}" class="form-control" ${ngClass}>${options.join("\n")}</select>`;
-                        }
-                        if (this.parameters[0] == 'radio') {    
-                            if(id == '*'){
-                                index = `{{ ${index} }}`;
+                            const keyNameWithoutAsterisk = this.dot_notation.filter((el:string) => el != '*').join("");
+                            if (this.parameters[0] == 'select') {
+                                const options = [
+                                    `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
+                                    `{{ data | json }}`,
+                                    `</option>`
+                                ]
+                                input_html = `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>${options.join("\n")}</select>`;
                             }
-                            input_html = [
-                                `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(hue, true)}$ | async) as data$">`,
-                                    `<div *ngFor="let data of data$; let index${ValidatorRuleHelper.camelCasedString(hue, true)} = index;">`,
-                                        `<div class="form-check">`,
-                                            `<input type="radio" formControlName="${index}" [value]="data" ${ngClass}>{{ data | json }}`,
+                            if (this.parameters[0] == 'radio') {    
+                                if(id == '*'){
+                                    index = `{{ ${index} }}`;
+                                }
+                                input_html = [
+                                    `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as data$">`,
+                                        `<div *ngFor="let data of data$; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
+                                            `<div class="form-check">`,
+                                                `<input type="radio" formControlName="${index}" [value]="data" ${ngClass}>{{ data | json }}`,
+                                            `</div>`,
                                         `</div>`,
-                                    `</div>`,
-                                `</div>`
-                            ].join("\n");
-                        }
-                        if (this.parameters[0] == 'checkbox') {       
-                            input_html = [
-                                `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(hue, true)}$ | async) as data">`,
-                                    `<div *ngFor="let d of data; let index${ValidatorRuleHelper.camelCasedString(id)} = index;">`,                                    
-                                        `<div class="form-check">`,
-                                            `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="d"> {{ d }}`,
+                                    `</div>`
+                                ].join("\n");
+                            }
+                            if (this.parameters[0] == 'checkbox') {       
+                                input_html = [
+                                    `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as data">`,
+                                        `<div *ngFor="let d of data; let index${ValidatorRuleHelper.camelCasedString(id)} = index;">`,                                    
+                                            `<div class="form-check">`,
+                                                `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="d"> {{ d }}`,
+                                            `</div>`,
                                         `</div>`,
-                                    `</div>`,
-                                `</div>`
-                            ].join("\n");
-                        }
-                    }                   
-                }
+                                    `</div>`
+                                ].join("\n");
+                            }
+                        }                   
+                    }
 
-                if (definition != null) {
-                    parameters = ValidatorRuleHelper.removeParameters(keySplit, parameters);
-                    lastDefinition.pop();
-                    let formArray: string[] = [];
-                    definition.get.forEach((item: any, i: number) => {
-                        let formArrayName: string = i <= 0
-                            ? `formArrayName="${firstNameBeforeDot}"`
-                            : `[formArrayName]="${item.second_to_last_index}"`;
-
-                        formArray.push(
-                            `<div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <button type="button" (click)="${item.get_with_parameters}.push(create${item.function_name}())" class="btn btn-primary btn-sm">add ${item.function_name}</button>
-                            </div>
-                            <div
-                                ${formArrayName}
-                                *ngFor="let h of ${item.get_with_parameters}!.controls; let ${item.last_index} = index;"
-                            >
-                                <div class="form-group col-md-12">
-                                    <label id="${id}">${obj_name}</label>
-                                    <div class="input-group mb-3">
-                                        ${input_html}
-                                        <button type="button" (click)="${item.delete}" class="btn btn-danger btn-sm">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete
-                                        </button>
-                                        <div *ngIf="${isFieldValid}" class="invalid-feedback">
-                                            ${messages.join("")}
+                    if (definition != null) {
+                        parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
+                        lastDefinition.pop();
+                        let formArray: string[] = [];
+                        definition.get.forEach((item: any, i: number) => {
+                            let formArrayName: string = i <= 0
+                                ? `formArrayName="${firstNameBeforeDot}"`
+                                : `[formArrayName]="${item.second_to_last_index}"`;
+                            formArray.push(
+                                `<div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" (click)="${item.get_with_parameters}.push(create${item.function_name}())" class="btn btn-primary btn-sm">add ${item.function_name}</button>
+                                </div>
+                                <div
+                                    ${formArrayName}
+                                    *ngFor="let h of ${item.get_with_parameters}!.controls; let ${item.last_index} = index;"
+                                >
+                                    <div class="form-group col-md-12">
+                                        <label id="${id}">${keyNameDotNotation}</label>
+                                        <div class="input-group mb-3">
+                                            ${input_html}
+                                            <button type="button" (click)="${item.delete}" class="btn btn-danger btn-sm">
+                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete
+                                            </button>
+                                            <div *ngIf="${isFieldValid}" class="invalid-feedback">
+                                                ${messages.join("")}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>`
-                        );
-                    });
+                                </div>`
+                            );
+                        });
 
-                    return formArray.join("\n");
+                        return formArray.join("\n");
+                    }
+
+                    return [
+                        `<div class="form-group col-md-12">`,
+                            `<label id="${id}">${keyNameDotNotation}</label>`,
+                            `${input_html}`,
+                            `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
+                                `${messages.join("")}`,
+                            `</div>`,
+                        `</div>`,
+                    ].join("\n");
                 }
 
-                return [
-                    `<div class="form-group col-md-12">`,
-                        `<label id="${id}">${obj_name}</label>`,
-                        `${input_html}`,
-                        `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
-                            `${messages.join("")}`,
-                        `</div>`,
-                    `</div>`,
-                ].join("");
-            }
-
-            return '';
-        }).join("\n");
+                return '';
+            }).join("\n");
     
         
 
         return drivenHtml;
     }
 
-    protected html(getField: string = '', objName: string): string {
-        //console.log('attr', this.attribute);
+    protected getErrorsMessages(getField: string = '', objName: string): string {
+
         if (this.attribute == 'required') {
             return `<div *ngIf="${getField}!.errors?.required">${objName.toUpperCase()} is required</div>`;
         }
@@ -725,6 +724,7 @@ class ReactiveDrivenValidator {
     componentName!: string;
     
     constructor(rules: any, componentName: string) {
+        console.log('entrou');
         this.componentName = componentName;
         this.setRules(rules);
     }
@@ -737,7 +737,7 @@ class ReactiveDrivenValidator {
         ];
     }
 
-    public generateComponent() {
+    public generateComponent() : string[] {
         let initVariables: string[] = [];
         let initObservables: string[] = [];
         let definitions: string[] = [];
@@ -999,6 +999,7 @@ class ReactiveDrivenValidator {
         if (this.attribute == 'between_length') {
             return this.validateBetweenLength();
         }
+
         return '';
     }
 
@@ -1028,13 +1029,21 @@ class ReactiveDrivenValidator {
     }
 }
 
+import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
+import { debounceTime, filter, finalize, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+
 @Component({
     selector: 'app-json-to-form-form',
     templateUrl: './json-to-form-form.component.html',
     styleUrls: ['./json-to-form-form.component.css']
 })
 export class JsonToFormFormComponent implements OnInit {
-    public formExample!: any;
+    public editorOptions: JsonEditorOptions;
+    @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
+    
+    loading: boolean = false;
+    formExample!: any;
     hoverEffect: {
         valid: string[],
         invalid: string[]
@@ -1042,94 +1051,136 @@ export class JsonToFormFormComponent implements OnInit {
         valid: [],
         invalid: []
     };
-    formHtml: string | null = null;
-    formData: string | null = null;
+    formBuilder$!: Observable<any>
     form!: FormGroup;
     formSubmitAttempt: boolean = false;
     errors: string[] = [];
-    examples!: {
+    examples: {
         valid: {
-            [key: string]: string
+            [key: string]: Object
         },
         invalid: {
-            [key: string]: string
+            [key: string]: Object
+        }
+    } = {
+        valid: {
+            "users.*.*": {
+                "users.*.*": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            }
+        },
+        invalid: {
+            "users.*.id": {
+                "users.*.id": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            },
+            ".*users": {
+                ".*users": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            },
+            "  users ": {
+                "  users ": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            }
         }
     };
+
+    private isLoadingSubject = new BehaviorSubject<boolean>(false);
+    isLoadingAction$ = this.isLoadingSubject.asObservable();
 
     constructor(
         private formBuilder: FormBuilder,
         private jsonToFormExampleService: JsonToFormExampleService,
         private route: ActivatedRoute
-    ) {}
+    ) {
+        this.editorOptions = new JsonEditorOptions()
+        //this.editorOptions.modes = ['code', 'text', 'tree', 'view']; // set all allowed modes
+        this.editorOptions.mode = 'code'; // set all allowed modes
+        this.editorOptions.modes = ['code']; // set all allowed modes
+    }
 
     ngOnInit(): void {
-        console.log('d', this.examples);
-        this.examples = {
-            valid: {
-                "users.*.*": js_beautify(JSON.stringify({
-                    "users.*.*": {
-                        first_name: "required|min:3|max:255",
-                        last_name: "required|min:3|max:255"
-                    },                
-                }))
-            },
-            invalid: {
-                "users.*.id": js_beautify(JSON.stringify({
-                    "users.*.id": {
-                        first_name: "required|min:3|max:255",
-                        last_name: "required|min:3|max:255"
-                    },                
-                })),
-                ".*users": js_beautify(JSON.stringify({
-                    ".*users": {
-                        first_name: "required|min:3|max:255",
-                        last_name: "required|min:3|max:255"
-                    },                
-                })),
-                "  users ": js_beautify(JSON.stringify({
-                    "  users ": {
-                        first_name: "required|min:3|max:255",
-                        last_name: "required|min:3|max:255"
-                    },                
-                }))
-            }
-        }
         this.route.params.subscribe(params => {
             this.formExample = this.jsonToFormExampleService.getExampleByNumber(params.id) == null
-            ? {}
-            : this.jsonToFormExampleService.getExampleByNumber(params.id).data;
-        }); 
+                ? {}
+                : this.jsonToFormExampleService.getExampleByNumber(params.id).data;
+        });
+
         this.form = this.formBuilder.group({
-            "json": [js_beautify(JSON.stringify(this.formExample)), [Validators.required, JsonValidators.isJson(), JsonValidators.startsWithCurlyBrackets()]],
-            "componentName": ['test-form', [Validators.required, Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
+            "json": [
+                this.formExample,
+                [
+                    JsonValidators.startsWithCurlyBrackets()
+                ]
+            ],
+            "componentName": [
+                'test-form', 
+                [
+                    Validators.required,
+                    Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+                ]
+            ],
             //"options": ['', [Validators.required]],
         });
-        this.generate();
+        
+        this.formBuilder$ = this.form.valueChanges
+            .pipe(
+                tap(() => this.isLoadingSubject.next(true)),
+                startWith(
+                    this.form.value
+                ),
+                map(value => {
+                    const json = value.json;
+                    const errors = ValidatorRuleHelper.validateObject(json);
+                    value.errors = errors;
+
+                    return value;
+                }),
+                tap(value => {
+                    this.errors = value.errors;
+                    if(value.errors.length > 0){
+                        this.isLoadingSubject.next(false)
+                    }
+                }),
+                filter(value => value.errors.length <= 0),
+                debounceTime(1000),
+                switchMap(value => {
+                    const json = value.json;
+                    if(this.errors.length <= 0){
+
+                        let component = (new ReactiveDrivenValidator(json, value.componentName))
+                            .generateComponent();
+                        let html = (new ReactiveDrivenHtml(json))
+                            .generate();
+                        
+                        return of({
+                            component: js_beautify(component.join("\n")),
+                            html: html_beautify(html.join("\n"))
+                        });
+                    }
+                    
+                    return of({});
+                }),
+                tap(() => this.isLoadingSubject.next(false))
+            );
     }
 
     copy(text: string){
         alert('still working on it!')
     }
 
-    generate(){
-        let json = JSON.parse(this.form.get('json')!.value);
-        this.errors = ValidatorRuleHelper.validateObject(json);
-        console.log('this.errors', this.errors);
-        if(this.errors.length <= 0){
-            let component = (new ReactiveDrivenValidator(json, this.form.get('componentName')!.value)).generateComponent();
-            let html  = (new ReactiveDrivenHtml(json)).generate();
-
-            this.formData = js_beautify(component.join("\n"));
-            this.formHtml = html_beautify(html.join("\n"));
-        }
-    }
-
     onSubmit(): void {
         this.formSubmitAttempt = true;
 
         if (this.f.valid) {
-            this.generate();
-            console.log('form submitted');
         } else {
             this.validateAllFormFields(this.f);
         }
