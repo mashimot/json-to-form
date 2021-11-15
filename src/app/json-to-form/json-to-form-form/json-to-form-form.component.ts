@@ -5,39 +5,50 @@ import { js_beautify, html_beautify } from 'js-beautify';
 import { JsonToFormExampleService } from './../json-to-form-example.service';
 
 class JsonValidators {
-    static startsWithCurlyBrackets(): ValidatorFn {
+    static validateObject(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
-            const error: ValidationErrors = { startsWithCurlyBrackets: true };
-            const isArray = Array.isArray(control.value);
+            const error: ValidationErrors = { 
+                invalidJson: true
+            };
 
-            if(isArray){
+            let object = control.value;
+            if(typeof control.value == 'string'){
+                object = JSON.parse(control.value);
+            }
+
+            console.log('object', object, typeof object);
+            if(typeof object == 'undefined'){
+                error.messages = ['JSON undefined'];
+                control.setErrors(error);
+                return error;
+            }
+
+            let isArray = Array.isArray(object);
+
+            if (Object.prototype.toString.call(object) != '[object Object]') {
+                error.messages = ['JSON should start with curly brackets'];
+                return error;
+            }
+
+            if(Object.keys(object).length <= 0){
+                error.messages = ['JSON must be not empty'];
+                control.setErrors(error);
+                return error;
+            }
+
+            let errors: string[] = ValidatorRuleHelper.validateObject(object);
+            if(errors.length > 0){
+                error.messages = errors;
                 control.setErrors(error);
                 return error;
             }
 
             control.setErrors(null);
             return null;
-        };
+        }
     }
 
-    static isJson(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            const error: ValidationErrors = { jsonInvalid: true };
-        
-            try {
-                JSON.parse(control.value);
-            } catch (e) {
-                control.setErrors(error);
-                return error;
-            }
-        
-            control.setErrors(null);
-            return null;
-        };
-    }
 }
-
-
 
 interface Rules {
     [name: string]: any;
@@ -74,7 +85,7 @@ class ValidatorRuleHelper {
 
     public static removeParameters(n: string[], parameters: string[]):string[]{
         
-        for(var i = n.length - 1; i >= 0; i--){
+        for(let i = n.length - 1; i >= 0; i--){
             let item = n[i];
             if (item != '*') {
                 break;
@@ -110,7 +121,28 @@ class ValidatorRuleHelper {
         return id;
     }
 
-    public static validateObject(obj: any, names: string = '', errors:string[] = []): any{
+    public static validateObject(obj: any, names: string = '', errors:string[] = []): string[]{
+        return Object.keys(obj)
+            .map((k: any) => {
+                let v = obj[k];
+                let rest = names.length > 0
+                    ? '.' + k
+                    : k;
+                const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
+
+                if (!re.test(k)) {
+                    errors.push(`Errors at:  "${names + rest}"`);
+                }
+
+                if (Object.prototype.toString.call(v) == '[object Object]') {
+                    ValidatorRuleHelper.validateObject(v, names + rest, errors);
+                }
+
+                return errors;
+            })[0];
+    }
+
+    public static validateObjectOld(obj: any, names: string = '', errors:string[] = []): any{
         if(typeof obj == 'undefined'){
             return [
                 'WOO'
@@ -134,8 +166,10 @@ class ValidatorRuleHelper {
         return Object.keys(obj)
             .map((k: any) => {
                 let v = obj[k];
-                let rest = names.length > 0 ? '.' + k : k;
-                var  re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
+                let rest = names.length > 0
+                    ? '.' + k
+                    : k;
+                const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
 
                 if (!re.test(k)) {
                     errors.push(`Errors at:  "${names + rest}"`);
@@ -191,7 +225,7 @@ class ValidatorRuleHelper {
             return '';
         }
             
-        let camelCase = string
+        const camelCase = string
             .toLowerCase()
             .match(/[A-Z0-9]+/ig)
             .map(function (word: any, i:number) {
@@ -200,7 +234,7 @@ class ValidatorRuleHelper {
             })
             .join("");
 
-        let firstLetter = isFirstLetterLowerCase
+        const firstLetter = isFirstLetterLowerCase
             ? camelCase[0].toLowerCase()
             : camelCase[0].toUpperCase();
 
@@ -281,31 +315,21 @@ class ValidatorDefinition {
         let parameters = [...element.parameters] ?? [];
         let completeKeyName = [...element.completeKeyName]
         let keyNameDotNotation = [...ValidatorRuleHelper.dotNotation(completeKeyName)];
-        let isValueAnArray = element.isValueAnArray ? element.isValueAnArray : false;
-        let formBuilderGroup = '';
-        if (typeof element.formBuilderGroup != 'undefined') {
-            formBuilderGroup = element.formBuilderGroup.join("");
-        }
+        //let isValueAnArray = element.isValueAnArray ? element.isValueAnArray : false;
+        let formBuilderGroup = typeof element.formBuilderGroup != 'undefined'
+            ? element.formBuilderGroup.join("")
+            : '';
 
         if (parameters.length <= 0) {
             return definition;
         }
-
+       
         let returnFunction = [...keyNameDotNotation];
-
-        let counterAsterisk = 0;
-        for (let i = keyNameDotNotation.length - 1; i >= 0; i--) {
-            if (keyNameDotNotation[i] != '*') {
-                break;
-            }
-            counterAsterisk++;
-        }
-        
         let count = 0;
         for (let i = 0; i < keyNameDotNotation.length; i++) {
-            let item = keyNameDotNotation[i];
+            const item = keyNameDotNotation[i];
             if (item == '*') {
-                let currentParameter = parameters[count];
+                const currentParameter = parameters[count];
                 returnFunction[i] = ` as FormArray).at(${currentParameter})`
                 count++;
             } else {
@@ -318,6 +342,13 @@ class ValidatorDefinition {
         
         let functionName = ValidatorRuleHelper.camelCasedString(keyNameDotNotation.join(""));
         let get = [];
+        let counterAsterisk = 0;
+        for (let i = keyNameDotNotation.length - 1; i >= 0; i--) {
+            if (keyNameDotNotation[i] != '*') {
+                break;
+            }
+            counterAsterisk++;
+        }
 
         for (let i = counterAsterisk - 1; i >= 0; i--) {
             let data: any = {};
@@ -333,7 +364,6 @@ class ValidatorDefinition {
 
             const parametersWithLastIndex = [...parameters];
             parametersWithLastIndex.push(lastIndex);
-            data.function_name = functionName;
             data.parameters = `(${parameters.map((p: any) => `${p}`).join(",")})`;
             data.parameters_typed = `(${parameters.map((p: any) => `${p}:number`).join(",")})`;
             data.parameters_with_last_index = `(${parametersWithLastIndex.map((p: any) => `${p}`).join(",")})`;
@@ -359,35 +389,19 @@ class ValidatorDefinition {
                 `${this.DELETE}${data.function_name}${data.parameters_with_last_index}`
             ].join("\n");
     
-            if (isValueAnArray) {
-                data.create_function = [
-                    `${this.CREATE}${data.function_name}(){`,
-                        `return ${
-                            i == counterAsterisk - 1
-                                ? formBuilderGroup
-                                : [
-                                    definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                    `this.${this.CREATE}${functionName}${i + 1}()`,
-                                    definition.formBuilderArray.close.splice(-1, 1).join(",\n")
-                                ].join("\n")
-                        }`,
-                    `}`
-                ].join("\n");
-            } else {
-                data.create_function = [
-                    `${this.CREATE}${data.function_name}(){`,
-                        `return ${
-                            i == counterAsterisk - 1
-                                ? formBuilderGroup
-                                : [
-                                    definition.formBuilderArray.open.splice(-1, 1).join("\n"),
-                                    `this.${this.CREATE}${functionName}${i + 1}()`,
-                                    definition.formBuilderArray.close.splice(-1, 1).join(",\n")
-                                ].join("\n")
-                        }`,
-                    `}`
-                ].join("\n");
-            }
+            data.create_function = [
+                `${this.CREATE}${data.function_name}(){`,
+                    `return ${
+                        i == counterAsterisk - 1
+                            ? formBuilderGroup
+                            : [
+                                definition.formBuilderArray.open.splice(-1, 1).join("\n"),
+                                `this.${this.CREATE}${functionName}${i + 1}()`,
+                                definition.formBuilderArray.close.splice(-1, 1).join(",\n")
+                            ].join("\n")
+                    }`,
+                `}`
+            ].join("\n");
             
             data.create = [
                 `${data.get_with_parameters}.push(${this.CREATE}${data.function_name}())`
@@ -451,7 +465,7 @@ class ReactiveDrivenHtml {
             .map((key: any) => {
                 let value = object[key];
                 let keyNameSplit = key.split('.');
-                let firstNameBeforeDot = keyNameSplit[0];
+                let firstKeyNameBeforedot = keyNameSplit[0];
                 let definition:any = null;
                 let rest = names.length > 0 ? '.' + key : key;
                 let completeKeyName = (names + rest).split('.');
@@ -475,7 +489,7 @@ class ReactiveDrivenHtml {
                     
                     definition = ValidatorDefinition.get({
                         completeKeyName: completeKeyName,
-                        name: firstNameBeforeDot,
+                        name: firstKeyNameBeforedot,
                         parameters: parameters
                     });
                     
@@ -485,60 +499,60 @@ class ReactiveDrivenHtml {
                 }
 
                 if (Object.prototype.toString.call(value) == '[object Object]') {
-                    if (completeKeyName[completeKeyName.length - 1] == '*') {
-
-                        let formArray: {
-                            open: string[],
-                            close: string[]
-                        } = {
-                            open: [],
-                            close: []
-                        }
-
-                        definition.get.forEach((item: any, i: number) => {
-                            const formArrayName: string = i <= 0
-                                ? `formArrayName="${firstNameBeforeDot}"`
-                                : `[formArrayName]="${item.second_to_last_index}"`;
-
-                            formArray.open.push(
-                                `<fieldset ${formArrayName} class="border border-dark p-2">
-                                    <pre>{{ ${item.get_with_parameters}.errors | json }}</pre>
-                                    <div class="d-grid gap-2">
-                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.create}">ADD ${item.function_name}</button>
-                                    </div>
-                                    <div 
-                                        *ngFor="let ${item.function_name}${i + 1} of ${item.get_with_parameters}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.last_index} = index;"
-                                        class="border border-dark p-2"
-                                        ${i == definition.get.length - 1? `[formGroupName]="${item.last_index}"`: ``}
-                                    >
-                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                            <button type="button" class="btn btn-danger btn-sm" (click)="${item.delete}">DELETE ${item.function_name}</button>
-                                        </div>`
-                            );
-
-                            formArray.close.push('</div>');
-                            formArray.close.push('</fieldset>');
-                        });
-
-                        const FORM_ARRAY: string[] = [
-                            formArray.open.join("\n"),
-                                `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
-                            formArray.close.join("\n"),
-                        ];
-                        
-                        //refresh the parameters list
-                        parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
-                        lastDefinition.pop();
-
-                        return FORM_ARRAY.join("\n");
+                    if(completeKeyName[completeKeyName.length - 1] != '*'){
+                        return [
+                            `<div formGroupName="${key}">`,
+                            `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
+                            `</div>`
+                        ]
+                        .join('\n');
                     }
 
-                    return [
-                        `<div formGroupName="${key}">`,
-                        `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
-                        `</div>`
-                    ]
-                    .join('\n');
+
+                    let formArray: {
+                        open: string[],
+                        close: string[]
+                    } = {
+                        open: [],
+                        close: []
+                    }
+
+                    definition.get.forEach((item: any, i: number) => {
+                        const formArrayName: string = i <= 0
+                            ? `formArrayName="${firstKeyNameBeforedot}"`
+                            : `[formArrayName]="${item.second_to_last_index}"`;
+
+                        formArray.open.push(
+                            `<fieldset ${formArrayName} class="border border-dark p-2">
+                                <pre>{{ ${item.get_with_parameters}.errors | json }}</pre>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.create}">ADD ${item.function_name}</button>
+                                </div>
+                                <div 
+                                    *ngFor="let ${item.function_name}${i + 1} of ${item.get_with_parameters}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.last_index} = index;"
+                                    class="border border-dark p-2"
+                                    ${i == definition.get.length - 1? `[formGroupName]="${item.last_index}"`: ``}
+                                >
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button type="button" class="btn btn-danger btn-sm" (click)="${item.delete}">DELETE ${item.function_name}</button>
+                                    </div>`
+                        );
+
+                        formArray.close.push('</div>');
+                        formArray.close.push('</fieldset>');
+                    });
+
+                    const FORM_ARRAY: string[] = [
+                        formArray.open.join("\n"),
+                            `${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
+                        formArray.close.join("\n"),
+                    ];
+                    
+                    //refresh the parameters list
+                    parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
+                    lastDefinition.pop();
+
+                    return FORM_ARRAY.join("\n");
                 }
                 
                 if (Array.isArray(value)) {
@@ -550,7 +564,7 @@ class ReactiveDrivenHtml {
                     let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
                     let get:any = lastDefinition[lastDefinition.length - 1];
                     let id = this.dot_notation[this.dot_notation.length - 1];
-                    var index = firstNameBeforeDot;
+                    var index = firstKeyNameBeforedot;
                     
                     //key has asterisk
                     if (lastDefinition.length > 0) {
@@ -599,7 +613,8 @@ class ReactiveDrivenHtml {
                                     `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
                                     `{{ data | json }}`,
                                     `</option>`
-                                ]
+                                ];
+                                
                                 input_html = `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>${options.join("\n")}</select>`;
                             }
                             if (this.parameters[0] == 'radio') {    
@@ -636,7 +651,7 @@ class ReactiveDrivenHtml {
                         let formArray: string[] = [];
                         definition.get.forEach((item: any, i: number) => {
                             let formArrayName: string = i <= 0
-                                ? `formArrayName="${firstNameBeforeDot}"`
+                                ? `formArrayName="${firstKeyNameBeforedot}"`
                                 : `[formArrayName]="${item.second_to_last_index}"`;
                             formArray.push(
                                 `<div class="d-grid gap-2 d-md-flex justify-content-md-end">
@@ -754,14 +769,14 @@ class ReactiveDrivenValidator {
             if(item.mock_data){
                 definitions.push([
                     `${item.mock_data.get_name}$(){`,
-                    `this.${item.mock_data.parameter_name}$ = of(${JSON.stringify(item.mock_data.values)})`,
+                    `return of(${JSON.stringify(item.mock_data.values)})`,
                     `.pipe(
                         delay(2000)
                     )`,
                     `}`
                 ].join("\n"));
                 initVariables.push(`${item.mock_data.parameter_name}$!: Observable<any>;`);
-                initObservables.push(`${item.mock_data.get_name}$();`);
+                initObservables.push(`${item.mock_data.parameter_name}$ = this.${item.mock_data.get_name}$();`);
             }
         });
         
@@ -887,7 +902,7 @@ class ReactiveDrivenValidator {
                     name: firstNameBeforeDot,
                     parameters: parameters,
                     formBuilderGroup: formBuilderGroup,
-                    isValueAnArray: isValueAnArray
+                    //isValueAnArray: isValueAnArray
                 });
 
                 this.getters.push(definition);
@@ -918,7 +933,7 @@ class ReactiveDrivenValidator {
             if (Array.isArray(value)) {
                 let rules = value;
                 let ruleParameters = rules.reduce((parameters: string[], rule: any) => {
-                    let parsed = ValidatorRuleHelper.parseStringRule(rule);
+                    const parsed = ValidatorRuleHelper.parseStringRule(rule);
                     this.attribute = parsed[0];
                     this.parameters = parsed[1];
                     let attr_get = this.get();
@@ -935,6 +950,7 @@ class ReactiveDrivenValidator {
                         accArr = parsed[1];
                         console.log('parsed', parsed);
                     }
+
                     if(parsed[0] == 'html'){
                         if(['select', 'radio', 'checkbox'].includes(parsed[1][0])){
                             if(parsed[0] != 'in'){
@@ -1030,7 +1046,7 @@ class ReactiveDrivenValidator {
 }
 
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
-import { debounceTime, filter, finalize, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, finalize, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 
 @Component({
@@ -1054,7 +1070,6 @@ export class JsonToFormFormComponent implements OnInit {
     formBuilder$!: Observable<any>
     form!: FormGroup;
     formSubmitAttempt: boolean = false;
-    errors: string[] = [];
     examples: {
         valid: {
             [key: string]: Object
@@ -1101,10 +1116,14 @@ export class JsonToFormFormComponent implements OnInit {
         private jsonToFormExampleService: JsonToFormExampleService,
         private route: ActivatedRoute
     ) {
-        this.editorOptions = new JsonEditorOptions()
-        //this.editorOptions.modes = ['code', 'text', 'tree', 'view']; // set all allowed modes
+        this.editorOptions = new JsonEditorOptions();
         this.editorOptions.mode = 'code'; // set all allowed modes
         this.editorOptions.modes = ['code']; // set all allowed modes
+
+     
+    }
+
+    ngAfterViewInit(){
     }
 
     ngOnInit(): void {
@@ -1118,7 +1137,8 @@ export class JsonToFormFormComponent implements OnInit {
             "json": [
                 this.formExample,
                 [
-                    JsonValidators.startsWithCurlyBrackets()
+                    //JsonValidators.startsWithCurlyBrackets(),
+                    JsonValidators.validateObject()
                 ]
             ],
             "componentName": [
@@ -1130,35 +1150,34 @@ export class JsonToFormFormComponent implements OnInit {
             ],
             //"options": ['', [Validators.required]],
         });
-        
+        this.form.markAllAsTouched();
+      
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(() => this.isLoadingSubject.next(true)),
                 startWith(
                     this.form.value
                 ),
-                map(value => {
-                    const json = value.json;
-                    const errors = ValidatorRuleHelper.validateObject(json);
-                    value.errors = errors;
-
-                    return value;
-                }),
                 tap(value => {
-                    this.errors = value.errors;
-                    if(value.errors.length > 0){
-                        this.isLoadingSubject.next(false)
+                    if(!this.form.valid){
+                        this.isLoadingSubject.next(false);
                     }
+                    console.log('value');
                 }),
-                filter(value => value.errors.length <= 0),
-                debounceTime(1000),
+                debounceTime(800),
+                distinctUntilChanged((a, b) => {
+                    if(JSON.stringify(a) === JSON.stringify(b)){
+                        this.isLoadingSubject.next(false);
+                        return true;
+                    }
+                    return false;
+                }),
                 switchMap(value => {
-                    const json = value.json;
-                    if(this.errors.length <= 0){
-
-                        let component = (new ReactiveDrivenValidator(json, value.componentName))
+                    if(this.form.valid){
+                        const json = value.json;
+                        const component = (new ReactiveDrivenValidator(json, value.componentName))
                             .generateComponent();
-                        let html = (new ReactiveDrivenHtml(json))
+                        const html = (new ReactiveDrivenHtml(json))
                             .generate();
                         
                         return of({

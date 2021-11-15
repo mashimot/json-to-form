@@ -62,14 +62,12 @@ export class JsonToFormExampleService {
         "overview": "nullable|html:textarea|string|min:2|max:4000",
         "popularity": "nullable|html:number|numeric",
         "poster_path": "nullable|html:text|string",
-        "production_companies.*": [
-          {
+        "production_companies.*": {
             "id": "html:number|nullable",
             "logo_path": "nullable|string",
             "name": "nullable|min:2|max:255",
             "origin_country": "nullable|min:2|max:2"
-          }
-        ],
+        },
         "production_countries.*": {
           "iso_3166_1": "nullable|min:2|max:2",
           "name": "nullable|min:2|max:255"

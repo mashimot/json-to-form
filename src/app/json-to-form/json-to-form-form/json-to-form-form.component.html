@@ -25,7 +25,7 @@
                 <span
                     [ngStyle]="{ cursor: 'pointer' }"
                     (click)="form.patchValue({json: valid.value}); onSubmit();"
-                    class=" badge bg-success btn-sm col-8"
+                    class="badge bg-success btn-sm col-8"
                     [ngClass]="hoverEffect.valid[exampleValidIndex]"
                     (mouseover)="hoverEffect.valid[exampleValidIndex] = 'animate__animated animate__headShake border border-primary'" 
                     (mouseout)="hoverEffect.valid[exampleValidIndex] = ''" 
@@ -46,7 +46,6 @@
         </section>
     </div>
 </div>
-
 <form [formGroup]="form" (ngSubmit)="onSubmit()" class="mt-3">
     <div class="card">
         <div class="card-body">
@@ -60,15 +59,13 @@
                             [class.is-invalid]="isFieldValid('json')"
                         ></json-editor>
                         <div *ngIf="isFieldValid('json')" class="invalid-feedback">
-                            <div *ngIf="getField('json')!.errors?.startsWithCurlyBrackets">JSON should start with curly brackets</div>
-                            <div *ngIf="getField('json')!.errors?.jsonInvalid">JSON is invalid</div>
-                        </div>
-                        <div *ngIf="errors.length > 0" class="text-danger">
-                            <div>
-                                <small>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</small>
-                            </div>
-                            <div *ngFor="let error of errors; let indexError = index;">
-                                <small><b>{{ error }}</b></small>
+                            <div *ngIf="getField('json')!.errors?.invalidJson">
+                                <small>
+                                    Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
+                                </small>
+                                <div *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;">
+                                    <small><b>{{ error }}</b></small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -117,7 +114,7 @@
 </ng-container>
 <ng-container *ngIf="(formBuilder$ | async) as formBuilder">
     <div *ngIf="!(isLoadingAction$ | async )">
-        <ng-container *ngIf="errors.length <= 0 && form.valid ">
+        <ng-container *ngIf="form.valid">
             <fieldset class="card mt-5">
                 <div class="card-header">
                     <ul>
