@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { JsonToFormFormComponent } from './json-to-form-form/json-to-form-form.component';
-import { JsonToFormComponent } from './json-to-form/json-to-form.component';
+import { JsonToFormComponent } from './json-to-form.component';
 
 const routes: Routes = [
   {

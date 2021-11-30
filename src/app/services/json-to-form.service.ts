@@ -1,9 +1,10 @@
+import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 
 @Injectable({
   providedIn: 'root'
 })
-export class JsonToFormExampleService {
+export class JsonToFormService {
 
   constructor() { }
 
@@ -25,9 +26,52 @@ export class JsonToFormExampleService {
       [key: number]: any
     } = this.getExamples();
     
+    
     return typeof examples[id] != 'undefined'
-      ? examples[id]
-      : null;
+      ? of(examples[id])
+      : of(null);
+  }
+
+
+  public getValidInvalid(): {
+    valid: {
+        [key: string]: Object
+    },
+    invalid: {
+        [key: string]: Object
+    }
+  }
+  {
+    return {
+        valid: {
+            "users.*.*": {
+                "users.*.*": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            }
+        },
+        invalid: {
+            "users.*.id": {
+                "users.*.id": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            },
+            ".*users": {
+                ".*users": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            },
+            "  users ": {
+                "  users ": {
+                    first_name: "required|min:3|max:255",
+                    last_name: "required|min:3|max:255"
+                },                
+            }
+        }
+    };
   }
 
   public bigAssArrayOfObjects(){
