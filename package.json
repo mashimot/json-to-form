@@ -26,6 +26,7 @@
     "ang-jsoneditor": "^1.10.5",
     "express": "^4.17.1",
     "js-beautify": "^1.14.0",
+    "jsoneditor": "^9.5.7",
     "monaco-editor": "^0.24.0",
     "path": "^0.12.7",
     "rxjs": "~6.6.0",
