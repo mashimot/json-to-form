@@ -49,9 +49,7 @@ class JsonValidators {
             return null;
         }
     }
-
 }
-
 
 import { debounceTime, distinctUntilChanged, filter, finalize, map, startWith, switchMap, tap } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
@@ -72,9 +70,6 @@ export class JsonToFormFormComponent implements OnInit {
         invalid: []
     };
     form!: FormGroup;
-    htmlFormControl: FormControl = new FormControl('');
-    componentFormControl: FormControl = new FormControl('');
-    formSubmitAttempt: boolean = false;
     examples: {
         valid: {
             [key: string]: Object
@@ -85,8 +80,6 @@ export class JsonToFormFormComponent implements OnInit {
     };
    
     editorOptions: JsonEditorOptions;
-    formControlHtml: FormControl = new FormControl;
-    formControlComponent: FormControl = new FormControl;
     formBuilder$!: Observable<any>;
     isLoadingAction$?: Observable<boolean>;
 
@@ -192,8 +185,6 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     onSubmit(): void {
-        this.formSubmitAttempt = true;
-
         if (this.f.valid) {
         } else {
             this.validateAllFormFields(this.f);

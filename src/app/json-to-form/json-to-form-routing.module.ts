@@ -1,6 +1,6 @@
+import { JsonToFormGenerateComponent } from './json-to-form-generate/json-to-form-generate.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { JsonToFormFormComponent } from './json-to-form-form/json-to-form-form.component';
 import { JsonToFormComponent } from './json-to-form.component';
 
 const routes: Routes = [
@@ -10,11 +10,11 @@ const routes: Routes = [
   },
   {
     path: 'create',
-    component: JsonToFormFormComponent
+    component: JsonToFormGenerateComponent
   },
   {
     path: ':id/edit',
-    component: JsonToFormFormComponent
+    component: JsonToFormGenerateComponent
   }
 ];
 

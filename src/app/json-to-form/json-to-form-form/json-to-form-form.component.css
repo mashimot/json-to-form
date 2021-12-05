@@ -4,3 +4,7 @@
 :host ::ng-deep json-editor jsoneditor-outer {
   height: 500px;
 }
+
+.full-width-field {
+  width: 100%;
+}

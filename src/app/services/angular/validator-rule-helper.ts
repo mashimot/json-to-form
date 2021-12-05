@@ -4,6 +4,23 @@ export class ValidatorRuleHelper {
 
   }
 
+  public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]) {
+    let indexName: string[] = []
+    let index = 0;
+    for (let i = completeKeyName.length - 1; i >= 0; i--) {
+        if (completeKeyName[i] != '*') {
+            break;
+        }
+
+        let rand = ValidatorRuleHelper.camelCasedString(keyNameSplit.join(""));
+        rand = `index${rand}${index == 0 ? '' : index}`;
+        indexName.push(rand);
+        index++;
+    }
+
+    return indexName;
+  }
+
   public static removeParameters(n: string[], parameters: string[]):string[]{
       
       for(let i = n.length - 1; i >= 0; i--){

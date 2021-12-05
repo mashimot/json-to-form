@@ -1,18 +1,17 @@
-<div class="card">
-    <div class="card-header">
-        <a class="btn btn-primary btn-sm" [routerLink]="['/json-to-form', 'create']">
-            Create
-        </a>
-    </div>
-    <div
-        class="card-body"
+<a mat-button [routerLink]="['/json-to-form', 'create']">
+    Create
+</a>
+<div fxLayout="row wrap" fxLayout.xs="column" fxLayoutGap="16px grid">
+    <div 
+        fxFlex
+        *ngFor="let formExample of formExamples; let formExampleIndex = index;"
     >
-        <div class="row">
-            <div
-                *ngFor="let formExample of formExamples; let formExampleIndex = index;"
-                class="col-md-4"
-                [style]="{ 'cursor': 'pointer' }"
-            >
+        <mat-card
+            fxFlex
+            class="mat-elevation-z1 card-prop"
+            [style]="{ 'cursor': 'pointer' }"
+        >
+            <mat-card-content>
                 <div
                     [routerLink]="['/json-to-form', formExampleIndex, 'edit']"
                     class="card card-dark"
@@ -24,12 +23,10 @@
                         <h2>{{ formExample.name }}</h2>
                     </div>
                     <div class="card-body">
-                        <h5 class="card-title">Card title</h5>
                         <pre><small>{{ formExample.data | json }}</small></pre>
                     </div>
                 </div>
-            </div>
-        </div>     
+            </mat-card-content>
+        </mat-card>
     </div>
 </div>
-    
