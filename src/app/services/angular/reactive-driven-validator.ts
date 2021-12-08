@@ -13,6 +13,77 @@ interface Options {
     componentName: string;
 }
 
+export class Validator {
+    rules: string[];
+
+    public constructor(rules: string[]){
+        this.rules = rules;
+    }
+
+    public get(){
+        return this.rules.reduce((acc: string[], rule: any) => {
+            acc.push(
+                this.validate(
+                    '',
+                    rule
+                )
+            );
+
+            return acc;
+        }, []);
+    }
+
+    //$attribute, $value, $parameters, $this
+    public validate(attribute: string, rule: string): string {
+        let [newRule, parameters] = ValidatorRuleHelper.parseStringRule(rule); //{rule}:{parameters}
+		//$value = $this->getValue($attribute);
+
+        if (newRule == 'min') {
+            return this.validateMin(parameters);
+        }
+        if (newRule == 'max') {
+            return this.validateMax(parameters);
+        }
+        if (newRule == 'required') {
+            return this.validateRequired();
+        }
+        if (newRule == 'email') {
+            return this.validateEmail();
+        }
+        if (newRule == 'between_length') {
+            return this.validateBetweenLength(parameters);
+        }
+
+        return '';
+    }
+
+    public validateBetweenLength(parameters: string[]) : string
+    {
+        return `ArrayValidators.betweenLength(${parameters[0]})`;
+    }
+
+    public validateMax(parameters: string[]) : string
+    {
+        return `Validators.maxLength(${parameters[0]})`;
+    }
+
+    public validateEmail() : string
+    {
+        return `Validators.email`;
+    }
+    
+    public validateMin(parameters: string[]) : string
+    {
+        return `Validators.minLength(${parameters[0]})`;
+    }
+    
+    public validateRequired() : string
+    {
+        return `Validators.required`;
+    }
+
+}
+
 export class ReactiveDrivenValidator {
     attribute!: string;
     parameters?: any;
@@ -137,190 +208,119 @@ export class ReactiveDrivenValidator {
     }
 
     protected reactiveDrivenValidators(object: any, names: string = '', parameters: string[] = []): string {
-        return Object.keys(object).map((key: any) => {
-            let value = object[key];
-            let rest = names.length ? '.' + key : key;
-            let completeKeyName = (names + rest).split('.');
-            let dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
-            let definition: any = null;
-            let n = key.split('.');
-            let firstNameBeforeDot = n[0];
-            //value: can be an array ['required', 'min:40'] or an object {}
-            let isValueAnArray = Array.isArray(value) ? true : false;
+        return Object.keys(object)
+            .map((key: any) => {
+                let value = object[key];
+                let rest = names.length ? '.' + key : key;
+                let completeKeyName = (names + rest).split('.');
+                let dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
+                let definition: any = null;
+                let keyNameSplit = key.split('.');
+                let firstNameBeforeDot = keyNameSplit[0];
+                //value: can be an array ['required', 'min:40'] or an object {}
+                let isValueAnArray = Array.isArray(value) ? true : false;
 
-            //key has asterisk, so must turn into an array
-            if (completeKeyName[completeKeyName.length - 1] == '*') {
-                parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, n));
+                //key has asterisk, so must turn into an array
+                if (completeKeyName[completeKeyName.length - 1] == '*') {
+                    let formBuilderGroup: string[] = [];
+                    parameters = parameters.concat(
+                        ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)
+                    );
 
-                let formBuilderGroup:string[] = [];
-
-                //"key.*": ['required', 'min:10']
-                if(isValueAnArray){
-                    let rules = value;
-                    let parameters = rules.reduce((parameters: string[], rule: any) => {
-                        let parsed = ValidatorRuleHelper.parseStringRule(rule);
-                        this.attribute = parsed[0];
-                        this.parameters = parsed[1];
-                        let attr_get = this.get();
-                        if (attr_get != '') {
-                            parameters.push(attr_get);
-                        }
-
-                        return parameters;
-                    }, []);
-
-                    formBuilderGroup = [`this.formBuilder.control('', [${parameters.join(",")}]);`];            
-                } else { //"key.*": { "any: ['required', 'min:10']" }
-                    formBuilderGroup = [
-                        `this.formBuilder.group({`,
-                        `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
-                        `})`,
-                    ];
-                }
-               
-                definition = (
-                    new ValidatorDefinition(
+                    //"key.*": ['required', 'min:10']
+                    if(isValueAnArray){
+                        const rules = value;
+                        const ruleParameters = new Validator(rules).get();
+                        formBuilderGroup = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];            
+                    } else { //"key.*": { "any: ['required', 'min:10']" }
+                        formBuilderGroup = [
+                            `this.formBuilder.group({`,
+                            `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
+                            `})`,
+                        ];
+                    }
+                
+                    definition = new ValidatorDefinition(
                         parameters,
                         completeKeyName,
                         formBuilderGroup
-                    )
-                ).get();
-                this.getters.push(definition);
-            }
-            
-            //key: { any: [], any2.*: [] }
-            if (Object.prototype.toString.call(value) == '[object Object]') {
-                //key has asterisk
-                if (completeKeyName[completeKeyName.length - 1] == '*') {
-                    parameters = ValidatorRuleHelper.removeParameters(n, parameters);
+                    ).get();
+                    this.getters.push(definition);
+                }
+                
+                if (Object.prototype.toString.call(value) == '[object Object]') {
+                    //key has asterisk
+                    if (completeKeyName[completeKeyName.length - 1] == '*') {
+                        parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
+
+                        return [
+                            `"${firstNameBeforeDot}":`,
+                            definition.formBuilder.join("\n"),
+                        ]
+                        .join('\n');
+                    }
 
                     return [
-                        `"${firstNameBeforeDot}":`,
-                        definition.formBuilder.join("\n"),
+                        `"${key}": this.formBuilder.group({`,
+                        `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
+                        `}),`
                     ]
                     .join('\n');
                 }
 
-                return [
-                    `"${key}": this.formBuilder.group({`,
-                    `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
-                    `}),`
-                ]
-                .join('\n');
-            }
+                if (Array.isArray(value)) {
+                    const rules = value;
+                    const ruleParameters = new Validator(rules).get();
+                    let values = rules.reduce((accArr, rule) => {
+                        let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+                        if (ruleName == 'in') {
+                            return ruleParameters;
+                        }
 
-            //key: ['max:40']
-            if (Array.isArray(value)) {
-                let rules = value;
-                let ruleParameters = rules.reduce((parameters: string[], rule: any) => {
-                    const parsed = ValidatorRuleHelper.parseStringRule(rule);
-                    this.attribute = parsed[0];
-                    this.parameters = parsed[1];
-                    let attr_get = this.get();
-                    if (attr_get != '') {
-                        parameters.push(attr_get);
-                    }
+                        if(
+                             ruleName == 'html' &&
+                            ['select', 'radio', 'checkbox'].includes(ruleParameters[0])
+                        ){
+                            return [{
+                                id: 1,
+                                mock: 1
+                            },{
+                                id: 2,
+                                mock: 2
+                            },{
+                                id: 3,
+                                mock: 3
+                            }];
+                        }
 
-                    return parameters;
-                }, []);
-                let values = rules.reduce((accArr, rule) => {
-                    let parsed = ValidatorRuleHelper.parseStringRule(rule);
-                    if (parsed[0] == 'in') {
-                        //accArr = parsed[1][0].split(",");
-                        accArr = parsed[1];
-                        console.log('parsed', parsed);
-                    }
+                        return accArr;
+                    }, []);
 
-                    if(parsed[0] == 'html'){
-                        if(['select', 'radio', 'checkbox'].includes(parsed[1][0])){
-                            if(parsed[0] != 'in'){
-                                accArr = [{
-                                    id: 1,
-                                    mock: 1
-                                },{
-                                    id: 2,
-                                    mock: 2
-                                },{
-                                    id: 3,
-                                    mock: 3
-                                }];
+                    if(values.length > 0){
+                        console.log('123123123');
+                        this.getters.push({
+                            mock_data: {
+                                parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),
+                                get_name: `get${ValidatorRuleHelper.camelCasedString(dot_notation.join("."))}`,
+                                values: values
                             }
-                        }
+                        })
                     }
-
-                    return accArr;
-                }, []);
-
-                if(values.length > 0){
-                    this.getters.push({
-                        mock_data: {
-                            parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),
-                            get_name: `get${ValidatorRuleHelper.camelCasedString(dot_notation.join("."))}`,
-                            values: values
-                        }
-                    })
+                    
+                    parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
+            
+                    if(definition != null){ //key has asterisk
+                        return `"${firstNameBeforeDot}": ${definition.formBuilder.join("\n")}`;
+                    }
+                    
+                    return `"${key}": ['', [${ruleParameters.join(",")}]],`
                 }
-                
-                parameters = ValidatorRuleHelper.removeParameters(n, parameters);
-        
-                if(definition != null){ //key has asterisk
-                    return `"${firstNameBeforeDot}": ${definition.formBuilder.join("\n")}`;
-                }
-                
-                return `"${key}": ['', [${ruleParameters.join(",")}]],`
-            }
 
-            return '';
-        }).join("\n");
+                return '';
+            }).join("\n");
     }
 
     private setRules(rules: Rules) {
         this.rules = ValidatorRuleHelper.splitRules(rules);
-    }
-
-    public get(): string {
-        
-        if (this.attribute == 'min') {
-            return this.validateMin();
-        }
-        if (this.attribute == 'max') {
-            return this.validateMax();
-        }
-        if (this.attribute == 'required') {
-            return this.validateRequired();
-        }
-        if (this.attribute == 'email') {
-            return this.validateEmail();
-        }
-        if (this.attribute == 'between_length') {
-            return this.validateBetweenLength();
-        }
-
-        return '';
-    }
-
-    public validateBetweenLength() : string
-    {
-        return `ArrayValidators.betweenLength(${this.parameters[0]})`;
-    }
-
-    public validateMax() : string
-    {
-        return `Validators.maxLength(${this.parameters[0]})`;
-    }
-
-    public validateEmail() : string
-    {
-        return `Validators.email`;
-    }
-    
-    public validateMin() : string
-    {
-        return `Validators.minLength(${this.parameters[0]})`;
-    }
-    
-    public validateRequired() : string
-    {
-        return `Validators.required`;
     }
 }

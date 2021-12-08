@@ -1,233 +1,208 @@
 export class ValidatorRuleHelper {
 
-  public static totalOfAsterisk(keyName: string[]){
-
-  }
-
-  public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]) {
-    let indexName: string[] = []
-    let index = 0;
-    for (let i = completeKeyName.length - 1; i >= 0; i--) {
-        if (completeKeyName[i] != '*') {
-            break;
+    static str_getcsv(text: string) {
+        let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
+        for (l of text) {
+            if ('"' === l) {
+                if (s && l === p) row[i] += l;
+                s = !s;
+            } else if (',' === l && s) l = row[++i] = '';
+            else if ('\n' === l && s) {
+                if ('\r' === p) row[i] = row[i].slice(0, -1);
+                row = ret[++r] = [l = '']; i = 0;
+            } else row[i] += l;
+            p = l;
         }
-
-        let rand = ValidatorRuleHelper.camelCasedString(keyNameSplit.join(""));
-        rand = `index${rand}${index == 0 ? '' : index}`;
-        indexName.push(rand);
-        index++;
+        return ret;
     }
 
-    return indexName;
-  }
 
-  public static removeParameters(n: string[], parameters: string[]):string[]{
-      
-      for(let i = n.length - 1; i >= 0; i--){
-          let item = n[i];
-          if (item != '*') {
-              break;
-          }
-          parameters.splice(-1, 1);
-      }
+    public static totalOfAsterisk(keyName: string[]){
 
-      return parameters;
-  }
+    }
 
-  public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*(:?-[a-zA-Z][.0-9a-zA-Z]*)*$/;
-  public static validateHtmlSelector(selector: string): string | boolean {
-      if (selector && !this.htmlSelectorRe.test(selector)) {
-          return `Selector (${selector}) is invalid.`;
-      }
+    public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]) {
+        let indexName: string[] = []
+        let index = 0;
+        for (let i = completeKeyName.length - 1; i >= 0; i--) {
+            if (completeKeyName[i] != '*') {
+                break;
+            }
 
-      return true;
-  }
+            let rand = ValidatorRuleHelper.camelCasedString(keyNameSplit.join(""));
+            rand = `index${rand}${index == 0 ? '' : index}`;
+            indexName.push(rand);
+            index++;
+        }
 
-  public static bracketsNotation(string: string[]): string[] {
-      let id:any = []
-      string.forEach((v, index) => {
-          //let v = item.split(".");
-          if(v.trim() == "*"){
-              v = '';;    
-          }
-          id[index] = `[${v}]`;
-          if(index == 0){
-              id[0] = v
-          }
-      });
+        return indexName;
+    }
 
-      return id;
-  }
+    public static removeParameters(n: string[], parameters: string[]):string[]{
+        
+        for(let i = n.length - 1; i >= 0; i--){
+            let item = n[i];
+            if (item != '*') {
+                break;
+            }
+            parameters.splice(-1, 1);
+        }
 
-  public static validateObject(obj: any, names: string = '', errors:string[] = []): string[]{
-      return Object.keys(obj)
-          .map((k: any) => {
-              let v = obj[k];
-              let rest = names.length > 0
-                  ? '.' + k
-                  : k;
-              const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
+        return parameters;
+    }
 
-              if (!re.test(k)) {
-                  errors.push(`Errors at:  "${names + rest}"`);
-              }
+    public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*(:?-[a-zA-Z][.0-9a-zA-Z]*)*$/;
+    public static validateHtmlSelector(selector: string): string | boolean {
+        if (selector && !this.htmlSelectorRe.test(selector)) {
+            return `Selector (${selector}) is invalid.`;
+        }
 
-              if (Object.prototype.toString.call(v) == '[object Object]') {
-                  this.validateObject(v, names + rest, errors);
-              }
+        return true;
+    }
 
-              return errors;
-          })[0];
-  }
+    public static bracketsNotation(string: string[]): string[] {
+        let id:any = []
+        string.forEach((v, index) => {
+            //let v = item.split(".");
+            if(v.trim() == "*"){
+                v = '';;    
+            }
+            id[index] = `[${v}]`;
+            if(index == 0){
+                id[0] = v
+            }
+        });
 
-  public static validateObjectOld(obj: any, names: string = '', errors:string[] = []): any{
-      if(typeof obj == 'undefined'){
-          return [
-              'WOO'
-          ];
-      }
+        return id;
+    }
 
-      let isArray = Array.isArray(obj);
+    public static validateObject(obj: any, names: string = '', errors:string[] = []): string[]{
+        return Object.keys(obj)
+            .map((k: any) => {
+                let v = obj[k];
+                let rest = names.length > 0
+                    ? '.' + k
+                    : k;
+                const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
 
-      if(isArray){
-          return [
-              'JSON should start with curly brackets'
-          ];
-      }
-      
-      if(Object.keys(obj).length <= 0){
-          return [
-              'JSON must be not empty'
-          ];
-      }
+                if (!re.test(k)) {
+                    errors.push(`Errors at:  "${names + rest}"`);
+                }
 
-      return Object.keys(obj)
-          .map((k: any) => {
-              let v = obj[k];
-              let rest = names.length > 0
-                  ? '.' + k
-                  : k;
-              const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
+                if (Object.prototype.toString.call(v) == '[object Object]') {
+                    this.validateObject(v, names + rest, errors);
+                }
 
-              if (!re.test(k)) {
-                  errors.push(`Errors at:  "${names + rest}"`);
-              }
+                return errors;
+            })[0];
+    }
 
-              if (Object.prototype.toString.call(v) == '[object Object]') {
-                  this.validateObject(v, names + rest, errors);
-              }
 
-              return errors;
-          })[0];
-  }
+    public static parseStringRule(rule: string | any[]): any[]
+    {
+        if (typeof rule == 'string') {
+            const afterColon = rule.substr( rule.indexOf(':') + 1 );
 
-  public static parseStringRule(rule: string | any[]): Array<any>
-  {
-      if (typeof rule == 'string') {
-          var afterColon = rule.substr( rule.indexOf(':') + 1 );
+            if (rule.indexOf(':') != -1) {
+                return [
+                    rule.split(':')[0],
+                    ValidatorRuleHelper.str_getcsv(afterColon)
+                ];
+            }
+        }
 
-          if (rule.indexOf(':') != -1) {
-              let data = [
-                  rule.split(':')[0],
-                  [afterColon]
-              ];
+        if (Array.isArray(rule)) {
+            if(!rule) {
+                return [
+                    'in',
+                    []
+                ];
+            }
 
-              return data;
-          }
-      }
+            let arr = [rule.join(",")]
+            return [
+                'in',
+                rule
+            ];
+        }
+        
+        return [
+            rule,
+            []
+        ];
+    }
+    
+    public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false) {
 
-      if (Array.isArray(rule)) {
-          if(!rule) {
-              return [
-                  'in',
-                  []
-              ];
-          }
+        if (string == null || string == '') {
+            return '';
+        }
+            
+        const camelCase = string
+            .toLowerCase()
+            .match(/[A-Z0-9]+/ig)
+            .map(function (word: any, i:number) {
+                if (!i) return word;
+                return word[0].toUpperCase() + word.slice(1); // return newly formed string
+            })
+            .join("");
 
-          let arr = [rule.join(",")]
-          return [
-              'in',
-              rule
-          ];
-      }
-      
-      return [
-          rule,
-          []
-      ];
-  }
-  
-  public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false) {
+        const firstLetter = isFirstLetterLowerCase
+            ? camelCase[0].toLowerCase()
+            : camelCase[0].toUpperCase();
 
-      if (string == null || string == '') {
-          return '';
-      }
-          
-      const camelCase = string
-          .toLowerCase()
-          .match(/[A-Z0-9]+/ig)
-          .map(function (word: any, i:number) {
-              if (!i) return word;
-              return word[0].toUpperCase() + word.slice(1); // return newly formed string
-          })
-          .join("");
+        return `${firstLetter}${camelCase.slice(1)}`;
+    }
 
-      const firstLetter = isFirstLetterLowerCase
-          ? camelCase[0].toLowerCase()
-          : camelCase[0].toUpperCase();
+    //['users', '*', 'address', 'number']
+    //users.*.address.number
+    //['users.', '*', '.address.number']
+    //['users', '*', 'address.number']
+    //'users|*|address.number'
+    //['users', '*', 'address.number']
+    public static dotNotation(string: string[]): string[] {
+        if(string.length <= 0){
+            return [];
+        }
+        
+        return string.join(".")
+            .split('*')
+            .map(str => {
+                return str.replace(/(^\.+|\.+$)/mg, '');
+            })
+            .join("|*|")
+            .split("|")
+            .filter(el => el);
+    }   
 
-      return `${firstLetter}${camelCase.slice(1)}`;
-  }
+    public static splitRules(obj: any): any {
 
-  //['users', '*', 'address', 'number']
-  //users.*.address.number
-  //['users.', '*', '.address.number']
-  //['users', '*', 'address.number']
-  //'users|*|address.number'
-  //['users', '*', 'address.number']
-  public static dotNotation(string: string[]): string[] {
-      if(string.length <= 0){
-          return [];
-      }
-      
-      return string.join(".")
-          .split('*')
-          .map(str => {
-              return str.replace(/(^\.+|\.+$)/mg, '');
-          })
-          .join("|*|")
-          .split("|")
-          .filter(el => el);
-  }   
+        let rules = Object.keys(obj).map((k) => {
+            let v = obj[k];
+            if (Object.prototype.toString.call(v) == '[object Object]') {
+                return {
+                    [k]: this.splitRules(v)
+                }
+            }
+            
+            //split and then converts into array of rules
+            if (typeof v === 'string') {
+                return {
+                    [k]: v.split("|")
+                };
+            }
 
-  public static splitRules(obj: any): any {
+            if (Array.isArray(v)) {
+                return {
+                    [k]: v
+                }
+            }
 
-      let rules = Object.keys(obj).map((k) => {
-          let v = obj[k];
-          if (Object.prototype.toString.call(v) == '[object Object]') {
-              return {
-                  [k]: this.splitRules(v)
-              }
-          }
-          
-          //split and then converts into array of rules
-          if (typeof v === 'string') {
-              return {
-                  [k]: v.split("|")
-              };
-          }
+            return null;
+            
+        });
 
-          if (Array.isArray(v)) {
-              return {
-                  [k]: v
-              }
-          }
-
-          return null;
-          
-      });
-
-      let asObject = Object.assign({}, ...rules);
-      return asObject;
-  }
+        let asObject = Object.assign({}, ...rules);
+        return asObject;
+    }
 }

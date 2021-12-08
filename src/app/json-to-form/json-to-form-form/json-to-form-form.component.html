@@ -25,7 +25,7 @@
             <mat-selection-list [multiple]="false" color="primary">
                 <mat-list-option 
                     class="mat-primary"
-                    *ngFor="let valid of examples.invalid | keyvalue; let validIndex = index;"
+                    *ngFor="let valid of examples.valid | keyvalue; let validIndex = index;"
                     (click)="form.patchValue({json: valid.value}); onSubmit();"
                 >
                     {{ valid.key }}

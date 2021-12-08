@@ -58,11 +58,9 @@ export class ReactiveDrivenHtml {
 				
 				if (completeKeyName[completeKeyName.length - 1] == '*') {
 					parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
-					definition = (
-						new ValidatorDefinition(
-							parameters,
-							completeKeyName
-						)
+					definition = new ValidatorDefinition(
+						parameters,
+						completeKeyName
 					).get();
 					
 					//if (Object.keys(definition.lastDefinition).length > 0) {
@@ -125,7 +123,7 @@ export class ReactiveDrivenHtml {
 				if (Array.isArray(value)) {
 					let messages: string[] = [];
 					const rules = value;
-					let keyNameDotNotation = completeKeyName.join(".");
+					const keyNameDotNotation = completeKeyName.join(".");
 					let formControlName = 'formControlName';
 					let getField = `getField('${keyNameDotNotation}')`;
 					let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
@@ -135,6 +133,7 @@ export class ReactiveDrivenHtml {
 					
 					//key has asterisk
 					if (lastDefinition.length > 0) {
+						console.log('lastDefinition: ', lastDefinition);
 						let getId = `.get('${id}')`;
 
 						if(id == '*'){
@@ -162,20 +161,20 @@ export class ReactiveDrivenHtml {
 					let input_html = input.text;
 
 					rules.forEach(rule => {
-						const parsed = ValidatorRuleHelper.parseStringRule(rule);
-						this.attribute = parsed[0];
-						this.parameters = parsed[1];
-						messages.push(
-							this.getErrorsMessages(getField, keyNameDotNotation)
-						);
+						const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
-						if (this.attribute == 'html') {
-							input_html = typeof input[this.parameters[0]] != 'undefined'
-								? input[this.parameters[0]]
+						messages.push(
+							//this.getErrorsMessages(getField, keyNameDotNotation)
+							this.getErrorsMessages({ ruleName, ruleParameters, getField, keyNameDotNotation })
+						);
+						console.log('rule', ruleName, 'ruleParameters', ruleParameters);
+						if (ruleName == 'html') {
+							input_html = typeof input[ruleParameters[0]] != 'undefined'
+								? input[ruleParameters[0]]
 								: input.html;
 
 							const keyNameWithoutAsterisk = this.dotNotation.filter((el:string) => el != '*').join("");
-							if (this.parameters[0] == 'select') {
+							if (ruleParameters[0] == 'select') {
 								const options = [
 									`<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
 									`{{ data | json }}`,
@@ -184,13 +183,13 @@ export class ReactiveDrivenHtml {
 								
 								input_html = `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>${options.join("\n")}</select>`;
 							}
-							if (this.parameters[0] == 'radio') {    
+							if (ruleParameters[0] == 'radio') {    
 								if(id == '*'){
 									index = `{{ ${index} }}`;
 								}
 								input_html = [
-									`<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as data$">`,
-										`<div *ngFor="let data of data$; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
+									`<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
+										`<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
 											`<div class="form-check">`,
 												`<input type="radio" formControlName="${index}" [value]="data" ${ngClass}>{{ data | json }}`,
 											`</div>`,
@@ -198,12 +197,12 @@ export class ReactiveDrivenHtml {
 									`</div>`
 								].join("\n");
 							}
-							if (this.parameters[0] == 'checkbox') {       
+							if (ruleParameters[0] == 'checkbox') {       
 								input_html = [
-									`<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as data">`,
-										`<div *ngFor="let d of data; let index${ValidatorRuleHelper.camelCasedString(id)} = index;">`,                                    
+									`<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
+										`<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(id)} = index;">`,                                    
 											`<div class="form-check">`,
-												`<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="d"> {{ d }}`,
+												`<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="data"> {{ data }}`,
 											`</div>`,
 										`</div>`,
 									`</div>`
@@ -265,25 +264,28 @@ export class ReactiveDrivenHtml {
 		return drivenHtml;
   }
 
-  protected getErrorsMessages(getField: string = '', objName: string): string {
-
-		if (this.attribute == 'required') {
-			return `<div *ngIf="${getField}!.errors?.['required']">${objName.toUpperCase()} is required</div>`;
+	protected getErrorsMessages({  getField, ruleName, ruleParameters, keyNameDotNotation }: any){
+		if (ruleName == 'required') {
+			//return `<div *ngIf="${getField}!.errors?.['required']">${keyNameDotNotation.toUpperCase()} is required</div>`;
+			return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
 		}
-		if (this.attribute == 'min') {
-			return `<div *ngIf="${getField}!.errors?.['minlength']">${objName.toUpperCase()} min must be ${this.parameters[0]}</div>`
+		if (ruleName == 'min') {
+			//return `<div *ngIf="${getField}!.errors?.['minlength']">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
+			return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
 		}
-		if (this.attribute == 'max') {
-			return `<div *ngIf="${getField}!.errors?.['maxlength']">${objName.toUpperCase()} max must be ${this.parameters[0]}</div>`
+		if (ruleName == 'max') {
+			//return `<div *ngIf="${getField}!.errors?.['maxlength']">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
+			return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
 		}
-		if (this.attribute == 'email') {
-			return `<div *ngIf="${getField}!.errors?.['email']">${objName.toUpperCase()} an valid Email</div>`;
+		if (ruleName == 'email') {
+			//return `<div *ngIf="${getField}!.errors?.['email']">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
+			return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
 		}
 		
 		return '';
-  }
+	}
 
-  private setRules(rules: Rules) {
+	private setRules(rules: Rules) {
 		this.rules = ValidatorRuleHelper.splitRules(rules);
-  }
+	}
 }

@@ -109,8 +109,6 @@ export class ValidatorDefinition {
 					'last_index',
 					lastIndex
 				);
-				console.log(parameters, dataMap.get('parameters_typed'))
-				
 				dataMap.set(
 					'get_function',
 					 [

@@ -4,6 +4,11 @@ import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
   {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: '/json-to-form'
+  },
+  {
     path: 'json-to-form',
     loadChildren: () => import ("./json-to-form/json-to-form.module").then(m => m.JsonToFormModule)
   },
