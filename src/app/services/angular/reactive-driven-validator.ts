@@ -16,7 +16,7 @@ interface Options {
 export class Validator {
     rules: string[];
 
-    public constructor(rules: string[]){
+     public constructor(rules: string[]){
         this.rules = rules;
     }
 
@@ -30,7 +30,8 @@ export class Validator {
             );
 
             return acc;
-        }, []);
+        }, [])
+        .filter(el => el);
     }
 
     //$attribute, $value, $parameters, $this
@@ -231,6 +232,7 @@ export class ReactiveDrivenValidator {
                     if(isValueAnArray){
                         const rules = value;
                         const ruleParameters = new Validator(rules).get();
+                        console.log('ruleParameters', ruleParameters)
                         formBuilderGroup = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];            
                     } else { //"key.*": { "any: ['required', 'min:10']" }
                         formBuilderGroup = [
@@ -297,7 +299,6 @@ export class ReactiveDrivenValidator {
                     }, []);
 
                     if(values.length > 0){
-                        console.log('123123123');
                         this.getters.push({
                             mock_data: {
                                 parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),

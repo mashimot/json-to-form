@@ -164,10 +164,9 @@ export class ReactiveDrivenHtml {
 						const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
 						messages.push(
-							//this.getErrorsMessages(getField, keyNameDotNotation)
 							this.getErrorsMessages({ ruleName, ruleParameters, getField, keyNameDotNotation })
 						);
-						console.log('rule', ruleName, 'ruleParameters', ruleParameters);
+
 						if (ruleName == 'html') {
 							input_html = typeof input[ruleParameters[0]] != 'undefined'
 								? input[ruleParameters[0]]
