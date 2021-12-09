@@ -177,6 +177,7 @@ export class JsonToFormFormComponent implements OnInit {
                 });
             });
 
+ 
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(() => {
@@ -207,6 +208,8 @@ export class JsonToFormFormComponent implements OnInit {
                             : value.json;
                         //const componentName = value.component.name;
                         const componentName = value.component_form;
+
+                        console.log('componentName', componentName);
                         
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
                         const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
@@ -223,6 +226,18 @@ export class JsonToFormFormComponent implements OnInit {
                 }),
                 tap(() => this.loadingService.isLoading(false))
             );
+
+            merge(
+                this.form.get('component.children')!.valueChanges,
+                this.form.get('component.name')!.valueChanges
+            )
+            .pipe(
+                tap(() => {
+                    this.form.get('component_form')!.patchValue('', {
+                        emitEvent: false
+                    })
+                })
+            ).subscribe();
     }
 
     copy(text: string){
