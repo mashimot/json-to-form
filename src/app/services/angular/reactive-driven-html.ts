@@ -39,7 +39,7 @@ export class ReactiveDrivenHtml {
 		];
   }
 
-  public dotNotation: any = [];
+  public dotNotation: string[] = [];
 
   public reactiveDrivenHtml(object: any, names: string = '', parameters: string[] = [], lastDefinition: any = []): string {
 		let drivenHtml = Object.keys(object)
@@ -133,7 +133,6 @@ export class ReactiveDrivenHtml {
 					
 					//key has asterisk
 					if (lastDefinition.length > 0) {
-						console.log('lastDefinition: ', lastDefinition);
 						let getId = `.get('${id}')`;
 
 						if(id == '*'){
@@ -261,7 +260,7 @@ export class ReactiveDrivenHtml {
 			}).join("\n");
 
 		return drivenHtml;
-  }
+  	}
 
 	protected getErrorsMessages({  getField, ruleName, ruleParameters, keyNameDotNotation }: any){
 		if (ruleName == 'required') {

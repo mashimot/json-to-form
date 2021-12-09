@@ -65,7 +65,9 @@
                             Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
                         </mat-error>
                         <ng-container *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;">
-                            <mat-error>{{ error }}</mat-error>
+                            <mat-error>
+                                <b style="white-space:pre;">{{ error }}</b>
+                            </mat-error>
                         </ng-container>
                     </div>
                 </ng-container>
@@ -109,65 +111,42 @@
                                 <mat-error>For example: user-post</mat-error>
                             </ng-container>
                         </div>
-                        <!--
-                        <button
-                            type="button"
-                            mat-button
-                            (click)="getComponentChildren().push(createComponentChildren())"
-                        >
-                            <mat-icon>add</mat-icon>
-                        </button>                            
-                        <div *ngFor="let ComponentChildren1Data of getComponentChildren().controls; let indexChildren = index;" class="border border-dark p-1" [formGroupName]="indexChildren">
-                            <mat-form-field class="full-width-field">
-                                <mat-label>Name</mat-label>
-                                <input type="text" matInput formControlName="name">
-                                <button
-                                    mat-icon-button
-                                    matSuffix
-                                    (click)="deleteComponentChildren(indexChildren)"
-                                >
-                                    <mat-icon>delete_outline</mat-icon>
-                                  </button>  
-                            </mat-form-field>
-                        </div>
-                        -->
                     </fieldset>
-                </fieldset>
-                <!--
-                <fieldset formGroupName="component">
-                    <mat-form-field class="full-width-field">
-                        <mat-label>Component Name</mat-label>
-                        <input type="text" matInput formControlName="name" >
-                    </mat-form-field>
-                    <ng-container *ngIf="isFieldValid('component.name')">
-                        <mat-error *ngIf="getField('component.name')!.errors?.required">Component Name is required</mat-error>
-                        <ng-container *ngIf="getField('component.name')!.errors?.pattern">
-                            <mat-error>Only the characters [a-zA-Z0-9] and hyphen (-)</mat-error>
-                            <mat-error>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</mat-error>
-                            <mat-error>White Spaces are not allowed.</mat-error>
-                            <mat-error>For example: user-post</mat-error>
-                        </ng-container>
-                    </ng-container>
 
-                    <fieldset
-                        formArrayName="children"
-                    >
-                        <ng-container
-                            *ngFor="let l of getComponentChildren().controls; let indexList = index;"
-                            [formGroupName]="indexList"
-                        >
-                            <mat-form-field class="full-width-field">
-                                <mat-label>Name</mat-label>
-                                <input type="text" matInput formControlName="name" >
-                            </mat-form-field>
-                        </ng-container>
-                    </fieldset>
+                    <div id="angular-cli">
+                        <div [formGroup]="form">
+                            <p>
+                                ng g module {{ form.get('component.name')!.value }} --routing
+                            </p>
+                            <mat-radio-group
+                                aria-labelledby="example-radio-group-label"
+                                class="example-radio-group"
+                                formControlName="component_form"
+                            >
+                                <mat-radio-button
+                                    class="example-radio-button"
+                                    [value]="form.get('component.name')?.value"
+                                >
+                                    ng g component {{ form.get('component.name')!.value }}
+                                </mat-radio-button>
+                                <mat-radio-button
+                                    class="example-radio-button" 
+                                    *ngFor="let component of getComponentChildren().controls; let indexList = index;"
+                                    [value]="form.get('component.name')?.value + '-' + component?.value.name"
+                                >
+                                    ng g component {{ form.get('component.name')!.value }}/{{ form.get('component.name')!.value }}-{{ component?.value.name }}
+                                </mat-radio-button>
+                            </mat-radio-group>
+                            <mat-error *ngIf="form.get('component_form')!.hasError('required')">
+                                Select a Component
+                            </mat-error>
+                        </div>
+                    </div>
                 </fieldset>
-                -->
             </form>
         </mat-card-content>
     </mat-card>
-</div>    
+</div>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
     <p class="animate__animated animate__headShake text-white">Loading...</p>
@@ -181,19 +160,13 @@
                         You need to import ReactiveFormsModule in order to create reactive forms
                     </strong>
                 </h1>
-                <ul>
-                    <li>ng g module {{ form.get('component.name')!.value }} --routing</li>
-                    <li>ng g component {{ form.get('component.name')!.value }}</li>
-                    <ng-container *ngFor="let l of getComponentChildren().controls; let indexList = index;">
-                        <li>ng g component {{ form.get('component.name')!.value }}/{{ form.get('component.name')!.value }}-{{ l.value.name }}</li>
-                    </ng-container>
-                </ul>
+
                 <fieldset>
-                    <h1>{{ form.get('component.name')!.value }}.component.ts</h1>
+                    <h1>{{ form.get('component_form')!.value }}.component.ts</h1>
                     <code id="__form-comonent"><pre>{{ formBuilder.component }}</pre></code>
                 </fieldset>
                 <fieldset>
-                    <h1>{{ form.get('component.name')!.value }}.component.html</h1>
+                    <h1>{{ form.get('component_form')!.value }}.component.html</h1>
                     <code id="__form-html"><pre>{{ formBuilder.html }}</pre></code>
                 </fieldset>
 

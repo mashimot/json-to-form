@@ -24,6 +24,7 @@ import { ReactiveFormsModule } from '@angular/forms';
   exports: [
     FlexLayoutModule,
     ReactiveFormsModule,
+
     MatCardModule,
     MatTableModule,
     MatToolbarModule,

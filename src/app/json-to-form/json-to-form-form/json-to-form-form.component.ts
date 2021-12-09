@@ -60,14 +60,15 @@ class JsonValidators {
     }
 }
 
-import { debounceTime, distinctUntilChanged, filter, finalize, map, startWith, switchMap, tap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
+import { Observable, of, merge, zip } from 'rxjs';
+
 import { ValidatorRuleHelper } from 'src/app/services/angular/validator-rule-helper';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 @Component({
     selector: 'app-json-to-form-form',
     templateUrl: './json-to-form-form.component.html',
-    styleUrls: ['./json-to-form-form.component.css']
+    styleUrls: ['./json-to-form-form.component.scss']
 })
 export class JsonToFormFormComponent implements OnInit {
     formExample!: any;
@@ -88,6 +89,7 @@ export class JsonToFormFormComponent implements OnInit {
         }
     };*/
     text: FormControl = new FormControl('', []);
+    huehue: FormControl = new FormControl('', []);
     editorOptions: JsonEditorOptions;
     formBuilder$!: Observable<any>;
     isLoadingAction$?: Observable<boolean>;
@@ -126,6 +128,7 @@ export class JsonToFormFormComponent implements OnInit {
                     JsonValidators.validateObject()
                 ]
             ],
+            component_form: this.formBuilder.control('', Validators.required),
             component: this.formBuilder.group({
                 name: ['task', [
                     Validators.required,
@@ -151,10 +154,13 @@ export class JsonToFormFormComponent implements OnInit {
             componentName.push(item.name);
         });
         this.text.patchValue(componentName.join("\n"));
+        this.onValueChanges();
+    }
 
+    onValueChanges(){
         this.text.valueChanges
             .pipe(
-                filter(el => el.length > 0),
+                //filter(el => el.length > 0),
                 distinctUntilChanged(),
                 map(value => {
                     return value.split('\n');
@@ -169,8 +175,8 @@ export class JsonToFormFormComponent implements OnInit {
                         this.createComponentChildren(component)
                     );
                 });
-
             });
+
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(() => {
@@ -179,12 +185,12 @@ export class JsonToFormFormComponent implements OnInit {
                 startWith(
                     this.form.value
                 ),
-                tap(() => {
+                tap((result) => {
                     if(!this.form.valid){
                         this.loadingService.isLoading(false);
                     }
                 }),
-                debounceTime(800),
+                debounceTime(500),
                 distinctUntilChanged((a, b) => {
                     if(JSON.stringify(a) === JSON.stringify(b)){
                         this.loadingService.isLoading(false);
@@ -192,12 +198,15 @@ export class JsonToFormFormComponent implements OnInit {
                     }
                     return false;
                 }),
+                tap(() => {
+                }),
                 switchMap(value => {
                     if(this.form.valid){
                         const json = typeof value.json === 'string'
                             ? JSON.parse(value.json)
                             : value.json;
-                        const componentName = value.component.name;
+                        //const componentName = value.component.name;
+                        const componentName = value.component_form;
                         
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
                         const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
