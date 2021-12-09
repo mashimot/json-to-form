@@ -8,6 +8,15 @@ import { js_beautify, html_beautify } from 'js-beautify';
 import { JsonToFormService } from './../../services/json-to-form.service';
 
 class JsonValidators {
+    static hadouken(): ValidatorFn {
+        return (control: AbstractControl): ValidationErrors | null => {
+            const error: ValidationErrors = { 
+                invalidJson: true
+            };
+
+            return null;
+        }
+    }
     static validateObject(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const error: ValidationErrors = { 
@@ -62,14 +71,14 @@ import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 })
 export class JsonToFormFormComponent implements OnInit {
     formExample!: any;
-    hoverEffect: {
+    form!: FormGroup;
+    /*hoverEffect: {
         valid: string[],
         invalid: string[]
     } = {
         valid: [],
         invalid: []
     };
-    form!: FormGroup;
     examples: {
         valid: {
             [key: string]: Object
@@ -77,8 +86,8 @@ export class JsonToFormFormComponent implements OnInit {
         invalid: {
             [key: string]: Object
         }
-    };
-   
+    };*/
+    text: FormControl = new FormControl('', []);
     editorOptions: JsonEditorOptions;
     formBuilder$!: Observable<any>;
     isLoadingAction$?: Observable<boolean>;
@@ -90,7 +99,7 @@ export class JsonToFormFormComponent implements OnInit {
         private route: ActivatedRoute,
         private loadingService: LoadingService
     ) {
-        this.examples = this.jsonToFormService.getValidInvalid();
+        //this.examples = this.jsonToFormService.getValidInvalid();
         this.editorOptions = new JsonEditorOptions();
         this.editorOptions.mode = 'code'; // set all allowed modes
         this.editorOptions.modes = ['code']; // set all allowed modes
@@ -111,25 +120,57 @@ export class JsonToFormFormComponent implements OnInit {
             });
 
         this.form = this.formBuilder.group({
-            "json": [
+            json: [
                 this.formExample,
                 [
                     JsonValidators.validateObject()
                 ]
             ],
-            "componentName": [
-                'test-form', 
-                [
+            component: this.formBuilder.group({
+                name: ['task', [
                     Validators.required,
                     Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+                ]],
+                children: this.formBuilder.array([
+                    this.createComponentChildren('form'),
+                    this.createComponentChildren('create-edit'),
+                    this.createComponentChildren('show'),
+                    this.createComponentChildren('table')
+                ]),
+            }),
+            options: this.formBuilder.group({
+                convert_to: [
+                    'angular', 
+                    [Validators.required]
                 ]
-            ],
-            //"options": ['', [Validators.required]],
-        }, {
-            
+            })
         });
         this.form.markAllAsTouched();
-    
+        let componentName: string[] = [];
+        this.getComponentChildren().value.forEach((item: any) => {
+            componentName.push(item.name);
+        });
+        this.text.patchValue(componentName.join("\n"));
+
+        this.text.valueChanges
+            .pipe(
+                filter(el => el.length > 0),
+                distinctUntilChanged(),
+                map(value => {
+                    return value.split('\n');
+                }),
+                map((valueArr: any) => {
+                    return valueArr.filter((el: any) => el);
+                })
+            ).subscribe(result => {
+                this.getComponentChildren().clear();
+                result.forEach((component: string) => {
+                    this.getComponentChildren().push(
+                        this.createComponentChildren(component)
+                    );
+                });
+
+            });
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(() => {
@@ -156,7 +197,7 @@ export class JsonToFormFormComponent implements OnInit {
                         const json = typeof value.json === 'string'
                             ? JSON.parse(value.json)
                             : value.json;
-                        const componentName = value.componentName;
+                        const componentName = value.component.name;
                         
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
                         const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
@@ -173,11 +214,6 @@ export class JsonToFormFormComponent implements OnInit {
                 }),
                 tap(() => this.loadingService.isLoading(false))
             );
-    }
-
-    getDasta(event: any){
-        console.log('event', event);
-
     }
 
     copy(text: string){
@@ -210,6 +246,20 @@ export class JsonToFormFormComponent implements OnInit {
     get f() {
         return this.form;
     }
+
+    getComponentChildren(): FormArray {
+        return this.form.get('component.children') as FormArray;
+    }
+
+    deleteComponentChildren(indexChildren: number): void {
+        this.getComponentChildren().removeAt(indexChildren);
+    }
+
+    createComponentChildren(name?: string) {
+        return this.formBuilder.group({
+            "name": [name, [Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
+        });
+    }    
 
     isFieldValid(field: string) {
         return !this.f.get(field)?.valid && this.f.get(field)?.touched;
