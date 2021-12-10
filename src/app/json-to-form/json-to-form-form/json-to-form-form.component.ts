@@ -8,15 +8,15 @@ import { js_beautify, html_beautify } from 'js-beautify';
 import { JsonToFormService } from './../../services/json-to-form.service';
 
 class JsonValidators {
-    static hadouken(): ValidatorFn {
+    static minLengthArray(min: number) {
         return (control: AbstractControl): ValidationErrors | null => {
-            const error: ValidationErrors = { 
-                invalidJson: true
-            };
-
-            return null;
+            if (control.value.length >= min)
+                return null;
+    
+            return { 'minLengthArray': {valid: false }};
         }
     }
+    
     static validateObject(): ValidatorFn {
         return (control: AbstractControl): ValidationErrors | null => {
             const error: ValidationErrors = { 
@@ -88,8 +88,7 @@ export class JsonToFormFormComponent implements OnInit {
             [key: string]: Object
         }
     };*/
-    text: FormControl = new FormControl('', []);
-    huehue: FormControl = new FormControl('', []);
+    childComponents: FormControl = new FormControl('', []);
     editorOptions: JsonEditorOptions;
     formBuilder$!: Observable<any>;
     isLoadingAction$?: Observable<boolean>;
@@ -139,6 +138,8 @@ export class JsonToFormFormComponent implements OnInit {
                     this.createComponentChildren('create-edit'),
                     this.createComponentChildren('show'),
                     this.createComponentChildren('table')
+                ], [
+                    JsonValidators.minLengthArray(1)
                 ]),
             }),
             options: this.formBuilder.group({
@@ -153,12 +154,25 @@ export class JsonToFormFormComponent implements OnInit {
         this.getComponentChildren().value.forEach((item: any) => {
             componentName.push(item.name);
         });
-        this.text.patchValue(componentName.join("\n"));
+        this.childComponents.patchValue(componentName.join("\n"));
         this.onValueChanges();
     }
 
     onValueChanges(){
-        this.text.valueChanges
+
+        this.form.get('component.name')?.valueChanges
+            .pipe(
+                map(value => {
+                    return value.trim();
+                })
+            ).subscribe(value => {
+                this.form.get('component.name')?.setValue(value, {
+                    emitEvent: false
+                });
+            })
+
+
+        this.childComponents.valueChanges
             .pipe(
                 //filter(el => el.length > 0),
                 distinctUntilChanged(),
