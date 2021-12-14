@@ -9,11 +9,13 @@ import { JsonToFormListComponent } from './json-to-form-list/json-to-form-list.c
 import { JsonToFormComponent } from './json-to-form.component';
 import { NgJsonEditorModule } from 'ang-jsoneditor';
 import { JsonToFormGenerateComponent } from './json-to-form-generate/json-to-form-generate.component';
+import { JsonToFormFormArrayComponent } from './json-to-form-form-array/json-to-form-form-array.component';
 
 @NgModule({
   declarations: [
     JsonToFormComponent,
     JsonToFormFormComponent,
+    JsonToFormFormArrayComponent,
     JsonToFormListComponent,
     JsonToFormGenerateComponent,
     FolderStructureComponent
