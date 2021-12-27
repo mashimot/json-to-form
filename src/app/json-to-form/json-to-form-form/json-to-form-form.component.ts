@@ -6,65 +6,12 @@ import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormA
 import { ActivatedRoute } from '@angular/router';
 import { js_beautify, html_beautify } from 'js-beautify';
 import { JsonToFormService } from './../../services/json-to-form.service';
-
-class JsonValidators {
-    static minLengthArray(min: number) {
-        return (control: AbstractControl): ValidationErrors | null => {
-            if (control.value.length >= min)
-                return null;
-    
-            return { 'minLengthArray': {valid: false }};
-        }
-    }
-    
-    static validateObject(): ValidatorFn {
-        return (control: AbstractControl): ValidationErrors | null => {
-            const error: ValidationErrors = { 
-                invalidJson: true
-            };
-
-            let object = control.value;
-            if(typeof control.value == 'string'){
-                object = JSON.parse(control.value);
-            }
-
-            if(typeof object == 'undefined'){
-                error.messages = ['JSON undefined'];
-                control.setErrors(error);
-                return error;
-            }
-
-            let isArray = Array.isArray(object);
-
-            if (Object.prototype.toString.call(object) != '[object Object]') {
-                error.messages = ['JSON should start with curly brackets'];
-                return error;
-            }
-
-            if(Object.keys(object).length <= 0){
-                error.messages = ['JSON must be not empty'];
-                control.setErrors(error);
-                return error;
-            }
-
-            let errors: string[] = ValidatorRuleHelper.validateObject(object);
-            if(errors.length > 0){
-                error.messages = errors;
-                control.setErrors(error);
-                return error;
-            }
-
-            control.setErrors(null);
-            return null;
-        }
-    }
-}
-
 import { debounceTime, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
-import { Observable, of, merge, zip } from 'rxjs';
-
+import { Observable, of, merge } from 'rxjs';
 import { ValidatorRuleHelper } from 'src/app/services/angular/validator-rule-helper';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
+import { JsonValidators, ArrayValidators } from 'src/app/shared/validators';
+
 @Component({
     selector: 'app-json-to-form-form',
     templateUrl: './json-to-form-form.component.html',
@@ -73,21 +20,6 @@ import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 export class JsonToFormFormComponent implements OnInit {
     formExample!: any;
     form!: FormGroup;
-    /*hoverEffect: {
-        valid: string[],
-        invalid: string[]
-    } = {
-        valid: [],
-        invalid: []
-    };
-    examples: {
-        valid: {
-            [key: string]: Object
-        },
-        invalid: {
-            [key: string]: Object
-        }
-    };*/
     childComponents: FormControl = new FormControl('', []);
     editorOptions: JsonEditorOptions;
     formBuilder$!: Observable<any>;
@@ -100,7 +32,6 @@ export class JsonToFormFormComponent implements OnInit {
         private route: ActivatedRoute,
         private loadingService: LoadingService
     ) {
-        //this.examples = this.jsonToFormService.getValidInvalid();
         this.editorOptions = new JsonEditorOptions();
         this.editorOptions.mode = 'code'; // set all allowed modes
         this.editorOptions.modes = ['code']; // set all allowed modes
@@ -139,7 +70,7 @@ export class JsonToFormFormComponent implements OnInit {
                     this.createComponentChildren('show'),
                     this.createComponentChildren('table')
                 ], [
-                    JsonValidators.minLengthArray(1)
+                    ArrayValidators.minLengthArray(1)
                 ]),
             }),
             options: this.formBuilder.group({
@@ -155,11 +86,10 @@ export class JsonToFormFormComponent implements OnInit {
             componentName.push(item.name);
         });
         this.childComponents.patchValue(componentName.join("\n"));
-        this.onValueChanges();
+        this.onChanges();
     }
 
-    onValueChanges(){
-
+    onChanges(){
         this.form.get('component.name')?.valueChanges
             .pipe(
                 map(value => {
@@ -220,11 +150,7 @@ export class JsonToFormFormComponent implements OnInit {
                         const json = typeof value.json === 'string'
                             ? JSON.parse(value.json)
                             : value.json;
-                        //const componentName = value.component.name;
                         const componentName = value.component_form;
-
-                        console.log('componentName', componentName);
-                        
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
                         const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
                         const component = reactiveDrivenValidator.generateComponent();
