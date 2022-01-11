@@ -79,7 +79,7 @@ export class ReactiveDrivenHtml {
 				}
 
 				if (Object.prototype.toString.call(value) == '[object Object]') {
-					if(completeKeyNameEndsWithAsterisk){
+					if(!completeKeyNameEndsWithAsterisk){
 						return [
 							`<div formGroupName="${key}">`,
 							`${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
