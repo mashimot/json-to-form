@@ -208,21 +208,28 @@ export class ReactiveDrivenValidator {
         return component;
     }
 
-    protected reactiveDrivenValidators(object: any, names: string = '', parameters: string[] = []): string {
+    protected reactiveDrivenValidators(object: { [key: string]: any }, names: string = '', parameters: string[] = []): string {
         return Object.keys(object)
             .map((key: any) => {
                 let value = object[key];
                 let rest = names.length ? '.' + key : key;
                 let completeKeyName = (names + rest).split('.');
+				const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] == '*'
+					? true
+					: false;                
                 let dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
-                let definition: any = null;
+                let definition: Definition = {
+					get: [],
+					lastDefinition: new Map(),
+					formBuilder: []
+				};
                 let keyNameSplit = key.split('.');
                 let firstNameBeforeDot = keyNameSplit[0];
                 //value: can be an array ['required', 'min:40'] or an object {}
                 let isValueAnArray = Array.isArray(value) ? true : false;
 
                 //key has asterisk, so must turn into an array
-                if (completeKeyName[completeKeyName.length - 1] == '*') {
+                if (completeKeyNameEndsWithAsterisk) {
                     let formBuilderGroup: string[] = [];
                     parameters = parameters.concat(
                         ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)
@@ -252,7 +259,7 @@ export class ReactiveDrivenValidator {
                 
                 if (Object.prototype.toString.call(value) == '[object Object]') {
                     //key has asterisk
-                    if (completeKeyName[completeKeyName.length - 1] == '*') {
+                    if (completeKeyNameEndsWithAsterisk) {
                         parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
 
                         return [
@@ -310,7 +317,7 @@ export class ReactiveDrivenValidator {
                     
                     parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
             
-                    if(definition != null){ //key has asterisk
+                    if(completeKeyNameEndsWithAsterisk){ //key has asterisk
                         return `"${firstNameBeforeDot}": ${definition.formBuilder.join("\n")}`;
                     }
                     

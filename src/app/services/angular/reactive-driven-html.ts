@@ -5,6 +5,9 @@ import { ValidatorRuleHelper } from './validator-rule-helper';
 interface Rules {
   [name: string]: any;
 }
+interface IDefinition {
+	lastDefinition: Map<string, string>
+}
 
 export class ReactiveDrivenHtml {
   rules!: any;
@@ -41,36 +44,42 @@ export class ReactiveDrivenHtml {
 
   public dotNotation: string[] = [];
 
-  public reactiveDrivenHtml(object: any, names: string = '', parameters: string[] = [], lastDefinition: any = []): string {
+  public reactiveDrivenHtml(object: { [key: string]: any }, names: string = '', parameters: string[] = [], lastDefinition: any = []): string {
 		let drivenHtml = Object.keys(object)
 			.map((key: string) => {
 				let value = object[key];
 				let keyNameSplit = key.split('.');
 				let firstKeyNameBeforedot = keyNameSplit[0];
-				let definition:any = null;
+				let definition: Definition = {
+					get: [],
+					lastDefinition: new Map(),
+					formBuilder: []
+				};
 				let rest = names.length > 0 ? '.' + key : key;
 				let completeKeyName = (names + rest).split('.');
+				const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] == '*'
+					? true
+					: false;
 				this.dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
 
 				if (key.trim().startsWith('$')) {
 					return '';
 				}
 				
-				if (completeKeyName[completeKeyName.length - 1] == '*') {
+				if (completeKeyNameEndsWithAsterisk) {
 					parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
 					definition = new ValidatorDefinition(
 						parameters,
 						completeKeyName
 					).get();
 					
-					//if (Object.keys(definition.lastDefinition).length > 0) {
 					if (definition.lastDefinition.size > 0) {
 						lastDefinition.push(definition);
 					}
 				}
 
 				if (Object.prototype.toString.call(value) == '[object Object]') {
-					if(completeKeyName[completeKeyName.length - 1] != '*'){
+					if(completeKeyNameEndsWithAsterisk){
 						return [
 							`<div formGroupName="${key}">`,
 							`${this.reactiveDrivenHtml(value, names + rest, parameters, lastDefinition)}`,
@@ -81,27 +90,30 @@ export class ReactiveDrivenHtml {
 
 					let formArrayOpenTag: string[] = []
 					let formArrayCloseTag: string[] = [];
-					
-					definition.get.forEach((item: any, i: number) => {
+					definition.get.forEach((item: Map<string, string>, i: number) => {
 						const formArrayName: string = i <= 0
 							? `formArrayName="${firstKeyNameBeforedot}"`
 							: `[formArrayName]="${item.get('second_to_last_index')}"`;
 
-							formArrayOpenTag.push(
-								`<fieldset ${formArrayName} class="border border-dark p-1">
-										<pre>{{ ${item.get('get_with_parameters')}.errors | json }}</pre>
+						formArrayOpenTag.push(
+							`<fieldset ${formArrayName} class="border border-dark p-1">
+									<pre>{{ ${item.get('get_with_parameters')}.errors | json }}</pre>
+									<div class="btn-group">
+										<button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.get('create')}">ADD ${item.get('function_name')}</button>
+									</div>
+									<div 
+										*ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.get('last_index')} = index;"
+										class="border border-dark p-1"
+										${
+											i == definition.get.length - 1
+												? `[formGroupName]="${item.get('last_index')}"`
+												: ``
+										}
+									>
 										<div class="btn-group">
-											<button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.get('create')}">ADD ${item.get('function_name')}</button>
-										</div>
-										<div 
-											*ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.get('last_index')} = index;"
-											class="border border-dark p-1"
-											${i == definition.get.length - 1? `[formGroupName]="${item.get('last_index')}"`: ``}
-										>
-											<div class="btn-group">
-												<button type="button" class="btn btn-danger btn-sm" (click)="${item.get('delete')}">DELETE ${item.get('function_name')}</button>
-											</div>`
-							);
+											<button type="button" class="btn btn-danger btn-sm" (click)="${item.get('delete')}">DELETE ${item.get('function_name')}</button>
+										</div>`
+						);
 
 						formArrayCloseTag.push('</div>');
 						formArrayCloseTag.push('</fieldset>');
@@ -209,7 +221,7 @@ export class ReactiveDrivenHtml {
 						}                   
 					});
 
-					if (definition != null) {
+					if (completeKeyNameEndsWithAsterisk) {
 						parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
 						lastDefinition.pop();
 						let formArray: string[] = [];
@@ -264,19 +276,15 @@ export class ReactiveDrivenHtml {
 
 	protected getErrorsMessages({  getField, ruleName, ruleParameters, keyNameDotNotation }: any){
 		if (ruleName == 'required') {
-			//return `<div *ngIf="${getField}!.errors?.['required']">${keyNameDotNotation.toUpperCase()} is required</div>`;
 			return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
 		}
 		if (ruleName == 'min') {
-			//return `<div *ngIf="${getField}!.errors?.['minlength']">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
 			return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
 		}
 		if (ruleName == 'max') {
-			//return `<div *ngIf="${getField}!.errors?.['maxlength']">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
 			return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
 		}
 		if (ruleName == 'email') {
-			//return `<div *ngIf="${getField}!.errors?.['email']">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
 			return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
 		}
 		
