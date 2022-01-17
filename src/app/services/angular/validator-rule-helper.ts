@@ -132,7 +132,7 @@ export class ValidatorRuleHelper {
         ];
     }
     
-    public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false) {
+    public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false): string {
 
         if (string == null || string == '') {
             return '';

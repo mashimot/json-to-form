@@ -5,41 +5,36 @@ import { ValidatorRuleHelper } from './validator-rule-helper';
 interface Rules {
   [name: string]: any;
 }
-interface IDefinition {
-	lastDefinition: Map<string, string>
-}
 
 export class ReactiveDrivenHtml {
   rules!: any;
-  attribute!: string;
-  parameters?: any;
   triggerValidationOnSubmit: boolean = true;
   formName: string = 'form';
 
-  constructor(rules: Rules) {
-    this.setRules(rules);
-  }
+	constructor(rules: Rules) {
+		this.setRules(rules);
+	}
 
-  public setFormName(formName: string): void {
+	public setFormName(formName: string): void {
 		this.formName = formName
-  }
+	}
 
-  public setTriggerValidationOnSubmit(triggerValidationOnSubmit: boolean): void {
+	public setTriggerValidationOnSubmit(triggerValidationOnSubmit: boolean): void {
 		this.triggerValidationOnSubmit = triggerValidationOnSubmit;
-  }
+	}
 
   public generate() : string[] {
-		return [
-			`<div class="container">`,
-			`<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
-			`<pre>{{ ${this.formName}.value | json }}</pre>`,
-			this.reactiveDrivenHtml(this.rules),
-			`<button type="submit" class="btn btn-primary">`,
-			`Submit`,
-			`</button>`,
-			`</form>`,
-			`</div>`
-		];
+	return [
+		`<div class="container">`,
+		`<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
+		`<pre>{{ ${this.formName}.value | json }}</pre>`,
+		this.reactiveDrivenHtml(this.rules),
+		`<button type="submit" class="btn btn-primary">`,
+		`Submit`,
+		`</button>`,
+		`</form>`,
+		`</div>`
+	];
   }
 
   public dotNotation: string[] = [];
@@ -67,7 +62,7 @@ export class ReactiveDrivenHtml {
 				}
 				
 				if (completeKeyNameEndsWithAsterisk) {
-					parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
+		 			parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
 					definition = new ValidatorDefinition(
 						parameters,
 						completeKeyName

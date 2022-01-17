@@ -86,11 +86,8 @@ export class Validator {
 }
 
 export class ReactiveDrivenValidator {
-    attribute!: string;
-    parameters?: any;
     rules!: any;
-    getDefinitions: any = [];
-    getters: any = [];
+    getters: Definition[] = [];
     _options: Options = {
         formName: 'form',
         triggerValidationOnSubmit: true,
@@ -127,17 +124,17 @@ export class ReactiveDrivenValidator {
                     definitions.push(currentGet.get('create_function'));
                 })
             }
-            if(item.mock_data){
+            if(item.mockData){
                 definitions.push([
-                    `${item.mock_data.get_name}$(){`,
-                    `return of(${JSON.stringify(item.mock_data.values)})`,
+                    `${item.mockData.get_name}$(){`,
+                    `return of(${JSON.stringify(item.mockData.values)})`,
                     `.pipe(
                         delay(2000)
                     )`,
                     `}`
                 ].join("\n"));
-                initVariables.push(`${item.mock_data.parameter_name}$!: Observable<any>;`);
-                initObservables.push(`${item.mock_data.parameter_name}$ = this.${item.mock_data.get_name}$();`);
+                initVariables.push(`${item.mockData.parameter_name}$!: Observable<any>;`);
+                initObservables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
         
@@ -306,13 +303,12 @@ export class ReactiveDrivenValidator {
                     }, []);
 
                     if(values.length > 0){
-                        this.getters.push({
-                            mock_data: {
-                                parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),
-                                get_name: `get${ValidatorRuleHelper.camelCasedString(dot_notation.join("."))}`,
-                                values: values
-                            }
-                        })
+                        definition.mockData = {
+                            parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),
+                            get_name: `get${ValidatorRuleHelper.camelCasedString(dot_notation.join("."))}`,
+                            values: values
+                        }
+                        this.getters.push(definition)
                     }
                     
                     parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
