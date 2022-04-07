@@ -1,5 +1,5 @@
 import { Definition } from './models/Definition';
-import { ValidatorDefinition } from './validator-definition';
+import { FunctionDefinition } from './function-definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -87,7 +87,8 @@ export class Validator {
 
 export class ReactiveDrivenValidator {
     rules!: any;
-    getters: Definition[] = [];
+    functions: Definition[] = [];
+    getters: string[] = [];
     _options: Options = {
         formName: 'form',
         triggerValidationOnSubmit: true,
@@ -113,10 +114,9 @@ export class ReactiveDrivenValidator {
         let initVariables: string[] = [];
         let initObservables: string[] = [];
         let definitions: string[] = [];
-        
         let init: string[] = this.generate();
         
-        this.getters.forEach((item: any) => {
+        this.functions.forEach((item: any) => {
             if(item.get){
                 item.get.forEach((currentGet: any) => {
                     definitions.push(currentGet.get('get_function'));
@@ -197,6 +197,7 @@ export class ReactiveDrivenValidator {
                     return this.f.get(field);
                 }
 
+                ${this.getters.join("\n")}
                 ${definitions.join("\n")}                
             `
         ];
@@ -214,8 +215,8 @@ export class ReactiveDrivenValidator {
 				const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] == '*'
 					? true
 					: false;                
-                let dot_notation = ValidatorRuleHelper.dotNotation(completeKeyName);
-                let definition: Definition = {
+                let dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+                let functionDefinition: Definition = {
 					get: [],
 					lastDefinition: new Map(),
 					formBuilder: []
@@ -231,12 +232,11 @@ export class ReactiveDrivenValidator {
                     parameters = parameters.concat(
                         ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)
                     );
-
+                    
                     //"key.*": ['required', 'min:10']
                     if(isValueAnArray){
                         const rules = value;
                         const ruleParameters = new Validator(rules).get();
-                        console.log('ruleParameters', ruleParameters)
                         formBuilderGroup = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];            
                     } else { //"key.*": { "any: ['required', 'min:10']" }
                         formBuilderGroup = [
@@ -246,12 +246,29 @@ export class ReactiveDrivenValidator {
                         ];
                     }
                 
-                    definition = new ValidatorDefinition(
+                    functionDefinition = new FunctionDefinition(
                         parameters,
                         completeKeyName,
                         formBuilderGroup
                     ).get();
-                    this.getters.push(definition);
+
+                    this.functions.push(functionDefinition);
+                } else {
+                    if(!completeKeyName.includes('*')){
+                        const keyNameDotNotation: string = completeKeyName.join(".");
+                        let getterFunctionName = ValidatorRuleHelper.camelCasedString(
+                            dotNotation
+                                .filter((el: string) => el != '*')
+                                .join(""),
+                            true		
+                        );
+                
+                        this.getters.push(
+                            `get ${getterFunctionName}(){
+                                return this.f.get('${keyNameDotNotation}');
+                            }`
+                        );
+                    }
                 }
                 
                 if (Object.prototype.toString.call(value) == '[object Object]') {
@@ -261,7 +278,7 @@ export class ReactiveDrivenValidator {
 
                         return [
                             `"${firstNameBeforeDot}":`,
-                            definition.formBuilder.join("\n"),
+                            functionDefinition.formBuilder.join("\n"),
                         ]
                         .join('\n');
                     }
@@ -303,18 +320,18 @@ export class ReactiveDrivenValidator {
                     }, []);
 
                     if(values.length > 0){
-                        definition.mockData = {
-                            parameter_name: ValidatorRuleHelper.camelCasedString(dot_notation.join("."), true),
-                            get_name: `get${ValidatorRuleHelper.camelCasedString(dot_notation.join("."))}`,
+                        functionDefinition.mockData = {
+                            parameter_name: ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true),
+                            get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))}`,
                             values: values
                         }
-                        this.getters.push(definition)
+                        this.functions.push(functionDefinition)
                     }
                     
                     parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
             
                     if(completeKeyNameEndsWithAsterisk){ //key has asterisk
-                        return `"${firstNameBeforeDot}": ${definition.formBuilder.join("\n")}`;
+                        return `"${firstNameBeforeDot}": ${functionDefinition.formBuilder.join("\n")}`;
                     }
                     
                     return `"${key}": ['', [${ruleParameters.join(",")}]],`

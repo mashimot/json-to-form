@@ -1,7 +1,7 @@
 import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
-export class ValidatorDefinition {
+export class FunctionDefinition {
 	private CREATE: string = 'create';
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
@@ -110,7 +110,7 @@ export class ValidatorDefinition {
 				'delete_function', 
 				[
 					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
-							`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
+						`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
 					`}`
 				].join("\n")
 			);
@@ -128,9 +128,9 @@ export class ValidatorDefinition {
 							i == counterAsterisk - 1
 								? this.formBuilderGroup.join("")
 								: [
-										`this.${this.FORM_BUILDER}.array([`,
-										`this.${this.CREATE}${functionName}${i + 1}()`,
-										`])`
+									`this.${this.FORM_BUILDER}.array([`,
+									`this.${this.CREATE}${functionName}${i + 1}()`,
+									`])`
 								].join("\n")
 						}`,
 					`}`

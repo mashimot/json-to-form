@@ -1,5 +1,5 @@
 import { Definition } from './models/Definition';
-import { ValidatorDefinition } from './validator-definition';
+import { FunctionDefinition } from './function-definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -44,8 +44,8 @@ export class ReactiveDrivenHtml {
 			.map((key: string) => {
 				let value = object[key];
 				let keyNameSplit = key.split('.');
-				let firstKeyNameBeforedot = keyNameSplit[0];
-				let definition: Definition = {
+				let firstKeyNameBeforeDot = keyNameSplit[0];
+				let functionDefinition: Definition = {
 					get: [],
 					lastDefinition: new Map(),
 					formBuilder: []
@@ -63,13 +63,13 @@ export class ReactiveDrivenHtml {
 				
 				if (completeKeyNameEndsWithAsterisk) {
 		 			parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
-					definition = new ValidatorDefinition(
+					functionDefinition = new FunctionDefinition(
 						parameters,
 						completeKeyName
 					).get();
 					
-					if (definition.lastDefinition.size > 0) {
-						lastDefinition.push(definition);
+					if (functionDefinition.lastDefinition.size > 0) {
+						lastDefinition.push(functionDefinition);
 					}
 				}
 
@@ -85,29 +85,29 @@ export class ReactiveDrivenHtml {
 
 					let formArrayOpenTag: string[] = []
 					let formArrayCloseTag: string[] = [];
-					definition.get.forEach((item: Map<string, string>, i: number) => {
+					functionDefinition.get.forEach((item: Map<string, string>, i: number) => {
 						const formArrayName: string = i <= 0
-							? `formArrayName="${firstKeyNameBeforedot}"`
+							? `formArrayName="${firstKeyNameBeforeDot}"`
 							: `[formArrayName]="${item.get('second_to_last_index')}"`;
 
 						formArrayOpenTag.push(
 							`<fieldset ${formArrayName} class="border border-dark p-1">
-									<pre>{{ ${item.get('get_with_parameters')}.errors | json }}</pre>
+								<pre>{{ ${item.get('get_with_parameters')}.errors | json }}</pre>
+								<div class="btn-group">
+									<button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.get('create')}">ADD ${item.get('function_name')}</button>
+								</div>
+								<div 
+									*ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.get('last_index')} = index;"
+									class="border border-dark p-1"
+									${
+										i == functionDefinition.get.length - 1
+											? `[formGroupName]="${item.get('last_index')}"`
+											: ``
+									}
+								>
 									<div class="btn-group">
-										<button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.get('create')}">ADD ${item.get('function_name')}</button>
-									</div>
-									<div 
-										*ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.get('last_index')} = index;"
-										class="border border-dark p-1"
-										${
-											i == definition.get.length - 1
-												? `[formGroupName]="${item.get('last_index')}"`
-												: ``
-										}
-									>
-										<div class="btn-group">
-											<button type="button" class="btn btn-danger btn-sm" (click)="${item.get('delete')}">DELETE ${item.get('function_name')}</button>
-										</div>`
+										<button type="button" class="btn btn-danger btn-sm" (click)="${item.get('delete')}">DELETE ${item.get('function_name')}</button>
+									</div>`
 						);
 
 						formArrayCloseTag.push('</div>');
@@ -127,16 +127,24 @@ export class ReactiveDrivenHtml {
 					return FORM_ARRAY.join("\n");
 				}
 				
+				//ex: keyName: []
 				if (Array.isArray(value)) {
 					let messages: string[] = [];
 					const rules = value;
-					const keyNameDotNotation = completeKeyName.join(".");
+					const keyNameDotNotation: string = completeKeyName.join(".");
 					let formControlName = 'formControlName';
-					let getField = `getField('${keyNameDotNotation}')`;
+					//let getField = `getField('${keyNameDotNotation}')`;
+					//let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
+					let getField = ValidatorRuleHelper.camelCasedString(
+						this.dotNotation
+							.filter((el: string) => el != '*')
+							.join(""),
+						true		
+					);
 					let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
 					let get:any = lastDefinition[lastDefinition.length - 1];
 					let id = this.dotNotation[this.dotNotation.length - 1];
-					var index = firstKeyNameBeforedot;
+					var index = firstKeyNameBeforeDot;
 					
 					//key has asterisk
 					if (lastDefinition.length > 0) {
@@ -220,9 +228,9 @@ export class ReactiveDrivenHtml {
 						parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
 						lastDefinition.pop();
 						let formArray: string[] = [];
-						definition.get.forEach((item: any, i: number) => {
+						functionDefinition.get.forEach((item: any, i: number) => {
 							let formArrayName: string = i <= 0
-								? `formArrayName="${firstKeyNameBeforedot}"`
+								? `formArrayName="${firstKeyNameBeforeDot}"`
 								: `[formArrayName]="${item.second_to_last_index}"`;
 
 							formArray.push(
