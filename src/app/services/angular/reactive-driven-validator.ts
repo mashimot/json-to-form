@@ -115,7 +115,7 @@ export class ReactiveDrivenValidator {
         let initObservables: string[] = [];
         let definitions: string[] = [];
         let init: string[] = this.generate();
-        
+        console.log('this.functions', this.functions);
         this.functions.forEach((item: any) => {
             if(item.get){
                 item.get.forEach((currentGet: any) => {
@@ -125,6 +125,7 @@ export class ReactiveDrivenValidator {
                 })
             }
             if(item.mockData){
+                // console.log('item.mockData', item.mockData)
                 definitions.push([
                     `${item.mockData.get_name}$(){`,
                     `return of(${JSON.stringify(item.mockData.values)})`,
@@ -252,7 +253,6 @@ export class ReactiveDrivenValidator {
                         formBuilderGroup
                     ).get();
 
-                    this.functions.push(functionDefinition);
                 } else {
                     if(!completeKeyName.includes('*')){
                         const keyNameDotNotation: string = completeKeyName.join(".");
@@ -270,6 +270,7 @@ export class ReactiveDrivenValidator {
                         );
                     }
                 }
+                this.functions.push(functionDefinition);
                 
                 if (Object.prototype.toString.call(value) == '[object Object]') {
                     //key has asterisk
@@ -294,14 +295,14 @@ export class ReactiveDrivenValidator {
                 if (Array.isArray(value)) {
                     const rules = value;
                     const ruleParameters = new Validator(rules).get();
-                    let values = rules.reduce((accArr, rule) => {
+                    const values = rules.reduce((accArr, rule) => {
                         let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
                         if (ruleName == 'in') {
                             return ruleParameters;
                         }
 
                         if(
-                             ruleName == 'html' &&
+                            ruleName == 'html' &&
                             ['select', 'radio', 'checkbox'].includes(ruleParameters[0])
                         ){
                             return [{
@@ -325,7 +326,6 @@ export class ReactiveDrivenValidator {
                             get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))}`,
                             values: values
                         }
-                        this.functions.push(functionDefinition)
                     }
                     
                     parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
