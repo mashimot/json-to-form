@@ -6,7 +6,7 @@ export class FunctionDefinition {
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
 
-	lastDefinition: string[] = [];
+	lastFunctionDefinition: string[] = [];
 	formBuilderGroup: string[] = [];
 	parameters: string[] = [];
 	completeKeyName: string[] = [];
@@ -17,7 +17,7 @@ export class FunctionDefinition {
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
 	){
-		this.parameters = parameters ?? [];
+		this.parameters = parameters || [];
 		this.completeKeyName = completeKeyName
 		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
@@ -27,7 +27,7 @@ export class FunctionDefinition {
 		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
 		let definition: Definition = {
 			get: [],
-			lastDefinition: new Map(),
+			lastFunctionDefinition: new Map(),
 			formBuilder: []
 		};
 
@@ -154,7 +154,7 @@ export class FunctionDefinition {
 		];
 
 		if (definition.get.length > 0) {
-			definition.lastDefinition = definition.get[definition.get.length - 1];
+			definition.lastFunctionDefinition = definition.get[definition.get.length - 1];
 		}
 
 		return definition;

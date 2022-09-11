@@ -106,7 +106,8 @@ export class ValidatorRuleHelper {
             if (rule.indexOf(':') != -1) {
                 return [
                     rule.split(':')[0],
-                    ValidatorRuleHelper.str_getcsv(afterColon)
+                    [afterColon]
+                    //ValidatorRuleHelper.str_getcsv(afterColon)
                 ];
             }
         }

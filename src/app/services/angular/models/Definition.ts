@@ -1,6 +1,6 @@
 export interface Definition {
     get: Array<Map<string, string>>,
-    lastDefinition: Map<string, string>,
+    lastFunctionDefinition: Map<string, string>,
     formBuilder: string[];
     mockData?: {
         parameter_name: string;
