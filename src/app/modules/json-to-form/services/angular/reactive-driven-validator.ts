@@ -133,7 +133,7 @@ export class ReactiveDrivenValidator {
                     )`,
                     `}`
                 ].join("\n"));
-                initVariables.push(`${item.mockData.parameter_name}$!: Observable<any>;`);
+                initVariables.push(`${item.mockData.parameter_name}$!: Observable<any>`);
                 initObservables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
@@ -152,7 +152,7 @@ export class ReactiveDrivenValidator {
             export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {              
                 ${this._options.formName}!: FormGroup;
                 formSubmitAttempt: boolean = false;
-                ${initVariables.join(";\n")}
+                ${initVariables.map(v => `${v};`).join("\n")}
                 constructor(
                     private formBuilder: FormBuilder
                 ) { }
@@ -171,7 +171,7 @@ export class ReactiveDrivenValidator {
                     }
                 }
 
-                validateAllFormFields(control: AbstractControl) {
+                validateAllFormFields(control: AbstractControl): void {
                     if (control instanceof FormControl) {
                         control.markAsTouched({ onlySelf: true });
                     } else if (control instanceof FormGroup) {
@@ -185,8 +185,8 @@ export class ReactiveDrivenValidator {
                     }
                 }
 
-                get f(){
-                    return this.form;
+                get f(): FormGroup {
+                    return this.form as FormGroup;
                 }
 
                 isFieldValid(field: string) {
@@ -224,7 +224,6 @@ export class ReactiveDrivenValidator {
                 let keyNameSplit = key.split('.');
                 let firstNameBeforeDot = keyNameSplit[0];
                 //value: can be an array ['required', 'min:40'] or an object {}
-                let isValueAnArray = Array.isArray(value) ? true : false;
 
                 //key has asterisk, so must turn into an array
                 if (completeKeyNameEndsWithAsterisk) {
@@ -234,7 +233,7 @@ export class ReactiveDrivenValidator {
                     );
                     
                     //"key.*": ['required', 'min:10']
-                    if(isValueAnArray){
+                    if(Array.isArray(value)){
                         const rules = value;
                         const ruleParameters = new Validator(rules).get();
                         formBuilderGroup = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];            
@@ -263,8 +262,8 @@ export class ReactiveDrivenValidator {
                         );
                 
                         this.getters.push(
-                            `get ${getterFunctionName}(){
-                                return this.f.get('${keyNameDotNotation}');
+                            `get ${getterFunctionName}(): FormControl {
+                                return this.f.get('${keyNameDotNotation}') as FormControl;
                             }`
                         );
                     }

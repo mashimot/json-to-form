@@ -6,6 +6,8 @@
     </div>
 -->
     <div fxFlex="100">
-        <app-json-to-form-form></app-json-to-form-form>
+        <app-json-to-form-form
+            [json]="formExample$ | async"
+        ></app-json-to-form-form>
     </div>
 </div>

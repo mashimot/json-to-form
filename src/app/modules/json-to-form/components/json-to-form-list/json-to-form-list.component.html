@@ -1,4 +1,4 @@
-<a mat-button [routerLink]="['/json-to-form', 'create']">
+<a mat-button (click)="createJsonToForm()">
     Create
 </a>
 <div fxLayout="row wrap" fxLayout.xs="column" fxLayoutGap="16px grid">
@@ -13,7 +13,7 @@
         >
             <mat-card-content>
                 <div
-                    [routerLink]="['/json-to-form', formExampleIndex, 'edit']"
+                    (click)="editJsonToForm(formExampleIndex)"
                     class="card card-dark"
                     [ngClass]="hoverEffect[formExampleIndex]"
                     (mouseover)="hoverEffect[formExampleIndex] = 'animate__animated animate__headShake border border-primary'" 

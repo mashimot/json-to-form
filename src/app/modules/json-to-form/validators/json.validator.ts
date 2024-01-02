@@ -1,5 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from "@angular/forms";
-import { ValidatorRuleHelper } from "src/app/services/angular/validator-rule-helper";
+import { ValidatorRuleHelper } from "./../services/angular/validator-rule-helper";
 
 export class JsonValidators {
     static validateObject(): ValidatorFn {

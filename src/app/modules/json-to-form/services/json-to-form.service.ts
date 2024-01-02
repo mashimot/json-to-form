@@ -1,5 +1,6 @@
-import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -8,30 +9,24 @@ export class JsonToFormService {
 
   constructor() { }
 
-  getExamples(){
-    let examples: any[] = [
+  getExamples(): Observable<any[]> {
+    return of([
       this.userMedications(),
       this.getMoviesDetails(),
       this.usersJson(),
       this.bigAssArrayOfObjects(),
       this.user(),
       this.randomJson(),
-    ];
-
-    return examples;
+    ]);
   }
 
   getExampleByNumber(id: number){
-    let examples: {
-      [key: number]: any
-    } = this.getExamples();
-    
-    
-    return typeof examples[id] != 'undefined'
-      ? of(examples[id])
-      : of(null);
+    return this.getExamples()
+      .pipe(
+        map(examples => examples[id]),
+        map(example => example ? example.data : null)
+      );
   }
-
 
   public getValidInvalid(): {
     valid: {

@@ -1,2 +1,1 @@
-export * from './JsonValidators';
-export * from './ArrayValidators';
+export * from './array.validator';

@@ -10,7 +10,7 @@ const routes: Routes = [
   },
   {
     path: 'json-to-form',
-    loadChildren: () => import ("./json-to-form/json-to-form.module").then(m => m.JsonToFormModule)
+    loadChildren: () => import ("./modules/json-to-form/json-to-form.module").then(m => m.JsonToFormModule)
   },
   {
     path: 'folders',

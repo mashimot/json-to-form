@@ -1,16 +1,15 @@
-import { LoadingService } from './../../shared/services/loading.service';
-import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
-import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn, ValidationErrors } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { js_beautify, html_beautify } from 'js-beautify';
-import { JsonToFormService } from './../../services/json-to-form.service';
-import { debounceTime, distinctUntilChanged, filter, finalize, map, mergeMap, startWith, switchMap, tap } from 'rxjs/operators';
-import { Observable, of, merge } from 'rxjs';
-import { ValidatorRuleHelper } from 'src/app/services/angular/validator-rule-helper';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
-import { JsonValidators, ArrayValidators } from 'src/app/shared/validators';
+import { html_beautify, js_beautify } from 'js-beautify';
+import { Observable, merge, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
+import { ArrayValidators } from 'src/app/shared/validators/array.validator';
+import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
+import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
+import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
+import { JsonValidators } from '../../validators/json.validator';
+import { LoadingService } from './../../../../shared/services/loading.service';
 
 @Component({
     selector: 'app-json-to-form-form',
@@ -18,7 +17,7 @@ import { JsonValidators, ArrayValidators } from 'src/app/shared/validators';
     styleUrls: ['./json-to-form-form.component.scss']
 })
 export class JsonToFormFormComponent implements OnInit {
-    formExample!: any;
+    @Input() json: any;
     form!: FormGroup;
     childComponents: FormControl = new FormControl('', []);
     editorOptions: JsonEditorOptions;
@@ -28,8 +27,6 @@ export class JsonToFormFormComponent implements OnInit {
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
     constructor(
         private formBuilder: FormBuilder,
-        private jsonToFormService: JsonToFormService,
-        private route: ActivatedRoute,
         private loadingService: LoadingService
     ) {
         this.editorOptions = new JsonEditorOptions();
@@ -39,21 +36,20 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        this.route.paramMap
-            .pipe(
-                map(paramMap => paramMap.get('id')),
-                filter(id => id != null),
-                switchMap(id => {
-                    return this.jsonToFormService.getExampleByNumber(Number(id))
-                })
-            )
-            .subscribe(result => {
-                this.formExample = result == null ? {} : result.data;
-            });
+        this.buildForm();
+        this.form.markAllAsTouched();
+        let componentName: string[] = [];
+        this.getComponentChildren().value.forEach((item: any) => {
+            componentName.push(item.name);
+        });
+        this.childComponents.patchValue(componentName.join("\n"));
+        this.onChanges();
+    }
 
+    public buildForm() {
         this.form = this.formBuilder.group({
             json: [
-                this.formExample,
+                this.json,
                 [
                     JsonValidators.validateObject()
                 ]
@@ -75,21 +71,14 @@ export class JsonToFormFormComponent implements OnInit {
             }),
             options: this.formBuilder.group({
                 convert_to: [
-                    'angular', 
+                    'angular',
                     [Validators.required]
                 ]
             })
         });
-        this.form.markAllAsTouched();
-        let componentName: string[] = [];
-        this.getComponentChildren().value.forEach((item: any) => {
-            componentName.push(item.name);
-        });
-        this.childComponents.patchValue(componentName.join("\n"));
-        this.onChanges();
     }
 
-    onChanges(){
+    onChanges() {
         this.form.get('component.name')?.valueChanges
             .pipe(
                 map(value => {
@@ -121,7 +110,7 @@ export class JsonToFormFormComponent implements OnInit {
                 });
             });
 
- 
+
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(() => {
@@ -131,22 +120,20 @@ export class JsonToFormFormComponent implements OnInit {
                     this.form.value
                 ),
                 tap((result) => {
-                    if(!this.form.valid){
+                    if (!this.form.valid) {
                         this.loadingService.isLoading(false);
                     }
                 }),
                 debounceTime(500),
                 distinctUntilChanged((a, b) => {
-                    if(JSON.stringify(a) === JSON.stringify(b)){
+                    if (JSON.stringify(a) === JSON.stringify(b)) {
                         this.loadingService.isLoading(false);
                         return true;
                     }
                     return false;
                 }),
-                tap(() => {
-                }),
                 switchMap(value => {
-                    if(this.form.valid){
+                    if (this.form.valid) {
                         const json = typeof value.json === 'string'
                             ? JSON.parse(value.json)
                             : value.json;
@@ -155,22 +142,22 @@ export class JsonToFormFormComponent implements OnInit {
                         const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
                         const component = reactiveDrivenValidator.generateComponent();
                         const html = reactiveDrivenHtml.generate();
-                        
+
                         return of({
                             component: js_beautify(component.join("\n")),
                             html: html_beautify(html.join("\n"))
                         });
                     }
-                    
+
                     return of({});
                 }),
                 tap(() => this.loadingService.isLoading(false))
             );
 
-            merge(
-                this.form.get('component.children')!.valueChanges,
-                this.form.get('component.name')!.valueChanges
-            )
+        merge(
+            this.form.get('component.children')!.valueChanges,
+            this.form.get('component.name')!.valueChanges
+        )
             .pipe(
                 tap(() => {
                     this.form.get('component_form')!.patchValue('', {
@@ -180,7 +167,7 @@ export class JsonToFormFormComponent implements OnInit {
             ).subscribe();
     }
 
-    copy(text: string){
+    copy(text: string) {
         alert('still working on it!')
     }
 
@@ -198,7 +185,7 @@ export class JsonToFormFormComponent implements OnInit {
             });
         } else if (control instanceof FormGroup) {
             Object.keys(control.controls).forEach((field: string) => {
-                const groupControl = control.get(field) !;
+                const groupControl = control.get(field)!;
                 this.validateAllFormFields(groupControl);
             });
         } else if (control instanceof FormArray) {
@@ -223,7 +210,7 @@ export class JsonToFormFormComponent implements OnInit {
         return this.formBuilder.group({
             "name": [name, [Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
         });
-    }    
+    }
 
     isFieldValid(field: string) {
         return !this.f.get(field)?.valid && this.f.get(field)?.touched;
