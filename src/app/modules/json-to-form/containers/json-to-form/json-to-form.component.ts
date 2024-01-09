@@ -9,7 +9,7 @@ import { Observable } from 'rxjs';
   styleUrls: ['./json-to-form.component.css']
 })
 export class JsonToFormComponent implements OnInit {
-  formExamples$!: Observable<any>;
+  formExamples$: Observable<any> = this.jsonToFormService.getExamples();
 
   constructor(
     private router: Router,
@@ -17,7 +17,6 @@ export class JsonToFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.formExamples$ = this.jsonToFormService.getExamples();
   }
 
   onCreate(): void {

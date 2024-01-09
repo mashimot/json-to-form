@@ -2,9 +2,8 @@ import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 import { html_beautify, js_beautify } from 'js-beautify';
-import { Observable, merge, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map, startWith, switchMap, tap } from 'rxjs/operators';
-import { ArrayValidators } from 'src/app/shared/validators/array.validator';
+import { Observable, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, startWith, switchMap, tap } from 'rxjs/operators';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
@@ -18,13 +17,23 @@ import { LoadingService } from './../../../../shared/services/loading.service';
 })
 export class JsonToFormFormComponent implements OnInit {
     @Input() json: any;
-    form!: FormGroup;
-    childComponents: FormControl = new FormControl('', []);
-    editorOptions: JsonEditorOptions;
-    formBuilder$!: Observable<any>;
-    isLoadingAction$?: Observable<boolean>;
 
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
+
+    public form!: FormGroup;
+    public childComponents: FormControl = new FormControl('', []);
+    public editorOptions: JsonEditorOptions;
+    public formBuilder$!: Observable<any>;
+    public isLoadingAction$?: Observable<boolean>;
+    public smartAndDumb: string[] = [
+        'ng g m :main_folder_name: --routing',
+        // 'ng g c :main_folder_name:/components/:main_folder_name:-form',
+        'ng g c :main_folder_name:/components/:main_folder_name:-list',
+        'ng g c :main_folder_name:/containers/:main_folder_name:',
+        'ng g s :main_folder_name:/services/:main_folder_name:',
+        'ng g i :main_folder_name:/models/:main_folder_name:',
+    ]
+
     constructor(
         private formBuilder: FormBuilder,
         private loadingService: LoadingService
@@ -37,38 +46,23 @@ export class JsonToFormFormComponent implements OnInit {
 
     ngOnInit(): void {
         this.buildForm();
-        this.form.markAllAsTouched();
-        let componentName: string[] = [];
-        this.getComponentChildren().value.forEach((item: any) => {
-            componentName.push(item.name);
-        });
-        this.childComponents.patchValue(componentName.join("\n"));
         this.onChanges();
     }
 
-    public buildForm() {
+    public buildForm(): void {
         this.form = this.formBuilder.group({
             json: [
                 this.json,
-                [
-                    JsonValidators.validateObject()
-                ]
+                [JsonValidators.validateObject()]
             ],
-            component_form: this.formBuilder.control('', Validators.required),
-            component: this.formBuilder.group({
-                name: ['task', [
-                    Validators.required,
-                    Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
-                ]],
-                children: this.formBuilder.array([
-                    this.createComponentChildren('form'),
-                    this.createComponentChildren('create-edit'),
-                    this.createComponentChildren('show'),
-                    this.createComponentChildren('table')
-                ], [
-                    ArrayValidators.minLengthArray(1)
-                ]),
-            }),
+            main_folder_name: this.formBuilder.control('tasks', [
+                Validators.required,
+                Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+            ]),
+            component_form_name: this.formBuilder.control('task-form', [
+                Validators.required,
+                Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+            ]),
             options: this.formBuilder.group({
                 convert_to: [
                     'angular',
@@ -76,53 +70,24 @@ export class JsonToFormFormComponent implements OnInit {
                 ]
             })
         });
+        this.form.markAllAsTouched();
     }
 
-    onChanges() {
-        this.form.get('component.name')?.valueChanges
-            .pipe(
-                map(value => {
-                    return value.trim();
-                })
-            ).subscribe(value => {
-                this.form.get('component.name')?.setValue(value, {
-                    emitEvent: false
-                });
-            })
-
-
-        this.childComponents.valueChanges
-            .pipe(
-                //filter(el => el.length > 0),
-                distinctUntilChanged(),
-                map(value => {
-                    return value.split('\n');
-                }),
-                map((valueArr: any) => {
-                    return valueArr.filter((el: any) => el);
-                })
-            ).subscribe(result => {
-                this.getComponentChildren().clear();
-                result.forEach((component: string) => {
-                    this.getComponentChildren().push(
-                        this.createComponentChildren(component)
-                    );
-                });
-            });
-
-
+    onChanges(): void {
         this.formBuilder$ = this.form.valueChanges
             .pipe(
-                tap(() => {
+                tap(response => {
+                    console.log('rr', response);
                     this.loadingService.isLoading(true)
                 }),
-                startWith(
-                    this.form.value
-                ),
-                tap((result) => {
-                    if (!this.form.valid) {
+                startWith(this.form.value),
+                filter(value => {
+                    if (this.form.invalid) {
                         this.loadingService.isLoading(false);
+                        return false;
                     }
+
+                    return true;
                 }),
                 debounceTime(500),
                 distinctUntilChanged((a, b) => {
@@ -132,14 +97,13 @@ export class JsonToFormFormComponent implements OnInit {
                     }
                     return false;
                 }),
-                switchMap(value => {
+                switchMap(({ json, component_form_name }) => {
                     if (this.form.valid) {
-                        const json = typeof value.json === 'string'
-                            ? JSON.parse(value.json)
-                            : value.json;
-                        const componentName = value.component_form;
+                        json = typeof json === 'string'
+                            ? JSON.parse(json)
+                            : json;
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
-                        const reactiveDrivenValidator = new ReactiveDrivenValidator(json, componentName);
+                        const reactiveDrivenValidator = new ReactiveDrivenValidator(json, component_form_name);
                         const component = reactiveDrivenValidator.generateComponent();
                         const html = reactiveDrivenHtml.generate();
 
@@ -153,21 +117,9 @@ export class JsonToFormFormComponent implements OnInit {
                 }),
                 tap(() => this.loadingService.isLoading(false))
             );
-
-        merge(
-            this.form.get('component.children')!.valueChanges,
-            this.form.get('component.name')!.valueChanges
-        )
-            .pipe(
-                tap(() => {
-                    this.form.get('component_form')!.patchValue('', {
-                        emitEvent: false
-                    })
-                })
-            ).subscribe();
     }
 
-    copy(text: string) {
+    copy(text: string): void {
         alert('still working on it!')
     }
 
@@ -178,7 +130,7 @@ export class JsonToFormFormComponent implements OnInit {
         }
     }
 
-    validateAllFormFields(control: AbstractControl) {
+    validateAllFormFields(control: AbstractControl): void {
         if (control instanceof FormControl) {
             control.markAsTouched({
                 onlySelf: true
@@ -194,30 +146,20 @@ export class JsonToFormFormComponent implements OnInit {
         }
     }
 
-    get f() {
-        return this.form;
+    get f(): FormGroup {
+        return this.form as FormGroup;
     }
 
-    getComponentChildren(): FormArray {
-        return this.form.get('component.children') as FormArray;
+    get componentFormName(): FormControl {
+        return this.f.get('component_form_name') as FormControl;
     }
 
-    deleteComponentChildren(indexChildren: number): void {
-        this.getComponentChildren().removeAt(indexChildren);
-    }
-
-    createComponentChildren(name?: string) {
-        return this.formBuilder.group({
-            "name": [name, [Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)]],
-        });
-    }
-
-    isFieldValid(field: string) {
+    isFieldValid(field: string): boolean | undefined {
         return !this.f.get(field)?.valid && this.f.get(field)?.touched;
     }
 
-    getField(field: string) {
-        return this.f.get(field);
+    getField(field: string): FormControl {
+        return this.f.get(field) as FormControl;
     }
 
 }

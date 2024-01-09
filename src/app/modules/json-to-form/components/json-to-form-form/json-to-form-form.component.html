@@ -72,84 +72,27 @@
                     </div>
                 </ng-container>
 
-                <br/>
-                <fieldset formGroupName="component">
-                    <mat-form-field class="full-width-field">
-                        <mat-label>Root Component Name</mat-label>
-                        <input type="text" matInput formControlName="name" >
-                    </mat-form-field>
-                    <ng-container *ngIf="isFieldValid('component.name')">
-                        <mat-error *ngIf="getField('component.name')!.errors?.required">Root Component Name is required</mat-error>
-                        <ng-container *ngIf="getField('component.name')!.errors?.pattern">
-                            <mat-error>Only the characters [a-zA-Z0-9] and hyphen (-)</mat-error>
-                            <mat-error>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</mat-error>
-                            <mat-error>White Spaces are not allowed.</mat-error>
-                            <mat-error>For example: user-post</mat-error>
-                        </ng-container>
-                    </ng-container>
+                <mat-form-field class="full-width-field">
+                    <mat-label>Main Folder Name</mat-label>
+                    <input type="text" matInput formControlName="main_folder_name" >
+                </mat-form-field>
 
-                    <fieldset formArrayName="children">
-                        <mat-form-field class="full-width-field">
-                            <mat-label>Child Components</mat-label>
-                            <textarea
-                                matInput
-                                cols="30"
-                                rows="10"
-                                [formControl]="childComponents"
-                            ></textarea>
-                        </mat-form-field>
-                        <mat-error *ngIf="form.get('component.children')!.hasError('minLengthArray')">
-                            Child Components are required
-                        </mat-error>                           
-                        <div *ngFor="let ComponentChildren1Data of getComponentChildren().controls; let indexChildren = index;" class="border border-dark p-1" [formGroupName]="indexChildren">
-                            <ng-container *ngIf="getComponentChildren().at(indexChildren)?.get('name')?.hasError('pattern')">
-                                <mat-error>
-                                    <strong>
-                                        <pre>{{ getComponentChildren().at(indexChildren)?.get('name')?.value | json }}</pre>
-                                    </strong>
-                                </mat-error>
-                                <mat-error>Only the characters [a-zA-Z0-9] and hyphen (-)</mat-error>
-                                <mat-error>Cannot start with a digit, two hyphens, or a hyphen followed by a digit.</mat-error>
-                                <mat-error>White Spaces are not allowed.</mat-error>
-                                <mat-error>For example: user-post</mat-error>
-                            </ng-container>
-                        </div>
-                    </fieldset>
-
-                    <ng-container *ngIf="form.get('component.children')?.value.length > 0 && form.get('component.name')?.value.length > 0">
-                        <div id="angular-cli">
-                            <div [formGroup]="form">
-                                <p>
-                                    ng g module {{ form.get('component.name')!.value }} --routing
-                                </p>
-                                <mat-radio-group
-                                    aria-labelledby="example-radio-group-label"
-                                    class="example-radio-group"
-                                    formControlName="component_form"
-                                >
-                                    <mat-radio-button
-                                        class="example-radio-button"
-                                        [value]="form.get('component.name')?.value"
-                                    >
-                                        ng g component {{ form.get('component.name')!.value }}
-                                    </mat-radio-button>
-                                    <mat-radio-button
-                                        class="example-radio-button" 
-                                        *ngFor="let component of getComponentChildren().controls; let indexList = index;"
-                                        [value]="form.get('component.name')?.value + '-' + component?.value.name"
-                                    >
-                                        ng g component {{ form.get('component.name')!.value }}/{{ form.get('component.name')!.value }}-{{ component?.value.name }}
-                                    </mat-radio-button>
-                                </mat-radio-group>
-            
-                                <mat-error *ngIf="form.get('component_form')!.hasError('required')">
-                                    Select a Component
-                                </mat-error>
-                            </div>
-                        </div>
-                    </ng-container>
-
-                </fieldset>
+                <mat-form-field class="full-width-field">
+                    <mat-label>Component Form Name</mat-label>
+                    <input type="text" matInput formControlName="component_form_name" >
+                </mat-form-field>
+                
+                <h1>Smart and Dumb Components</h1>
+                <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
+                    <p>{{ sB | replace : ':main_folder_name:' : f.get('main_folder_name')?.value }}</p>                    
+                </ng-container>
+                <p>
+                    {{ 
+                        'ng g c :main_folder_name:/components/:form_name:' | 
+                        replace : ':main_folder_name:' : f.get('main_folder_name')?.value | 
+                        replace : ':form_name:' : componentFormName?.value 
+                    }}
+                </p>
             </form>
         </mat-card-content>
     </mat-card>
@@ -169,11 +112,11 @@
                 </h1>
 
                 <fieldset>
-                    <h1>{{ form.get('component_form')!.value }}.component.ts</h1>
+                    <h1>{{ componentFormName?.value }}.component.ts</h1>
                     <code id="__form-comonent"><pre>{{ formBuilder.component }}</pre></code>
                 </fieldset>
                 <fieldset>
-                    <h1>{{ form.get('component_form')!.value }}.component.html</h1>
+                    <h1>{{ componentFormName?.value }}.component.html</h1>
                     <code id="__form-html"><pre>{{ formBuilder.html }}</pre></code>
                 </fieldset>
             </mat-card>
