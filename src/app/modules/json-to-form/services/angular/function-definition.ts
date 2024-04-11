@@ -16,7 +16,7 @@ export class FunctionDefinition {
 		parameters: string[],
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
-	){
+	) {
 		this.parameters = parameters || [];
 		this.completeKeyName = completeKeyName
 		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
@@ -33,7 +33,7 @@ export class FunctionDefinition {
 
 		let counterAsterisk = 0;
 		for (let i = this.keyNameDotNotation.length - 1; i >= 0; i--) {
-			if (this.keyNameDotNotation[i] != '*') {
+			if (this.keyNameDotNotation[i] !== '*') {
 				break;
 			}
 			counterAsterisk++;
@@ -41,7 +41,7 @@ export class FunctionDefinition {
 
 		const returnFunction = this.generateReturnFunction();
 		const parameters = [...this.parameters];
-		
+
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
 			let dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
@@ -86,7 +86,7 @@ export class FunctionDefinition {
 				`${dataMap.get('get_with_parameters')}.at(${lastIndex})`
 			);
 			dataMap.set(
-				'index', 
+				'index',
 				parameters[i]
 			);
 			dataMap.set(
@@ -99,23 +99,23 @@ export class FunctionDefinition {
 			);
 			dataMap.set(
 				'get_function',
-					[
+				[
 					`${getFunctionName}${dataMap.get('parameters_typed')}: FormArray {`,
-						`return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
+					`return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
 					`}`
 				]
-				.join("\n")
+					.join("\n")
 			);
 			dataMap.set(
-				'delete_function', 
+				'delete_function',
 				[
 					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
-						`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
+					`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
 					`}`
 				].join("\n")
 			);
 			dataMap.set(
-				'delete', 
+				'delete',
 				[
 					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index')}`
 				].join("\n")
@@ -124,18 +124,18 @@ export class FunctionDefinition {
 				'create_function',
 				[
 					`${this.CREATE}${dataMap.get('function_name')}(){`,
-						`return ${
-							i == counterAsterisk - 1
-								? this.formBuilderGroup.join("")
-								: [
-									`this.${this.FORM_BUILDER}.array([`,
-									`this.${this.CREATE}${functionName}${i + 1}()`,
-									`])`
-								].join("\n")
-						}`,
+					`return ${
+						i == counterAsterisk - 1
+							? this.formBuilderGroup.join("")
+							: [
+								`this.${this.FORM_BUILDER}.array([`,
+								`this.${this.CREATE}${functionName}${i + 1}()`,
+								`])`
+							].join("\n")
+					}`,
 					`}`
 				]
-				.join("\n")
+					.join("\n")
 			);
 			dataMap.set(
 				'create',
@@ -160,19 +160,19 @@ export class FunctionDefinition {
 		return definition;
 	}
 
-	generateReturnFunction(): string[]{
+	generateReturnFunction(): string[] {
 		let returnFunction = this.keyNameDotNotation;
 		let count = 0;
 
 		for (let i = 0; i < this.keyNameDotNotation.length; i++) {
 			const item = this.keyNameDotNotation[i];
-			if (item == '*') {
+			if (item === '*') {
 				const currentParameter = this.parameters[count];
 				returnFunction[i] = ` as FormArray).at(${currentParameter})`
 				count++;
 			} else {
 				returnFunction[i] = `.get('${item}')`;
-				if (i == 0) {
+				if (i === 0) {
 					returnFunction[i] = `this.form${returnFunction[i]}`;
 				}
 			}

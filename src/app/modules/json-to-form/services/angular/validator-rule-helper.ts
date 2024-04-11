@@ -17,7 +17,7 @@ export class ValidatorRuleHelper {
     }
 
 
-    public static totalOfAsterisk(keyName: string[]){
+    public static totalOfAsterisk(keyName: string[]) {
 
     }
 
@@ -38,11 +38,11 @@ export class ValidatorRuleHelper {
         return indexName;
     }
 
-    public static removeParameters(n: string[], parameters: string[]):string[]{
-        
-        for(let i = n.length - 1; i >= 0; i--){
+    public static removeParameters(n: string[], parameters: string[]): string[] {
+
+        for (let i = n.length - 1; i >= 0; i--) {
             let item = n[i];
-            if (item != '*') {
+            if (item !== '*') {
                 break;
             }
             parameters.splice(-1, 1);
@@ -61,14 +61,14 @@ export class ValidatorRuleHelper {
     }
 
     public static bracketsNotation(string: string[]): string[] {
-        let id:any = []
+        let id: any = []
         string.forEach((v, index) => {
             //let v = item.split(".");
-            if(v.trim() == "*"){
-                v = '';;    
+            if (v.trim() == "*") {
+                v = '';;
             }
             id[index] = `[${v}]`;
-            if(index == 0){
+            if (index == 0) {
                 id[0] = v
             }
         });
@@ -76,7 +76,7 @@ export class ValidatorRuleHelper {
         return id;
     }
 
-    public static validateObject(obj: any, names: string = '', errors:string[] = []): string[]{
+    public static validateObject(obj: any, names: string = '', errors: string[] = []): string[] {
         return Object.keys(obj)
             .map((k: any) => {
                 let v = obj[k];
@@ -98,10 +98,9 @@ export class ValidatorRuleHelper {
     }
 
 
-    public static parseStringRule(rule: string | any[]): any[]
-    {
+    public static parseStringRule(rule: string | any[]): any[] {
         if (typeof rule == 'string') {
-            const afterColon = rule.substr( rule.indexOf(':') + 1 );
+            const afterColon = rule.substr(rule.indexOf(':') + 1);
 
             if (rule.indexOf(':') != -1) {
                 return [
@@ -113,7 +112,7 @@ export class ValidatorRuleHelper {
         }
 
         if (Array.isArray(rule)) {
-            if(!rule) {
+            if (!rule) {
                 return [
                     'in',
                     []
@@ -126,23 +125,23 @@ export class ValidatorRuleHelper {
                 rule
             ];
         }
-        
+
         return [
             rule,
             []
         ];
     }
-    
+
     public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false): string {
 
         if (string == null || string == '') {
             return '';
         }
-            
+
         const camelCase = string
             .toLowerCase()
             .match(/[A-Z0-9]+/ig)
-            .map(function (word: any, i:number) {
+            .map(function (word: any, i: number) {
                 if (!i) return word;
                 return word[0].toUpperCase() + word.slice(1); // return newly formed string
             })
@@ -162,10 +161,10 @@ export class ValidatorRuleHelper {
     //'users|*|address.number'
     //['users', '*', 'address.number']
     public static dotNotation(string: string[]): string[] {
-        if(string.length <= 0){
+        if (string.length <= 0) {
             return [];
         }
-        
+
         return string.join(".")
             .split('*')
             .map(str => {
@@ -174,7 +173,7 @@ export class ValidatorRuleHelper {
             .join("|*|")
             .split("|")
             .filter(el => el);
-    }   
+    }
 
     public static splitRules(obj: any): any {
 
@@ -185,7 +184,7 @@ export class ValidatorRuleHelper {
                     [k]: this.splitRules(v)
                 }
             }
-            
+
             //split and then converts into array of rules
             if (typeof v === 'string') {
                 return {
@@ -200,7 +199,7 @@ export class ValidatorRuleHelper {
             }
 
             return null;
-            
+
         });
 
         let asObject = Object.assign({}, ...rules);
