@@ -26,11 +26,11 @@ export class ReactiveDrivenHtml {
   public generate() : string[] {
     return [
       `<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
-      `<pre>{{ ${this.formName}.value | json }}</pre>`,
-      this.reactiveDrivenHtml(this.rules),
-      `<button type="submit" class="btn btn-primary">`,
-      `Submit`,
-      `</button>`,
+        `<pre>{{ ${this.formName}.value | json }}</pre>`,
+          this.reactiveDrivenHtml(this.rules),
+        `<button type="submit" class="btn btn-primary">`,
+        `Submit`,
+        `</button>`,
       `</form>`,
     ];
   }
@@ -40,20 +40,23 @@ export class ReactiveDrivenHtml {
   public reactiveDrivenHtml(object: { [key: string]: any }, names: string = '', parameters: string[] = [], lastFunctionDefinition: any = []): string {
     let drivenHtml = Object.keys(object)
       .map((key: string) => {
-        let value = object[key];
-        let keyNameSplit = key.split('.');
-        let firstKeyNameBeforeDot = keyNameSplit[0];
+        const value = object[key];
+        const isValueAnArray = Array.isArray(value);
+        const isValueAnObject = Object.prototype.toString.call(value) === '[object Object]';
+        const rest = names.length ? '.' + key : key;
+        const completeKeyName = (names + rest).split('.');
+        const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] === '*'
+            ? true
+            : false;
+        const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+        const keyNameSplit = key.split('.');
+        const firstKeyNameBeforeDot = keyNameSplit[0];
         let functionDefinition: Definition = {
-          get: [],
-          lastFunctionDefinition: new Map(),
-          formBuilder: []
+            get: [],
+            lastFunctionDefinition: new Map(),
+            formBuilder: []
         };
-        let rest = names.length > 0 ? '.' + key : key;
-        let completeKeyName = (names + rest).split('.');
-        const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] == '*'
-          ? true
-          : false;
-        this.dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+        this.dotNotation = dotNotation;
 
         if (key.trim().startsWith('$')) {
           return '';
@@ -71,7 +74,8 @@ export class ReactiveDrivenHtml {
           }
         }
 
-        if (Object.prototype.toString.call(value) == '[object Object]') {
+        //ex: { keyName: {} }
+        if (isValueAnObject) {
           if (!completeKeyNameEndsWithAsterisk){
             return [
               `<div formGroupName="${key}">`,
@@ -81,36 +85,10 @@ export class ReactiveDrivenHtml {
             .join('\n');
           }
 
-          let formArrayOpenTag: string[] = []
-          let formArrayCloseTag: string[] = [];
-          functionDefinition.get.forEach((item: Map<string, string>, i: number) => {
-            const formArrayName: string = i <= 0
-              ? `formArrayName="${firstKeyNameBeforeDot}"`
-              : `[formArrayName]="${item.get('second_to_last_index')}"`;
-
-            formArrayOpenTag.push(
-              `<fieldset ${formArrayName}>
-                <pre>{{ ${item.get('get_with_parameters')}.errors | json }}</pre>
-                <div class="btn-group">
-                  <button type="button" class="btn btn-primary btn-block btn-sm" (click)="${item.get('create')}">ADD ${item.get('function_name')}</button>
-                </div>
-                <div
-                  *ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${/*_parametersAux[pos + (i + 1)]*/ item.get('last_index')} = index;"
-                  ${
-                    i == functionDefinition.get.length - 1
-                      ? `[formGroupName]="${item.get('last_index')}"`
-                      : ``
-                  }
-                >
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-danger btn-sm" (click)="${item.get('delete')}">DELETE ${item.get('function_name')}</button>
-                  </div>`
-            );
-
-            formArrayCloseTag.push('</div>');
-            formArrayCloseTag.push('</fieldset>');
-          });
-
+          //ex: { keyName.*: {} }{
+          const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
+            functionDefinition, firstKeyNameBeforeDot, isValueAnObject
+          );
           const FORM_ARRAY: string[] = [
             formArrayOpenTag.join("\n"),
               this.reactiveDrivenHtml(value, names + rest, parameters, lastFunctionDefinition),
@@ -124,20 +102,17 @@ export class ReactiveDrivenHtml {
           return FORM_ARRAY.join("\n");
         }
        
-        //ex: keyName: []
-        if (Array.isArray(value)) {
+        //ex: { keyName: [] }
+        if (isValueAnArray) {
           const rules = value;
           const keyNameDotNotation: string = completeKeyName.join(".");
           let formControlName = 'formControlName';
           let getField = ValidatorRuleHelper.camelCasedString(
-            this
-              .dotNotation
-              .filter((el: string) => el != '*')
-              .join(""),
+            this.dotNotation.filter((el: string) => el !== '*').join(""),
             true    
           );
           let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
-          let get:any = lastFunctionDefinition[lastFunctionDefinition.length - 1];
+          let get: any = lastFunctionDefinition[lastFunctionDefinition.length - 1];
           let id = this.dotNotation[this.dotNotation.length - 1];
           let index = firstKeyNameBeforeDot;
          
@@ -145,8 +120,8 @@ export class ReactiveDrivenHtml {
           if (lastFunctionDefinition.length > 0) {
             let getId = `.get('${id}')`;
 
-            if(id == '*'){
-              getId = ''
+            if(id === '*'){
+              getId = '';
               formControlName = '[formControlName]';
               index = get.lastFunctionDefinition.get('last_index');
             }
@@ -156,7 +131,7 @@ export class ReactiveDrivenHtml {
 
           const ngClass = `[class.is-invalid]="${isFieldValid}"`;
           const keyNameWithoutAsterisk = this.dotNotation.filter((el:string) => el != '*').join("");
-          const newIndex = id == '*' ? `{{ ${index} }}` : index;
+          const newIndex = id === '*' ? `{{ ${index} }}` : index;
           let INPUTS: {
             [key:string]: string
           } = {
@@ -194,7 +169,7 @@ export class ReactiveDrivenHtml {
             ].join('\n')
           };
 
-          const FORM = rules.reduce((form, rule) => {
+          const FORM = rules.reduce((form: any, rule: any) => {
             const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
             if (ruleName === 'html') {
@@ -211,36 +186,14 @@ export class ReactiveDrivenHtml {
             input: INPUTS.text
           });
 
+          //ex.*: { keyName: [] }
           if (completeKeyNameEndsWithAsterisk) {
+            const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
+              functionDefinition, firstKeyNameBeforeDot, isValueAnObject
+            );
+            
             parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
             lastFunctionDefinition.pop();
-            let formArrayOpenTag: string[] = [];
-            let formArrayCloseTag: string[] = [];
-            let deleteButton: string[] = [];
-           
-            functionDefinition.get.forEach((item: any, i: number) => {
-              let formArrayName: string = i <= 0
-                ? `formArrayName="${firstKeyNameBeforeDot}"`
-                : `[formArrayName]="${item.get('second_to_last_index')}"`;
-
-              deleteButton.push([
-                `<button type="button" (click)="${item.get('delete')}" class="btn btn-danger btn-sm">`,
-                  `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span> Delete`,
-                `</button>`
-              ].join('\n'));
-
-              formArrayOpenTag.push([
-                `<div class="btn-group">`,
-                  `<button type="button" (click)="${item.get('get_with_parameters')}.push(create${item.get('function_name')}())" class="btn btn-primary btn-sm">add ${item.get('function_name')}</button>`,
-                `</div>`,
-                `<div
-                  ${formArrayName}
-                  *ngFor="let h of ${item.get('get_with_parameters')}!.controls; let ${item.get('last_index')} = index;"
-                >`,
-                i < functionDefinition.get.length - 1 ? deleteButton[i] : ''
-              ].join('\n'));
-              formArrayCloseTag.push('</div>');
-            });
 
             return [
               ...formArrayOpenTag,
@@ -248,7 +201,7 @@ export class ReactiveDrivenHtml {
                 `<label for="${id}">${keyNameDotNotation}</label>`,
                 `<div class="input-group">`,
                   `${FORM.input}`,
-                  deleteButton.length > 0 ? deleteButton[deleteButton.length - 1] : '',
+                  //deleteButton.length > 0 ? deleteButton[deleteButton.length - 1] : '',
                   `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
                     `${FORM.validators.join("")}`,
                   `</div>`,
@@ -276,16 +229,16 @@ export class ReactiveDrivenHtml {
   }
 
   protected getErrorsMessages({ getField, ruleName, ruleParameters, keyNameDotNotation }: any){
-    if (ruleName == 'required') {
+    if (ruleName === 'required') {
       return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
     }
-    if (ruleName == 'min') {
+    if (ruleName === 'min') {
       return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
     }
-    if (ruleName == 'max') {
+    if (ruleName === 'max') {
       return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
     }
-    if (ruleName == 'email') {
+    if (ruleName === 'email') {
       return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
     }
    
@@ -294,5 +247,69 @@ export class ReactiveDrivenHtml {
 
   private setRules(rules: Rules) {
     this.rules = ValidatorRuleHelper.splitRules(rules);
+  }
+
+  private generateDeleteButton(item: Map<string, string>): string[] {
+    return [
+      `<div class="btn-group">`,
+        `<button`,
+          	`type="button"`,
+            `(click)="${item.get('delete')}"`, 
+            `class="btn btn-danger btn-sm"`,
+        `>`,
+          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+          `DELETE ${item.get('function_name')}`,
+        `</button>`,
+      `</div>`
+    ];
+  }
+
+  private generateAddButton(item: Map<string, string>): string[] {
+    return [
+      `<div class="btn-group">`,
+        `<button`,
+          `type="button" `,
+          `class="btn btn-primary btn-block btn-sm" `,
+          `(click)="${item.get('create')}"`,
+        `>`,
+          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+          `ADD ${item.get('function_name')}`,
+        `</button>`,
+      `</div>`
+    ];
+  }
+
+  private generateFormArray(
+    functionDefinition: Definition, 
+    firstKeyNameBeforeDot: string,
+    isValueAnObject: boolean
+  ): [string[], string[]] {
+    const formArrayOpenTag: string[] = []
+    const formArrayCloseTag: string[] = [];
+
+    functionDefinition.get.forEach((item: Map<string, string>, i: number) => {
+      const formArrayName: string = i <= 0
+        ? `formArrayName="${firstKeyNameBeforeDot}"`
+        : `[formArrayName]="${item.get('second_to_last_index')}"`;
+
+      formArrayOpenTag.push(
+        `<fieldset ${formArrayName}>
+          ${this.generateAddButton(item).join("\n")}
+          <div
+            *ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${item.get('last_index')} = index;"
+            ${
+              isValueAnObject === true && i === functionDefinition.get.length - 1
+                ? `[formGroupName]="${item.get('last_index')}"`
+                : ''
+            }
+          >
+          `
+      );
+      formArrayOpenTag.push(this.generateDeleteButton(item).join("\n"));
+      formArrayCloseTag.push('</div>');
+      formArrayCloseTag.push('</fieldset>');
+    });
+
+    return [formArrayOpenTag, formArrayCloseTag];
   }
 }

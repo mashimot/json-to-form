@@ -21,11 +21,11 @@ export class ValidatorRuleHelper {
 
     }
 
-    public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]) {
+    public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]): string[] {
         let indexName: string[] = []
         let index = 0;
         for (let i = completeKeyName.length - 1; i >= 0; i--) {
-            if (completeKeyName[i] != '*') {
+            if (completeKeyName[i] !== '*') {
                 break;
             }
 

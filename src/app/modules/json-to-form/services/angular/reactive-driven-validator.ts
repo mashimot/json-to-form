@@ -23,10 +23,7 @@ export class Validator {
     public get() {
         return this.rules.reduce((acc: string[], rule: any) => {
             acc.push(
-                this.validate(
-                    '',
-                    rule
-                )
+                this.validate('', rule)
             );
 
             return acc;
@@ -97,7 +94,7 @@ export class ReactiveDrivenValidator {
         this.setRules(rules);
     }
 
-    public generate() {
+    public generateFormBuilder() {
         return [
             `this.${this._options.formName} = this.formBuilder.group({`,
             this.reactiveDrivenValidators(this.rules),
@@ -109,7 +106,7 @@ export class ReactiveDrivenValidator {
         let initVariables: string[] = [];
         let initObservables: string[] = [];
         let definitions: string[] = [];
-        let init: string[] = this.generate();
+        let init: string[] = this.generateFormBuilder();
 
         this.functions.forEach((item: any) => {
             if (item.get) {
