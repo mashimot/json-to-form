@@ -27,7 +27,7 @@ export class FunctionDefinition {
 		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
 		let definition: Definition = {
 			get: [],
-			lastFunctionDefinition: new Map(),
+			parameters: [],
 			formBuilder: []
 		};
 
@@ -42,6 +42,8 @@ export class FunctionDefinition {
 		const returnFunction = this.generateReturnFunction();
 		const parameters = [...this.parameters];
 
+		definition.parameters = parameters;
+		
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
 			let dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
@@ -153,14 +155,10 @@ export class FunctionDefinition {
 			`]),`
 		];
 
-		if (definition.get.length > 0) {
-			definition.lastFunctionDefinition = definition.get[definition.get.length - 1];
-		}
-
 		return definition;
 	}
 
-	generateReturnFunction(): string[] {
+	private generateReturnFunction(): string[] {
 		let returnFunction = this.keyNameDotNotation;
 		let count = 0;
 

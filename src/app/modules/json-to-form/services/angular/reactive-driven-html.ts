@@ -16,7 +16,7 @@ export class ReactiveDrivenHtml {
   }
 
   public setFormName(formName: string): void {
-    this.formName = formName
+    this.formName = formName;
   }
 
   public setTriggerValidationOnSubmit(triggerValidationOnSubmit: boolean): void {
@@ -37,7 +37,7 @@ export class ReactiveDrivenHtml {
 
   public dotNotation: string[] = [];
 
-  public reactiveDrivenHtml(object: { [key: string]: any }, names: string = '', parameters: string[] = [], lastFunctionDefinition: any = []): string {
+  public reactiveDrivenHtml(object: { [key: string]: any }, names: string = '', parameters: string[] = [], nestedFormArray: any = []): string {
     let drivenHtml = Object.keys(object)
       .map((key: string) => {
         const value = object[key];
@@ -53,7 +53,6 @@ export class ReactiveDrivenHtml {
         const firstKeyNameBeforeDot = keyNameSplit[0];
         let functionDefinition: Definition = {
             get: [],
-            lastFunctionDefinition: new Map(),
             formBuilder: []
         };
         this.dotNotation = dotNotation;
@@ -63,15 +62,16 @@ export class ReactiveDrivenHtml {
         }
        
         if (completeKeyNameEndsWithAsterisk) {
-          parameters = parameters.concat(ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit));
-          functionDefinition = new FunctionDefinition(
-            parameters,
-            completeKeyName
-          ).get();
-         
-          if (functionDefinition.lastFunctionDefinition.size > 0) {
-            lastFunctionDefinition.push(functionDefinition);
-          }
+			parameters = [ ...parameters, ...ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit) ];
+			functionDefinition = new FunctionDefinition(
+				parameters,
+				completeKeyName
+			)
+			.get();
+
+			if(functionDefinition.get.length > 0){
+				nestedFormArray.push(functionDefinition.get[functionDefinition.get.length - 1]);
+			}
         }
 
         //ex: { keyName: {} }
@@ -79,7 +79,7 @@ export class ReactiveDrivenHtml {
           if (!completeKeyNameEndsWithAsterisk){
             return [
               `<div formGroupName="${key}">`,
-              `${this.reactiveDrivenHtml(value, names + rest, parameters, lastFunctionDefinition)}`,
+              `${this.reactiveDrivenHtml(value, names + rest, parameters, nestedFormArray)}`,
               `</div>`
             ]
             .join('\n');
@@ -91,13 +91,13 @@ export class ReactiveDrivenHtml {
           );
           const FORM_ARRAY: string[] = [
             formArrayOpenTag.join("\n"),
-              this.reactiveDrivenHtml(value, names + rest, parameters, lastFunctionDefinition),
+              this.reactiveDrivenHtml(value, names + rest, parameters, nestedFormArray),
             formArrayCloseTag.join("\n"),
           ];
          
           //refresh the parameters list
           parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
-          lastFunctionDefinition.pop();
+          nestedFormArray.pop();
 
           return FORM_ARRAY.join("\n");
         }
@@ -112,25 +112,25 @@ export class ReactiveDrivenHtml {
             true    
           );
           let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
-          let get: any = lastFunctionDefinition[lastFunctionDefinition.length - 1];
           let id = this.dotNotation[this.dotNotation.length - 1];
           let index = firstKeyNameBeforeDot;
-         
+
           //key has asterisk
-          if (lastFunctionDefinition.length > 0) {
+          if (nestedFormArray.length > 0) {
+            const lastFormArray = nestedFormArray[nestedFormArray.length - 1];
             let getId = `.get('${id}')`;
 
             if(id === '*'){
               getId = '';
               formControlName = '[formControlName]';
-              index = get.lastFunctionDefinition.get('last_index');
+              index = lastFormArray.get('last_index');
             }
-            getField = `${get.lastFunctionDefinition.get('get_at')}${getId}`;
+            getField = `${lastFormArray.get('get_at')}${getId}`;
             isFieldValid = `!${getField}?.valid`
           }
 
           const ngClass = `[class.is-invalid]="${isFieldValid}"`;
-          const keyNameWithoutAsterisk = this.dotNotation.filter((el:string) => el != '*').join("");
+          const keyNameWithoutAsterisk = this.dotNotation.filter((el:string) => el !== '*').join("");
           const newIndex = id === '*' ? `{{ ${index} }}` : index;
           let INPUTS: {
             [key:string]: string
@@ -193,7 +193,7 @@ export class ReactiveDrivenHtml {
             );
             
             parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
-            lastFunctionDefinition.pop();
+            nestedFormArray.pop();
 
             return [
               ...formArrayOpenTag,

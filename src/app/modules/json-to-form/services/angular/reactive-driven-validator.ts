@@ -1,5 +1,5 @@
-import { Definition } from './models/Definition';
 import { FunctionDefinition } from './function-definition';
+import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -214,7 +214,6 @@ export class ReactiveDrivenValidator {
                 const firstNameBeforeDot = keyNameSplit[0];
                 let functionDefinition: Definition = {
                     get: [],
-                    lastFunctionDefinition: new Map(),
                     formBuilder: []
                 };
 
@@ -320,7 +319,7 @@ export class ReactiveDrivenValidator {
 
                 return '';
             })
-                .join("\n");
+            .join("\n");
     }
 
     private generateGetterFunction(completeKeyName: string[], dotNotation: string[]): void {
@@ -331,7 +330,7 @@ export class ReactiveDrivenValidator {
                 .join(""),
             true
         );
-    
+
         this.getters.push(
             `get ${getterFunctionName}(): FormControl {
                 return this.f.get('${keyNameDotNotation}') as FormControl;
