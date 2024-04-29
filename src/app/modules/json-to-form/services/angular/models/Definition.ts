@@ -6,5 +6,4 @@ export interface Definition {
         get_name: string;
         values: string[];
     };
-    parameters?: string[];
 }

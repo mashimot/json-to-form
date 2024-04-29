@@ -38,7 +38,7 @@ export class ReactiveDrivenHtml {
   public dotNotation: string[] = [];
 
   public reactiveDrivenHtml(object: { [key: string]: any }, names: string = '', parameters: string[] = [], nestedFormArray: any = []): string {
-    let drivenHtml = Object.keys(object)
+    const reactiveDrivenHtml = Object.keys(object)
       .map((key: string) => {
         const value = object[key];
         const isValueAnArray = Array.isArray(value);
@@ -55,23 +55,22 @@ export class ReactiveDrivenHtml {
             get: [],
             formBuilder: []
         };
-        this.dotNotation = dotNotation;
 
         if (key.trim().startsWith('$')) {
           return '';
         }
-       
-        if (completeKeyNameEndsWithAsterisk) {
-			parameters = [ ...parameters, ...ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit) ];
-			functionDefinition = new FunctionDefinition(
-				parameters,
-				completeKeyName
-			)
-			.get();
 
-			if(functionDefinition.get.length > 0){
-				nestedFormArray.push(functionDefinition.get[functionDefinition.get.length - 1]);
-			}
+        if (completeKeyNameEndsWithAsterisk) {
+          parameters = [...parameters, ...ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)];
+          functionDefinition = new FunctionDefinition(
+            parameters,
+            completeKeyName
+          )
+            .get();
+
+          if (functionDefinition.get.length > 0) {
+            nestedFormArray.push(functionDefinition.get[functionDefinition.get.length - 1]);
+          }
         }
 
         //ex: { keyName: {} }
@@ -108,11 +107,11 @@ export class ReactiveDrivenHtml {
           const keyNameDotNotation: string = completeKeyName.join(".");
           let formControlName = 'formControlName';
           let getField = ValidatorRuleHelper.camelCasedString(
-            this.dotNotation.filter((el: string) => el !== '*').join(""),
+            dotNotation.filter((el: string) => el !== '*').join(""),
             true    
           );
           let isFieldValid = `isFieldValid('${keyNameDotNotation}')`;
-          let id = this.dotNotation[this.dotNotation.length - 1];
+          let id = dotNotation[dotNotation.length - 1];
           let index = firstKeyNameBeforeDot;
 
           //key has asterisk
@@ -130,50 +129,22 @@ export class ReactiveDrivenHtml {
           }
 
           const ngClass = `[class.is-invalid]="${isFieldValid}"`;
-          const keyNameWithoutAsterisk = this.dotNotation.filter((el:string) => el !== '*').join("");
+          const keyNameWithoutAsterisk = dotNotation.filter((el:string) => el !== '*').join("");
           const newIndex = id === '*' ? `{{ ${index} }}` : index;
-          let INPUTS: {
-            [key:string]: string
-          } = {
-            text: `<input type="text" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            file: `<input type="file" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            password: `<input type="password" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            email: `<input type="email" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            number: `<input type="number" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            date: `<input type="date" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-            textarea: `<textarea ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
-            select: [
-              `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-                `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
-                `{{ data | json }}`,
-                `</option>`,
-              `</select>`
-            ].join('\n'),
-            radio: [
-              `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
-                `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
-                  `<div class="form-check">`,
-                    `<input type="radio" formControlName="${newIndex}" [value]="data" ${ngClass}>{{ data | json }}`,
-                  `</div>`,
-                `</div>`,
-              `</div>`
-            ].join('\n'),
-            checkbox: [
-              `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
-                `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,                                    
-                  `<div class="form-check">`,
-                    `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="data"> {{ data }}`,
-                  `</div>`,
-                `</div>`,
-              `</div>`
-            ].join('\n')
-          };
-
+          const INPUTS = this.generateFormInput(
+            formControlName,
+            index,
+            newIndex,
+            ngClass,
+            keyNameDotNotation,
+            keyNameWithoutAsterisk
+          );
           const FORM = rules.reduce((form: any, rule: any) => {
             const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
             if (ruleName === 'html') {
-              form.input = INPUTS[ruleParameters[0]] || INPUTS.text;
+              const defaultInput = INPUTS.text;
+              form.input = INPUTS[ruleParameters[0]] || defaultInput;
             }
 
             form.validators.push(
@@ -185,33 +156,21 @@ export class ReactiveDrivenHtml {
             validators: [],
             input: INPUTS.text
           });
-
+          let formArrayOpenTag: string[] = [];
+          let formArrayCloseTag: string[] = [];
+          
           //ex.*: { keyName: [] }
           if (completeKeyNameEndsWithAsterisk) {
-            const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
+            [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
               functionDefinition, firstKeyNameBeforeDot, isValueAnObject
             );
             
             parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
             nestedFormArray.pop();
-
-            return [
-              ...formArrayOpenTag,
-              `<div class="form-group col-md-12">`,
-                `<label for="${id}">${keyNameDotNotation}</label>`,
-                `<div class="input-group">`,
-                  `${FORM.input}`,
-                  //deleteButton.length > 0 ? deleteButton[deleteButton.length - 1] : '',
-                  `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
-                    `${FORM.validators.join("")}`,
-                  `</div>`,
-                `</div>`,
-              `</div>`,
-              ...formArrayCloseTag
-            ].join("\n");
           }
 
           return [
+            formArrayOpenTag.join("\n"),
             `<div class="form-group">`,
               `<label for="${id}">${keyNameDotNotation}</label>`,
               `${FORM.input}`,
@@ -219,13 +178,14 @@ export class ReactiveDrivenHtml {
                 `${FORM.validators.join("")}`,
               `</div>`,
             `</div>`,
+            formArrayCloseTag.join("\n")
           ].join("\n");
         }
 
         return '';
       }).join("\n");
 
-    return drivenHtml;
+    return reactiveDrivenHtml;
   }
 
   protected getErrorsMessages({ getField, ruleName, ruleParameters, keyNameDotNotation }: any){
@@ -247,6 +207,59 @@ export class ReactiveDrivenHtml {
 
   private setRules(rules: Rules) {
     this.rules = ValidatorRuleHelper.splitRules(rules);
+  }
+
+  private generateFormInput(
+    // inputType: string, 
+    formControlName: string,
+    index: string,
+    newIndex: string,
+    ngClass: string,
+    keyNameDotNotation: string,
+    keyNameWithoutAsterisk: string
+  ): {
+    [key: string]: string
+  } {
+  // ): string {
+    let INPUTS: {
+      [key: string]: string
+    } = {
+      text: `<input type="text" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      file: `<input type="file" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      password: `<input type="password" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      email: `<input type="email" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      number: `<input type="number" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      date: `<input type="date" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+      textarea: `<textarea ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
+      select: [
+        `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
+          `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
+          `{{ data | json }}`,
+          `</option>`,
+        `</select>`
+      ].join('\n'),
+      radio: [
+        `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
+          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
+            `<div class="form-check">`,
+              `<input type="radio" formControlName="${newIndex}" [value]="data" ${ngClass}>{{ data | json }}`,
+            `</div>`,
+          `</div>`,
+        `</div>`
+      ].join('\n'),
+      checkbox: [
+        `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
+          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,                                    
+            `<div class="form-check">`,
+              `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="data"> {{ data }}`,
+            `</div>`,
+          `</div>`,
+        `</div>`
+      ].join('\n')
+    };
+
+    return INPUTS;
+    // return INPUTS[inputType];
   }
 
   private generateDeleteButton(item: Map<string, string>): string[] {

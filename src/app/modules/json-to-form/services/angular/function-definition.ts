@@ -6,7 +6,6 @@ export class FunctionDefinition {
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
 
-	lastFunctionDefinition: string[] = [];
 	formBuilderGroup: string[] = [];
 	parameters: string[] = [];
 	completeKeyName: string[] = [];
@@ -18,7 +17,7 @@ export class FunctionDefinition {
 		formBuilderGroup: string[] = []
 	) {
 		this.parameters = parameters || [];
-		this.completeKeyName = completeKeyName
+		this.completeKeyName = completeKeyName;
 		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
 	}
@@ -27,7 +26,6 @@ export class FunctionDefinition {
 		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
 		let definition: Definition = {
 			get: [],
-			parameters: [],
 			formBuilder: []
 		};
 
@@ -42,8 +40,6 @@ export class FunctionDefinition {
 		const returnFunction = this.generateReturnFunction();
 		const parameters = [...this.parameters];
 
-		definition.parameters = parameters;
-		
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
 			let dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
@@ -59,19 +55,19 @@ export class FunctionDefinition {
 
 			dataMap.set(
 				'parameters',
-				`(${parameters.map((p: any) => `${p}`).join(",")})`
+				`(${parameters.map((p: string) => `${p}`).join(",")})`
 			);
 			dataMap.set(
 				'parameters_typed',
-				`(${parameters.map((p: any) => `${p}:number`).join(",")})`
+				`(${parameters.map((p: string) => `${p}:number`).join(",")})`
 			);
 			dataMap.set(
 				'parameters_with_last_index',
-				`(${parametersWithLastIndex.map((p: any) => `${p}`).join(",")})`
+				`(${parametersWithLastIndex.map((p: string) => `${p}`).join(",")})`
 			);
 			dataMap.set(
 				'parameters_with_last_index_typed',
-				`(${parametersWithLastIndex.map((p: any) => `${p}:number`).join(",")})`
+				`(${parametersWithLastIndex.map((p: string) => `${p}:number`).join(",")})`
 			);
 			dataMap.set(
 				'function_name', `${functionName}${i > 0 ? i : ''}`);
@@ -81,7 +77,7 @@ export class FunctionDefinition {
 			);
 			dataMap.set(
 				'get_with_parameters',
-				`${getFunctionName}(${parameters.map((p: any) => `${p}`).join(",")})`
+				`${getFunctionName}(${parameters.map((p: string) => `${p}`).join(",")})`
 			);
 			dataMap.set(
 				'get_at',
