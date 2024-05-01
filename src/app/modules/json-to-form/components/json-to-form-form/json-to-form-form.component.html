@@ -1,124 +1,126 @@
 <mat-card class="mat-elevation-z8 card-prop">
     <mat-card-content>
-        <mat-card-title>Rules for Key Names</mat-card-title>
-        <ul>
-            <li>Keys have to be surrounded by double quotes.</li>
-            <li>White Spaces are not allowed.</li>            
-            <li>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</li>
-        </ul>
-        <mat-divider inset></mat-divider>
-        <mat-card-title>Form controls for Array of Objects</mat-card-title>
-        <ul>
-            <li>
-                If the key name ends with a dot followed by an asterisk (<b>.*</b>): It's going to be a HTML of an Array of Objects or Elements.
-                <ul> 
-                    <li>Ex: "users.*" Array of users.</li>
-                    <li>Ex: "users.*.*" 2 level deep nested Array of users.</li>
-                </ul>
-            </li>
-        </ul>
+        <div class="rules">
+            <mat-card-title>Rules for Key Names</mat-card-title>
+            <ul>
+                <li>Keys have to be surrounded by double quotes.</li>
+                <li>White Spaces are not allowed.</li>            
+                <li>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</li>
+            </ul>
+        </div>
+        <mat-divider inset [style.margin-top]="'24px'" [style.margin-bottom]="'24px'"></mat-divider>
+        <div class="rules">
+            <mat-card-title>Form controls for Array of Objects</mat-card-title>
+            <ul>
+                <li>
+                    If the key name ends with a dot followed by an asterisk (<b>.*</b>): It's going to be a HTML of an Array of Objects or Elements.
+                    <ul> 
+                        <li>Ex: "users.*" Array of users.</li>
+                        <li>Ex: "users.*.*" 2 level deep nested Array of users.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
     </mat-card-content>
-    <!--
-    <mat-card-actions>
-        <h3>Examples</h3>
-        <section class="valid-examples">
-            <h6 class="text-success">Valid (Click below for examples)</h6>
-            <mat-selection-list [multiple]="false" color="primary">
-                <mat-list-option 
-                    class="mat-primary"
-                    *ngFor="let valid of examples.valid | keyvalue; let validIndex = index;"
-                    (click)="form.patchValue({json: valid.value}); onSubmit();"
-                >
-                    {{ valid.key }}
-                </mat-list-option>
-            </mat-selection-list>
-        </section>
-        <section class="invalid-examples">            
-            <h6 class="text-danger">Not Valid (Click below for examples)</h6>
-            <mat-selection-list [multiple]="false" color="primary">
-                <mat-list-option 
-                    class="mat-primary"
-                    *ngFor="let invalid of examples.invalid | keyvalue; let invalidIndex = index;"
-                    (click)="form.patchValue({json: invalid.value}); onSubmit();"
-                >
-                    {{ invalid.key }}
-                </mat-list-option>
-            </mat-selection-list>
-        </section>
-    </mat-card-actions>
-    -->
 </mat-card>
+<!-- <div 
+    fxLayout="row wrap" 
+>
+    <div fxFlex="80" fxFlex.xs="100">[flex=60]</div>
+    <div fxFlex="20" fxFlex.xs="100">[flex=60]</div>
+</div> -->
 
-<div>
+<div 
+    [style.margin-top]="'24px'"
+>
     <mat-card class="mat-elevation-z8 card-prop">
         <mat-card-content>
             <form [formGroup]="form" (ngSubmit)="onSubmit()">
-                <label for="__json">JSON</label>
-                <json-editor
-                    [options]="editorOptions"
-                    formControlName="json"
-                    [class.is-invalid]="isFieldValid('json')"
-                ></json-editor>
-                <ng-container *ngIf="form.get('json')?.errors">
-                    <div *ngIf="getField('json')!.errors?.invalidJson">
-                        <mat-error>
-                            Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
-                        </mat-error>
-                        <ng-container *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;">
+                <div class="form-field-json" [style.margin-bottom]="'12px'">
+                    <label for="__json">JSON</label>
+                    <json-editor
+                        [options]="editorOptions"
+                        formControlName="json"
+                        [class.is-invalid]="isFieldValid('json')"
+                    ></json-editor>
+                    <ng-container *ngIf="form.get('json')?.errors">
+                        <div *ngIf="getField('json')!.errors?.invalidJson">
                             <mat-error>
-                                <b style="white-space:pre;">{{ error }}</b>
+                                Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
                             </mat-error>
+                            <ng-container *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;">
+                                <mat-error>
+                                    <b style="white-space:pre;">{{ error }}</b>
+                                </mat-error>
+                            </ng-container>
+                        </div>
+                    </ng-container>
+                </div>
+                <div 
+                    fxLayout="row" 
+                    fxLayoutGap="30px"
+                    fxLayout.xs="row wrap" 
+                    fxLayoutGap.xs="0px"
+                >
+                    <div fxFlex="35" fxFlex.xs="100">
+                        <mat-form-field class="full-width-field">
+                            <mat-label>Main folder name</mat-label>
+                            <input type="text" matInput formControlName="path">
+                        </mat-form-field>
+
+                        <mat-form-field class="full-width-field">
+                            <mat-label>Feature name</mat-label>
+                            <input type="text" matInput formControlName="feature_name">
+                        </mat-form-field>
+                    </div>
+                    <div fxFlex="65" fxFlex.xs="100">
+                        <ng-container *ngIf="f.valid">
+                            <h1>Smart and Dumb Components</h1>
+                            <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
+                                <p>{{ 
+                                        sB | 
+                                        replace : ':path:' : path?.value | 
+                                        replace : ':feature_name:' : featureName?.value  
+                                    }}
+                                </p>                    
+                            </ng-container>
                         </ng-container>
                     </div>
-                </ng-container>
-
-                <mat-form-field class="full-width-field">
-                    <mat-label>Main Folder Name</mat-label>
-                    <input type="text" matInput formControlName="main_folder_name" >
-                </mat-form-field>
-
-                <mat-form-field class="full-width-field">
-                    <mat-label>Component Form Name</mat-label>
-                    <input type="text" matInput formControlName="component_form_name" >
-                </mat-form-field>
-                
-                <h1>Smart and Dumb Components</h1>
-                <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
-                    <p>{{ sB | replace : ':main_folder_name:' : f.get('main_folder_name')?.value }}</p>                    
-                </ng-container>
-                <p>
-                    {{ 
-                        'ng g c :main_folder_name:/components/:form_name:' | 
-                        replace : ':main_folder_name:' : f.get('main_folder_name')?.value | 
-                        replace : ':form_name:' : componentFormName?.value 
-                    }}
-                </p>
+                </div>
             </form>
         </mat-card-content>
     </mat-card>
 </div>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
-    <p class="animate__animated animate__headShake text-white">Loading...</p>
+    <div fxLayoutAlign="center center" [style.margin-top]="'24px'" [style.margin-bottom]="'24px'">
+        LOADING...
+        <mat-spinner></mat-spinner>
+    </div>
 </ng-container>
 <ng-container *ngIf="(formBuilder$ | async) as formBuilder">
     <ng-container *ngIf="!(isLoadingAction$ | async )">
         <ng-container *ngIf="form.valid">
-            <mat-card class="mat-elevation-z8 card-prop"> 
-                <h1>
-                    <strong>
-                        You need to import ReactiveFormsModule in order to create reactive forms
-                    </strong>
-                </h1>
-
-                <fieldset>
-                    <h1>{{ componentFormName?.value }}.component.ts</h1>
-                    <code id="__form-comonent"><pre>{{ formBuilder.component }}</pre></code>
-                </fieldset>
-                <fieldset>
-                    <h1>{{ componentFormName?.value }}.component.html</h1>
+            <mat-card class="mat-elevation-z8 card-prop" [style.margin-top]="'24px'"> 
+                <mat-card-header>
+                    <mat-card-title>
+                        <h1>
+                            <strong>
+                                You need to import ReactiveFormsModule in order to create reactive forms
+                            </strong>
+                        </h1>
+                    </mat-card-title>
+                </mat-card-header>
+                <mat-card-content>
+                    <h1>{{ featureNamePlusForm }}.component.ts</h1>
+                    <code id="__form-component"><pre>{{ formBuilder.component }}</pre></code>
+                </mat-card-content>
+            </mat-card>
+            <mat-card class="mat-elevation-z8 card-prop" [style.margin-top]="'24px'"> 
+                <mat-card-content>
+                    <h1>{{ featureNamePlusForm }}.component.html</h1>
                     <code id="__form-html"><pre>{{ formBuilder.html }}</pre></code>
-                </fieldset>
+                </mat-card-content>
             </mat-card>
         </ng-container>
     </ng-container>

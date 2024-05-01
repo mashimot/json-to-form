@@ -121,6 +121,7 @@ export class ReactiveDrivenValidator {
                     `${item.mockData.get_name}$(){`,
                     `return of(${JSON.stringify(item.mockData.values)})`,
                     `.pipe(
+                        shareReplay(1),
                         delay(2000)
                     )`,
                     `}`
@@ -129,12 +130,12 @@ export class ReactiveDrivenValidator {
                 initObservables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
-
+        
         let component = [
             `import { Component, OnInit } from '@angular/core'`,
             `import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn } from '@angular/forms'`,
             `import { Observable, of } from 'rxjs';`,
-            `import { delay } from 'rxjs/operators';`,
+            `import { delay, shareReplay } from 'rxjs/operators';`,
             `
             @Component({
                 selector: 'app-${this.componentName}',

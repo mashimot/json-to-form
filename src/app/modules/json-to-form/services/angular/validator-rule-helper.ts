@@ -51,7 +51,8 @@ export class ValidatorRuleHelper {
         return parameters;
     }
 
-    public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*(:?-[a-zA-Z][.0-9a-zA-Z]*)*$/;
+    // public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][.0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
+    public static htmlSelectorRe = /^[a-zA-Z][/0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][/0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
     public static validateHtmlSelector(selector: string): string | boolean {
         if (selector && !this.htmlSelectorRe.test(selector)) {
             return `Selector (${selector}) is invalid.`;
@@ -99,7 +100,7 @@ export class ValidatorRuleHelper {
 
 
     public static parseStringRule(rule: string | any[]): any[] {
-        if (typeof rule == 'string') {
+        if (typeof rule === 'string') {
             const afterColon = rule.substr(rule.indexOf(':') + 1);
 
             if (rule.indexOf(':') != -1) {

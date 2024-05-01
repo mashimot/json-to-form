@@ -26,12 +26,12 @@ export class JsonToFormFormComponent implements OnInit {
     public formBuilder$!: Observable<any>;
     public isLoadingAction$?: Observable<boolean>;
     public smartAndDumb: string[] = [
-        'ng g m :main_folder_name: --routing',
-        // 'ng g c :main_folder_name:/components/:main_folder_name:-form',
-        'ng g c :main_folder_name:/components/:main_folder_name:-list',
-        'ng g c :main_folder_name:/containers/:main_folder_name:',
-        'ng g s :main_folder_name:/services/:main_folder_name:',
-        'ng g i :main_folder_name:/models/:main_folder_name:',
+        'ng g m :path: --routing',
+        'ng g c :path:/components/:feature_name:-form',
+        'ng g c :path:/components/:feature_name:-list',
+        'ng g c :path:/containers/:feature_name:',
+        'ng g s :path:/services/:feature_name:',
+        'ng g i :path:/models/:feature_name:',
     ]
 
     constructor(
@@ -55,11 +55,11 @@ export class JsonToFormFormComponent implements OnInit {
                 this.json,
                 [JsonValidators.validateObject()]
             ],
-            main_folder_name: this.formBuilder.control('tasks', [
+            path: this.formBuilder.control('modules/tasks', [
                 Validators.required,
                 Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
             ]),
-            component_form_name: this.formBuilder.control('task-form', [
+            feature_name: this.formBuilder.control('task', [
                 Validators.required,
                 Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
             ]),
@@ -77,7 +77,6 @@ export class JsonToFormFormComponent implements OnInit {
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(response => {
-                    console.log('rr', response);
                     this.loadingService.isLoading(true)
                 }),
                 startWith(this.form.value),
@@ -89,7 +88,7 @@ export class JsonToFormFormComponent implements OnInit {
 
                     return true;
                 }),
-                debounceTime(500),
+                debounceTime(600),
                 distinctUntilChanged((a, b) => {
                     if (JSON.stringify(a) === JSON.stringify(b)) {
                         this.loadingService.isLoading(false);
@@ -97,13 +96,13 @@ export class JsonToFormFormComponent implements OnInit {
                     }
                     return false;
                 }),
-                switchMap(({ json, component_form_name }) => {
+                switchMap(({ json, feature_name }) => {
                     if (this.form.valid) {
                         json = typeof json === 'string'
                             ? JSON.parse(json)
                             : json;
                         const reactiveDrivenHtml = new ReactiveDrivenHtml(json);
-                        const reactiveDrivenValidator = new ReactiveDrivenValidator(json, component_form_name);
+                        const reactiveDrivenValidator = new ReactiveDrivenValidator(json, this.featureNamePlusForm);
                         const component = reactiveDrivenValidator.generateComponent();
                         const html = reactiveDrivenHtml.generate();
 
@@ -150,8 +149,16 @@ export class JsonToFormFormComponent implements OnInit {
         return this.form as FormGroup;
     }
 
-    get componentFormName(): FormControl {
-        return this.f.get('component_form_name') as FormControl;
+    get featureName(): FormControl {
+        return this.f.get('feature_name') as FormControl;
+    }
+
+    get path(): FormControl {
+        return this.f.get('path') as FormControl;
+    }
+
+    get featureNamePlusForm(): string {
+        return `${this.featureName?.value}-form`;
     }
 
     isFieldValid(field: string): boolean | undefined {
