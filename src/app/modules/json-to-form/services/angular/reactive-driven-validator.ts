@@ -199,7 +199,7 @@ export class ReactiveDrivenValidator {
         return component;
     }
 
-    protected reactiveDrivenValidators(object: { [key: string]: any }, names: string = '', parameters: string[] = []): string {
+    protected reactiveDrivenValidators(object: { [key: string]: any }, names: string = '', parameters: any[] = []): string {
         return Object.keys(object)
             .map((key: any) => {
                 const value = object[key];
@@ -220,11 +220,10 @@ export class ReactiveDrivenValidator {
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
+                
                 if (completeKeyNameEndsWithAsterisk) {
                     let formBuilderGroup: string[] = [];
-                    parameters = parameters.concat(
-                        ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)
-                    );
+                    parameters = [...parameters, rest ];
 
                     //"key.*": ['required', 'min:10']
                     if (isValueAnArray) {

@@ -66,7 +66,7 @@ export class ReactiveDrivenHtml {
         }
 
         if (completeKeyNameEndsWithAsterisk) {
-          parameters = [...parameters, ...ValidatorRuleHelper.defineIndexName(completeKeyName, keyNameSplit)];
+          parameters = [ ...parameters, rest ];
           functionDefinition = new FunctionDefinition(
             parameters,
             completeKeyName

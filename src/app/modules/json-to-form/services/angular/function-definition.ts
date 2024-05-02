@@ -16,7 +16,7 @@ export class FunctionDefinition {
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
 	) {
-		this.parameters = parameters || [];
+		this.parameters = [...(parameters || [])];
 		this.completeKeyName = completeKeyName;
 		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
@@ -24,11 +24,10 @@ export class FunctionDefinition {
 
 	public get(): Definition {
 		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
-		let definition: Definition = {
+		const definition: Definition = {
 			get: [],
 			formBuilder: []
 		};
-
 		let counterAsterisk = 0;
 		for (let i = this.keyNameDotNotation.length - 1; i >= 0; i--) {
 			if (this.keyNameDotNotation[i] !== '*') {
@@ -36,18 +35,24 @@ export class FunctionDefinition {
 			}
 			counterAsterisk++;
 		}
+		const parameters = this.parameters.map(parameter => {
+			return ValidatorRuleHelper.defineIndexName(this.completeKeyName, parameter.split('.')).join("");
+		});
+		// .map((parameter, index) => {
+		// 	return 'index' + index;
+		// });
+		const returnFunction = this.generateReturnFunction(parameters);
+		const lastIndex = parameters.length > 0 
+			? parameters[parameters.length - 1] 
+			: '';
 
-		const returnFunction = this.generateReturnFunction();
-		const parameters = [...this.parameters];
+		parameters.splice(-1, 1);
+		returnFunction.splice(-1, 2);
+		
 
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
-			let dataMap: Map<string, string> = new Map();
+			const dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
-			const lastIndex = parameters[parameters.length - 1];
-
-			parameters.splice(-1, 1);
-			returnFunction.splice(-1, 2);
-
 			const parametersWithLastIndex = [
 				...parameters,
 				lastIndex
@@ -154,14 +159,14 @@ export class FunctionDefinition {
 		return definition;
 	}
 
-	private generateReturnFunction(): string[] {
+	private generateReturnFunction(parameters: string[]): string[] {
 		let returnFunction = this.keyNameDotNotation;
 		let count = 0;
 
 		for (let i = 0; i < this.keyNameDotNotation.length; i++) {
 			const item = this.keyNameDotNotation[i];
 			if (item === '*') {
-				const currentParameter = this.parameters[count];
+				const currentParameter = parameters[count];
 				returnFunction[i] = ` as FormArray).at(${currentParameter})`
 				count++;
 			} else {
