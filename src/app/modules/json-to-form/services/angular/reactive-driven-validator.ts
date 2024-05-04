@@ -199,6 +199,7 @@ export class ReactiveDrivenValidator {
         return component;
     }
 
+    public huehue: number = 0;
     protected reactiveDrivenValidators(object: { [key: string]: any }, names: string = '', parameters: any[] = []): string {
         return Object.keys(object)
             .map((key: any) => {
@@ -220,10 +221,17 @@ export class ReactiveDrivenValidator {
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
-                
                 if (completeKeyNameEndsWithAsterisk) {
                     let formBuilderGroup: string[] = [];
-                    parameters = [...parameters, rest ];
+                    parameters = parameters.concat(
+                        (keyNameSplit as string[])
+                            .filter(n => n === '*')
+                            .map((p, i) => {
+                                const count = (parameters[parameters.length - 1] || 0)
+                                return count + (i + 1);
+                            })
+                    );
+                    console.log('this.huehue', this.huehue)
 
                     //"key.*": ['required', 'min:10']
                     if (isValueAnArray) {
@@ -255,6 +263,7 @@ export class ReactiveDrivenValidator {
                 if (isValueAnObject) {
                     //key has asterisk
                     if (completeKeyNameEndsWithAsterisk) {
+                        this.huehue++;
                         parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
 
                         return [
@@ -308,6 +317,7 @@ export class ReactiveDrivenValidator {
                         }
                     }
 
+                    this.huehue++;
                     parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
 
                     if (completeKeyNameEndsWithAsterisk) { //key has asterisk

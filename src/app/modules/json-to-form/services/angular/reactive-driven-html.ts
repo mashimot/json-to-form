@@ -66,7 +66,14 @@ export class ReactiveDrivenHtml {
         }
 
         if (completeKeyNameEndsWithAsterisk) {
-          parameters = [ ...parameters, rest ];
+          parameters = parameters.concat(
+            (keyNameSplit as string[])
+              .filter(n => n === '*')
+              .map((p, i: any) => {
+                  const count = (parameters[parameters.length - 1] || 0);
+                  return count + (i + 1);
+              })
+          );          
           functionDefinition = new FunctionDefinition(
             parameters,
             completeKeyName

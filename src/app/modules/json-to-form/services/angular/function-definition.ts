@@ -5,18 +5,17 @@ export class FunctionDefinition {
 	private CREATE: string = 'create';
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
-
-	formBuilderGroup: string[] = [];
-	parameters: string[] = [];
-	completeKeyName: string[] = [];
-	keyNameDotNotation: string[] = [];
+	private formBuilderGroup: string[] = [];
+	private parameters: string[] = [];
+	private completeKeyName: string[] = [];
+	private keyNameDotNotation: string[] = [];
 
 	constructor(
 		parameters: string[],
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
 	) {
-		this.parameters = [...(parameters || [])];
+		this.parameters = (parameters || []).map(p => `index${p}`);
 		this.completeKeyName = completeKeyName;
 		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
@@ -24,10 +23,11 @@ export class FunctionDefinition {
 
 	public get(): Definition {
 		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
-		const definition: Definition = {
+		let definition: Definition = {
 			get: [],
 			formBuilder: []
 		};
+
 		let counterAsterisk = 0;
 		for (let i = this.keyNameDotNotation.length - 1; i >= 0; i--) {
 			if (this.keyNameDotNotation[i] !== '*') {
@@ -35,24 +35,19 @@ export class FunctionDefinition {
 			}
 			counterAsterisk++;
 		}
-		const parameters = this.parameters.map(parameter => {
-			return ValidatorRuleHelper.defineIndexName(this.completeKeyName, parameter.split('.')).join("");
-		});
-		// .map((parameter, index) => {
-		// 	return 'index' + index;
-		// });
-		const returnFunction = this.generateReturnFunction(parameters);
-		const lastIndex = parameters.length > 0 
-			? parameters[parameters.length - 1] 
-			: '';
-
-		parameters.splice(-1, 1);
-		returnFunction.splice(-1, 2);
-		
+		console.log('parameters -> ', this.parameters)
+		const returnFunction = this.generateReturnFunction();
+		const parameters = [...this.parameters];
 
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
-			const dataMap: Map<string, string> = new Map();
+			let dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
+			// const lastIndex = parameters[parameters.length - 1];
+			const lastIndex = `${parameters[parameters.length - 1]}`;
+
+			parameters.splice(-1, 1);
+			returnFunction.splice(-1, 2);
+
 			const parametersWithLastIndex = [
 				...parameters,
 				lastIndex
@@ -159,14 +154,14 @@ export class FunctionDefinition {
 		return definition;
 	}
 
-	private generateReturnFunction(parameters: string[]): string[] {
+	private generateReturnFunction(): string[] {
 		let returnFunction = this.keyNameDotNotation;
 		let count = 0;
-
+		console.log('| rrr => ', this.keyNameDotNotation)
 		for (let i = 0; i < this.keyNameDotNotation.length; i++) {
 			const item = this.keyNameDotNotation[i];
 			if (item === '*') {
-				const currentParameter = parameters[count];
+				const currentParameter = this.parameters[count];
 				returnFunction[i] = ` as FormArray).at(${currentParameter})`
 				count++;
 			} else {
