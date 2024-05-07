@@ -21,10 +21,8 @@ export class Validator {
     }
 
     public get() {
-        return this.rules.reduce((acc: string[], rule: any) => {
-            acc.push(
-                this.validate('', rule)
-            );
+        return this.rules.reduce((acc: string[], rule: string) => {
+            acc.push(this.validate('', rule));
 
             return acc;
         }, [])
@@ -94,7 +92,7 @@ export class ReactiveDrivenValidator {
         this.setRules(rules);
     }
 
-    public generateFormBuilder() {
+    public generateFormBuilder(): string[] {
         return [
             `this.${this._options.formName} = this.formBuilder.group({`,
             this.reactiveDrivenValidators(this.rules),
@@ -103,12 +101,12 @@ export class ReactiveDrivenValidator {
     }
 
     public generateComponent(): string[] {
-        let initVariables: string[] = [];
-        let initObservables: string[] = [];
-        let definitions: string[] = [];
-        let init: string[] = this.generateFormBuilder();
+        const attributes: string[] = [];
+        const observables: string[] = [];
+        const definitions: string[] = [];
+        const formGroup: string[] = this.generateFormBuilder();
 
-        this.functions.forEach((item: any) => {
+        this.functions.forEach((item: Definition) => {
             if (item.get) {
                 item.get.forEach((currentGet: any) => {
                     definitions.push(currentGet.get('get_function'));
@@ -126,11 +124,11 @@ export class ReactiveDrivenValidator {
                     )`,
                     `}`
                 ].join("\n"));
-                initVariables.push(`${item.mockData.parameter_name}$!: Observable<any>`);
-                initObservables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
+                attributes.push(`${item.mockData.parameter_name}$!: Observable<any>`);
+                observables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
-        
+
         let component = [
             `import { Component, OnInit } from '@angular/core'`,
             `import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn } from '@angular/forms'`,
@@ -142,17 +140,17 @@ export class ReactiveDrivenValidator {
                 templateUrl: './${this.componentName}.component.html',
                 styleUrls: ['./${this.componentName}.component.css']
             })
-            export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {              
+            export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {
                 ${this._options.formName}!: FormGroup;
                 formSubmitAttempt: boolean = false;
-                ${initVariables.map(v => `${v};`).join("\n")}
+                ${attributes.map(v => `${v};`).join("\n")}
                 constructor(
                     private formBuilder: FormBuilder
                 ) { }
 
                 ngOnInit(): void {
-                    ${`${initObservables.map((v) => `this.${v}`).join("\n")}`}
-                    ${init.join("\n")}
+                    ${`${observables.map((o) => `this.${o}`).join("\n")}`}
+                    ${formGroup.join("\n")}
                 }
                 
                 onSubmit(): void {
@@ -192,26 +190,29 @@ export class ReactiveDrivenValidator {
 
                 ${this.getters.join("\n")}
                 ${definitions.join("\n")}                
+            }
             `
         ];
 
-        component.push("}");
         return component;
     }
 
-    public huehue: number = 0;
-    protected reactiveDrivenValidators(object: { [key: string]: any }, names: string = '', parameters: any[] = []): string {
+    protected reactiveDrivenValidators(
+        object: { [key: string]: any },
+        names: string = ''
+    ): string {
         return Object.keys(object)
             .map((key: any) => {
                 const value = object[key];
                 const isValueAnArray = Array.isArray(value);
                 const isValueAnObject = Object.prototype.toString.call(value) === '[object Object]';
                 const rest = names.length ? '.' + key : key;
-                const completeKeyName = (names + rest).split('.');
-                const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] === '*'
+                const completeKeyName = (names + rest);
+                const completeKeyNameSplitDot = completeKeyName.split('.');
+                const completeKeyNameSplitDotEndsWithAsterisk = completeKeyNameSplitDot[completeKeyNameSplitDot.length - 1] === '*'
                     ? true
                     : false;
-                const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+                const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
                 const keyNameSplit = key.split('.');
                 const firstNameBeforeDot = keyNameSplit[0];
                 let functionDefinition: Definition = {
@@ -221,18 +222,8 @@ export class ReactiveDrivenValidator {
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
-                if (completeKeyNameEndsWithAsterisk) {
+                if (completeKeyNameSplitDotEndsWithAsterisk) {
                     let formBuilderGroup: string[] = [];
-                    parameters = parameters.concat(
-                        (keyNameSplit as string[])
-                            .filter(n => n === '*')
-                            .map((p, i) => {
-                                const count = (parameters[parameters.length - 1] || 0)
-                                return count + (i + 1);
-                            })
-                    );
-                    console.log('this.huehue', this.huehue)
-
                     //"key.*": ['required', 'min:10']
                     if (isValueAnArray) {
                         const rules = value;
@@ -241,20 +232,19 @@ export class ReactiveDrivenValidator {
                     } else { //"key.*": { "any: ['required', 'min:10']" }
                         formBuilderGroup = [
                             `this.formBuilder.group({`,
-                            `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
+                            `${this.reactiveDrivenValidators(value, completeKeyName)}`,
                             `})`,
                         ];
                     }
 
                     functionDefinition = new FunctionDefinition(
-                        parameters,
-                        completeKeyName,
+                        completeKeyNameSplitDot,
                         formBuilderGroup
                     ).get();
 
                 } else {
-                    if (!completeKeyName.includes('*')) {
-                        this.generateGetterFunction(completeKeyName, dotNotation);
+                    if (!completeKeyNameSplitDot.includes('*')) {
+                        this.generateGetters(completeKeyNameSplitDot, dotNotationSplit);
                     }
                 }
 
@@ -262,10 +252,7 @@ export class ReactiveDrivenValidator {
 
                 if (isValueAnObject) {
                     //key has asterisk
-                    if (completeKeyNameEndsWithAsterisk) {
-                        this.huehue++;
-                        parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
-
+                    if (completeKeyNameSplitDotEndsWithAsterisk) {
                         return [
                             `"${firstNameBeforeDot}":`,
                             functionDefinition.formBuilder.join("\n"),
@@ -275,7 +262,7 @@ export class ReactiveDrivenValidator {
 
                     return [
                         `"${key}": this.formBuilder.group({`,
-                        `${this.reactiveDrivenValidators(value, names + rest, parameters)}`,
+                        `${this.reactiveDrivenValidators(value, completeKeyName)}`,
                         `}),`
                     ]
                         .join('\n');
@@ -284,43 +271,17 @@ export class ReactiveDrivenValidator {
                 if (isValueAnArray) {
                     const rules = value;
                     const ruleParameters = new Validator(rules).get();
-                    const values = rules.reduce((accArr: any, rule: any) => {
-                        let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-                        if (ruleName === 'in') {
-                            return ruleParameters;
-                        }
-
-                        if (
-                            ruleName === 'html' &&
-                            ['select', 'radio', 'checkbox'].includes(ruleParameters[0])
-                        ) {
-                            accArr = [{
-                                id: 1,
-                                mock: 1
-                            }, {
-                                id: 2,
-                                mock: 2
-                            }, {
-                                id: 3,
-                                mock: 3
-                            }];
-                        }
-
-                        return accArr;
-                    }, []);
+                    const values = this.generateValues(rules);
 
                     if (values.length > 0) {
                         functionDefinition.mockData = {
-                            parameter_name: ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true),
-                            get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))}`,
+                            parameter_name: ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."), true),
+                            get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
                             values: values
                         }
                     }
 
-                    this.huehue++;
-                    parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
-
-                    if (completeKeyNameEndsWithAsterisk) { //key has asterisk
+                    if (completeKeyNameSplitDotEndsWithAsterisk) { //key has asterisk
                         return `"${firstNameBeforeDot}": ${functionDefinition.formBuilder.join("\n")}`;
                     }
 
@@ -332,10 +293,37 @@ export class ReactiveDrivenValidator {
             .join("\n");
     }
 
-    private generateGetterFunction(completeKeyName: string[], dotNotation: string[]): void {
+    private generateValues(rules: any): any[] {
+        return rules.reduce((acc: any, rule: any) => {
+            let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+            if (ruleName === 'in') {
+                return ruleParameters;
+            }
+
+            if (
+                ruleName === 'html' &&
+                ['select', 'radio', 'checkbox'].includes(ruleParameters[0])
+            ) {
+                acc = [{
+                    id: 1,
+                    mock: 1
+                }, {
+                    id: 2,
+                    mock: 2
+                }, {
+                    id: 3,
+                    mock: 3
+                }];
+            }
+
+            return acc;
+        }, []);
+    }
+    
+    private generateGetters(completeKeyName: string[], dotNotationSplit: string[]): void {
         const keyNameDotNotation: string = completeKeyName.join(".");
         let getterFunctionName = ValidatorRuleHelper.camelCasedString(
-            dotNotation
+            dotNotationSplit
                 .filter((el: string) => el !== '*')
                 .join(""),
             true
@@ -348,7 +336,7 @@ export class ReactiveDrivenValidator {
         );
     }
 
-    private setRules(rules: Rules) {
+    private setRules(rules: Rules): void {
         this.rules = ValidatorRuleHelper.splitRules(rules);
     }
 }

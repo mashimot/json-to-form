@@ -6,52 +6,49 @@ export class FunctionDefinition {
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
 	private formBuilderGroup: string[] = [];
-	private parameters: string[] = [];
-	private completeKeyName: string[] = [];
-	private keyNameDotNotation: string[] = [];
+	// private completeKeyName: string[] = [];
+	private dotNotationSplit: string[] = [];
 
 	constructor(
-		parameters: string[],
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
 	) {
-		this.parameters = (parameters || []).map(p => `index${p}`);
-		this.completeKeyName = completeKeyName;
-		this.keyNameDotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+		// this.completeKeyName = completeKeyName;
+		this.dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
 	}
 
-	public get(): Definition {
-		const functionName = ValidatorRuleHelper.camelCasedString(this.keyNameDotNotation.join(""));
-		let definition: Definition = {
-			get: [],
-			formBuilder: []
-		};
-
+	public getTotalAsterisks(): number {
 		let counterAsterisk = 0;
-		for (let i = this.keyNameDotNotation.length - 1; i >= 0; i--) {
-			if (this.keyNameDotNotation[i] !== '*') {
+		for (let i = this.dotNotationSplit.length - 1; i >= 0; i--) {
+			if (this.dotNotationSplit[i] !== '*') {
 				break;
 			}
 			counterAsterisk++;
 		}
-		console.log('parameters -> ', this.parameters)
-		const returnFunction = this.generateReturnFunction();
-		const parameters = [...this.parameters];
+
+		return counterAsterisk;
+	}
+
+	public get(): Definition {
+		const functionName = ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
+		const definition: Definition = {
+			get: [],
+			formBuilder: []
+		};
+		const counterAsterisk = this.getTotalAsterisks();
+		const parameters = [...ValidatorRuleHelper.getParameters(this.dotNotationSplit)];
+		const returnFunction = this.generateReturnFunction(parameters);
 
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
-			let dataMap: Map<string, string> = new Map();
+			const dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
-			// const lastIndex = parameters[parameters.length - 1];
 			const lastIndex = `${parameters[parameters.length - 1]}`;
 
-			parameters.splice(-1, 1);
-			returnFunction.splice(-1, 2);
+			parameters.pop();
+			returnFunction.pop();
 
-			const parametersWithLastIndex = [
-				...parameters,
-				lastIndex
-			];
+			const parametersWithLastIndex = [...parameters, lastIndex];
 
 			dataMap.set(
 				'parameters',
@@ -70,7 +67,9 @@ export class FunctionDefinition {
 				`(${parametersWithLastIndex.map((p: string) => `${p}:number`).join(",")})`
 			);
 			dataMap.set(
-				'function_name', `${functionName}${i > 0 ? i : ''}`);
+				'function_name',
+				`${functionName}${i > 0 ? i : ''}`
+			);
 			dataMap.set(
 				'get_function_name',
 				getFunctionName
@@ -82,10 +81,6 @@ export class FunctionDefinition {
 			dataMap.set(
 				'get_at',
 				`${dataMap.get('get_with_parameters')}.at(${lastIndex})`
-			);
-			dataMap.set(
-				'index',
-				parameters[i]
 			);
 			dataMap.set(
 				'second_to_last_index',
@@ -122,14 +117,13 @@ export class FunctionDefinition {
 				'create_function',
 				[
 					`${this.CREATE}${dataMap.get('function_name')}(){`,
-					`return ${
-						i == counterAsterisk - 1
-							? this.formBuilderGroup.join("")
-							: [
-								`this.${this.FORM_BUILDER}.array([`,
-								`this.${this.CREATE}${functionName}${i + 1}()`,
-								`])`
-							].join("\n")
+					`return ${i === counterAsterisk - 1
+						? this.formBuilderGroup.join("")
+						: [
+							`this.${this.FORM_BUILDER}.array([`,
+							`this.${this.CREATE}${functionName}${i + 1}()`,
+							`])`
+						].join("\n")
 					}`,
 					`}`
 				]
@@ -145,23 +139,26 @@ export class FunctionDefinition {
 			definition.get.unshift(dataMap);
 		}
 
-		definition.formBuilder = [
-			`this.${this.FORM_BUILDER}.array([`,
-			`this.${this.CREATE}${definition.get[0].get('function_name')}()`,
-			`]),`
-		];
+		if (definition.get.length > 0) {
+			const firstFunctionName = definition.get[0].get('function_name');
+			definition.formBuilder = [
+				`this.${this.FORM_BUILDER}.array([`,
+				`this.${this.CREATE}${firstFunctionName}()`,
+				`]),`
+			];
+		}
 
 		return definition;
 	}
 
-	private generateReturnFunction(): string[] {
-		let returnFunction = this.keyNameDotNotation;
+	private generateReturnFunction(parameters: string[]): string[] {
+		let returnFunction = [...this.dotNotationSplit];
 		let count = 0;
-		console.log('| rrr => ', this.keyNameDotNotation)
-		for (let i = 0; i < this.keyNameDotNotation.length; i++) {
-			const item = this.keyNameDotNotation[i];
+
+		for (let i = 0; i < returnFunction.length; i++) {
+			const item = returnFunction[i];
 			if (item === '*') {
-				const currentParameter = this.parameters[count];
+				const currentParameter = parameters[count];
 				returnFunction[i] = ` as FormArray).at(${currentParameter})`
 				count++;
 			} else {

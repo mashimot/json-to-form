@@ -16,11 +16,6 @@ export class ValidatorRuleHelper {
         return ret;
     }
 
-
-    public static totalOfAsterisk(keyName: string[]) {
-
-    }
-
     public static defineIndexName(completeKeyName: string[], keyNameSplit: string[]): string[] {
         let indexName: string[] = []
         let index = 0;
@@ -133,20 +128,22 @@ export class ValidatorRuleHelper {
         ];
     }
 
-    public static camelCasedString(string: any, isFirstLetterLowerCase: boolean = false): string {
-
-        if (string == null || string == '') {
+    public static camelCasedString(string: string, isFirstLetterLowerCase: boolean = false): string {
+        if (!string) {
             return '';
         }
 
-        const camelCase = string
-            .toLowerCase()
-            .match(/[A-Z0-9]+/ig)
-            .map(function (word: any, i: number) {
+        const stringToLowerCase = ((string || '')?.toLowerCase());
+        const onlyLettersAndNumber = stringToLowerCase.match(/[A-Z0-9]+/ig);
+        let camelCase = '';
+
+        if(onlyLettersAndNumber) {
+            camelCase = onlyLettersAndNumber.map((word: string, i: number) => {
                 if (!i) return word;
                 return word[0].toUpperCase() + word.slice(1); // return newly formed string
             })
             .join("");
+        }
 
         const firstLetter = isFirstLetterLowerCase
             ? camelCase[0].toLowerCase()
@@ -168,9 +165,7 @@ export class ValidatorRuleHelper {
 
         return string.join(".")
             .split('*')
-            .map(str => {
-                return str.replace(/(^\.+|\.+$)/mg, '');
-            })
+            .map(str => str.replace(/(^\.+|\.+$)/mg, ''))
             .join("|*|")
             .split("|")
             .filter(el => el);
@@ -180,7 +175,7 @@ export class ValidatorRuleHelper {
 
         let rules = Object.keys(obj).map((k) => {
             let v = obj[k];
-            if (Object.prototype.toString.call(v) == '[object Object]') {
+            if (Object.prototype.toString.call(v) === '[object Object]') {
                 return {
                     [k]: this.splitRules(v)
                 }
@@ -206,4 +201,34 @@ export class ValidatorRuleHelper {
         let asObject = Object.assign({}, ...rules);
         return asObject;
     }
+
+    //return parameter name
+    //Ex. ['index1', 'index2']
+    public static getParameters(dotNotation: string[]): string[] {
+		let count = 1;
+		return dotNotation.reduce((parameters: string[], item) => {
+			if (item === '*') {
+				parameters.push(`index${count}`);
+				count++;
+			}
+
+			return parameters;
+		}, []);
+	}
+
+	public static uniqueId(dotNotation: string[]): string[] {
+        const parameters = this.getParameters(dotNotation);
+		const id = [...dotNotation];
+		let count = 0;
+		for (let i = 0; i < id.length; i++) {
+			const item = id[i];
+			if (item === '*') {
+				const currentParameter = parameters[count];
+				id[i] = `{{ ${currentParameter} }}`
+				count++;
+			}
+		}
+
+		return id;
+	}
 }

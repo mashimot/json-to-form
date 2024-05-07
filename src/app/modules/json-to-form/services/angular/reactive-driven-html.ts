@@ -35,25 +35,23 @@ export class ReactiveDrivenHtml {
     ];
   }
 
-  public dotNotation: string[] = [];
-
   public reactiveDrivenHtml(
     object: { [key: string]: any },
     names: string = '',
-    parameters: string[] = [],
-    nestedFormArray: any = []
+    nestedFormArray: Array<Map<string, string>> = []
   ): string {
     const reactiveDrivenHtml = Object.keys(object)
       .map((key: string) => {
         const value = object[key];
         const isValueAnArray = Array.isArray(value);
         const isValueAnObject = Object.prototype.toString.call(value) === '[object Object]';
-        const rest = names.length ? '.' + key : key;
-        const completeKeyName = (names + rest).split('.');
-        const completeKeyNameEndsWithAsterisk = completeKeyName[completeKeyName.length - 1] === '*'
-            ? true
-            : false;
-        const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyName);
+        const rest = names.length ? `.${key}` : key;
+        const completeKeyName = (names + rest);
+        const completeKeyNameSplitDot = completeKeyName.split('.');
+        const completeKeyNameSplitDotEndsWithAsterisk = completeKeyNameSplitDot[completeKeyNameSplitDot.length - 1] === '*'
+          ? true
+          : false;
+        const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
         const keyNameSplit = key.split('.');
         const firstKeyNameBeforeDot = keyNameSplit[0];
         let functionDefinition: Definition = {
@@ -65,20 +63,8 @@ export class ReactiveDrivenHtml {
           return '';
         }
 
-        if (completeKeyNameEndsWithAsterisk) {
-          parameters = parameters.concat(
-            (keyNameSplit as string[])
-              .filter(n => n === '*')
-              .map((p, i: any) => {
-                  const count = (parameters[parameters.length - 1] || 0);
-                  return count + (i + 1);
-              })
-          );          
-          functionDefinition = new FunctionDefinition(
-            parameters,
-            completeKeyName
-          )
-            .get();
+        if (completeKeyNameSplitDotEndsWithAsterisk) {
+          functionDefinition = new FunctionDefinition(completeKeyNameSplitDot).get();
 
           if (functionDefinition.get.length > 0) {
             nestedFormArray.push(functionDefinition.get[functionDefinition.get.length - 1]);
@@ -87,10 +73,10 @@ export class ReactiveDrivenHtml {
 
         //ex: { keyName: {} }
         if (isValueAnObject) {
-          if (!completeKeyNameEndsWithAsterisk){
+          if (!completeKeyNameSplitDotEndsWithAsterisk){
             return [
               `<div formGroupName="${key}">`,
-                `${this.reactiveDrivenHtml(value, names + rest, parameters, nestedFormArray)}`,
+                `${this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray)}`,
               `</div>`
             ]
             .join('\n');
@@ -102,12 +88,10 @@ export class ReactiveDrivenHtml {
           );
           const FORM_ARRAY: string[] = [
             formArrayOpenTag.join("\n"),
-              this.reactiveDrivenHtml(value, names + rest, parameters, nestedFormArray),
+              this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray),
             formArrayCloseTag.join("\n"),
           ];
          
-          //refresh the parameters list
-          parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
           nestedFormArray.pop();
 
           return FORM_ARRAY.join("\n");
@@ -120,18 +104,16 @@ export class ReactiveDrivenHtml {
               ? '[formControlName]' 
               : 'formControlName';
           };
-          const generateGetField = (lastName: string, nestedFormArray: Array<Map<string, string>>, dotNotation: string[]): string => {
+          const generateGetField = (lastName: string, nestedFormArray: Array<Map<string, string>>, dotNotationSplit: string[]): string => {
             if (nestedFormArray.length > 0) {
               const lastFormArray = nestedFormArray[nestedFormArray.length - 1];
-              if(lastName === '*'){
-                return `${lastFormArray.get('get_at')}`;
-              }
-  
-              return `${lastFormArray.get('get_at')}.get('${lastName}')`;
+              return lastName === '*'
+								? `${lastFormArray.get('get_at')}`
+              	: `${lastFormArray.get('get_at')}.get('${lastName}')`;
             }
 
             return ValidatorRuleHelper.camelCasedString(
-              dotNotation.filter((el: string) => el !== '*').join(""),
+              dotNotationSplit.filter((el: string) => el !== '*').join(""),
               true    
             );
           };
@@ -178,42 +160,43 @@ export class ReactiveDrivenHtml {
 
             return firstKeyNameBeforeDot;
           }
+          const getId = (dotNotationSplit: string[]) => ValidatorRuleHelper.uniqueId(dotNotationSplit).join("-");
           const rules = value;
-          const keyNameDotNotation: string = completeKeyName.join(".");
-          const lastName = dotNotation[dotNotation.length - 1];
+          const keyNameDotNotation: string = dotNotationSplit.join(".");
+          const lastName = dotNotationSplit[dotNotationSplit.length - 1];
           const index = getIndex(firstKeyNameBeforeDot, nestedFormArray);
           const formControlName = generateFormControlName(lastName, nestedFormArray);
-          const getField = generateGetField(lastName, nestedFormArray, dotNotation);
+          const getField = generateGetField(lastName, nestedFormArray, dotNotationSplit);
           const isFieldValid = generateIsFieldValid(getField, nestedFormArray, keyNameDotNotation);
           const newIndex = lastName === '*' ? `{{ ${index} }}` : index;
           const ngClass = `[class.is-invalid]="${isFieldValid}"`;
-          const keyNameWithoutAsterisk = dotNotation.filter((el:string) => el !== '*').join("");
+          const id = getId(dotNotationSplit);
+          // const id = keyNameDotNotation;
           const INPUTS = this.generateFormInput(
             formControlName,
             index,
             newIndex,
             ngClass,
-            keyNameDotNotation,
-            keyNameWithoutAsterisk
+						completeKeyNameSplitDot,
+            id
           );
           const FORM = generateFormInputsAndValidators(INPUTS, rules, getField, keyNameDotNotation);
           let formArrayOpenTag: string[] = [];
           let formArrayCloseTag: string[] = [];
           
           //ex.*: { keyName: [] }
-          if (completeKeyNameEndsWithAsterisk) {
+          if (completeKeyNameSplitDotEndsWithAsterisk) {
             [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
               functionDefinition, firstKeyNameBeforeDot, isValueAnObject
             );
             
-            parameters = ValidatorRuleHelper.removeParameters(keyNameSplit, parameters);
             nestedFormArray.pop();
           }
 
           return [
             formArrayOpenTag.join(""),
             `<div class="form-group">`,
-              `<label for="${lastName}">${keyNameDotNotation}</label>`,
+              `<label for="${id}">${id}</label>`,
               `${FORM.input}`,
               `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
                 `${FORM.validators.join("")}`,
@@ -226,12 +209,13 @@ export class ReactiveDrivenHtml {
         }
 
         return '';
-      }).join("\n");
+      })
+      .join("\n");
 
     return reactiveDrivenHtml;
   }
 
-  protected getErrorsMessages({ getField, ruleName, ruleParameters, keyNameDotNotation }: any){
+  protected getErrorsMessages({ getField, ruleName, ruleParameters, keyNameDotNotation }: any): string {
     if (ruleName === 'required') {
       return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
     }
@@ -248,7 +232,7 @@ export class ReactiveDrivenHtml {
     return '';
   }
 
-  private setRules(rules: Rules) {
+  private setRules(rules: Rules): void {
     this.rules = ValidatorRuleHelper.splitRules(rules);
   }
 
@@ -257,29 +241,32 @@ export class ReactiveDrivenHtml {
     index: string,
     newIndex: string,
     ngClass: string,
-    keyNameDotNotation: string,
-    keyNameWithoutAsterisk: string
+		completeKeyNameSplitDot: string[],
+    id: string
   ): {
     [key: string]: string
   } {
+		const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
+		const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
+    
     return {
-      text: `<input type="text" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      file: `<input type="file" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      password: `<input type="password" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      email: `<input type="email" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      number: `<input type="number" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      date: `<input type="date" ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-      textarea: `<textarea ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
+      text: `<input type="text" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      file: `<input type="file" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      password: `<input type="password" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      email: `<input type="email" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      number: `<input type="number" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      date: `<input type="date" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+      textarea: `<textarea ${formControlName}="${index}" id="${id}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
       select: [
-        `<select ${formControlName}="${index}" id="${keyNameDotNotation}" class="form-control" ${ngClass}>`,
-          `<option *ngFor="let data of (${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async)" [ngValue]="data">`,
+        `<select ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+          `<option *ngFor="let data of (${async}$ | async)" [ngValue]="data">`,
           `{{ data | json }}`,
           `</option>`,
         `</select>`
       ].join('\n'),
       radio: [
-        `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
-          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,
+        `<div *ngIf="(${async}$ | async) as asyncData">`,
+          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;">`,
             `<div class="form-check">`,
               `<input type="radio" formControlName="${newIndex}" [value]="data" ${ngClass}>{{ data | json }}`,
             `</div>`,
@@ -287,8 +274,8 @@ export class ReactiveDrivenHtml {
         `</div>`
       ].join('\n'),
       checkbox: [
-        `<div *ngIf="(${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)}$ | async) as asyncData">`,
-          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(keyNameWithoutAsterisk, true)} = index;">`,                                    
+        `<div *ngIf="(${async}$ | async) as asyncData">`,
+          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;">`,                                    
             `<div class="form-check">`,
               `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="data"> {{ data }}`,
             `</div>`,

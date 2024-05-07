@@ -20,7 +20,7 @@ export class JsonToFormService {
     ]);
   }
 
-  getExampleByNumber(id: number){
+  getExampleByNumber(id: number): Observable<any> {
     return this.getExamples()
       .pipe(
         map(examples => examples[id]),
@@ -74,7 +74,7 @@ export class JsonToFormService {
       "name": "Big Ass Array of Objects",
       "data": {
         "big_ass_array_of_objects.*.*.*": {
-          first_name: "required|min:3|max:255",
+          "first_name.*": "required|min:3|max:255",
           last_name: "required|min:3|max:255"
         }
       }
