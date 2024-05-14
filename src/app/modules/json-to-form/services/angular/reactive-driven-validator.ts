@@ -176,16 +176,22 @@ export class ReactiveDrivenValidator {
                     }
                 }
 
+                getField(path: (string | number)[] | string): {
+                    name: string,
+                    id: string,
+                    abstractControl: AbstractControl | null | any,
+                    isFieldValid: boolean | undefined
+                } {
+                    return {
+                        name: typeof path === 'string' ? path : path.join('.'),
+                        id: typeof path === 'string' ? path : path.join('-'),
+                        abstractControl: this.f.get(path),
+                        isFieldValid: this.f.get(path)?.invalid && this.f.get(path)?.touched
+                    }
+                }
+
                 get f(): FormGroup {
                     return this.form as FormGroup;
-                }
-
-                isFieldValid(field: string) {
-                    return !this.f.get(field)?.valid && this.f.get(field)?.touched;
-                }
-
-                getField(field: string) {
-                    return this.f.get(field);
                 }
 
                 ${this.getters.join("\n")}
@@ -229,6 +235,14 @@ export class ReactiveDrivenValidator {
                         const rules = value;
                         const ruleParameters = new Validator(rules).get();
                         formBuilderGroup = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
+                        rules.forEach((rule: any) => {
+                            const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+                            if (ruleName === 'html') {
+                                if (ruleParameters?.[0] === 'checkbox') {
+                                    formBuilderGroup = [`this.formBuilder.array([])`];
+                                }
+                            }
+                        });
                     } else { //"key.*": { "any: ['required', 'min:10']" }
                         formBuilderGroup = [
                             `this.formBuilder.group({`,
@@ -244,7 +258,7 @@ export class ReactiveDrivenValidator {
 
                 } else {
                     if (!completeKeyNameSplitDot.includes('*')) {
-                        this.generateGetters(completeKeyNameSplitDot, dotNotationSplit);
+                        this.generateGetters(completeKeyNameSplitDot, dotNotationSplit, isValueAnObject);
                     }
                 }
 
@@ -320,18 +334,18 @@ export class ReactiveDrivenValidator {
         }, []);
     }
     
-    private generateGetters(completeKeyName: string[], dotNotationSplit: string[]): void {
-        const keyNameDotNotation: string = completeKeyName.join(".");
-        let getterFunctionName = ValidatorRuleHelper.camelCasedString(
+    private generateGetters(completeKeyNameSplitDot: string[], dotNotationSplit: string[], isValueAnObject: boolean): void {
+        const path: string = `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot).join(",")}]`;
+        const getterFunctionName = ValidatorRuleHelper.camelCasedString(
             dotNotationSplit
                 .filter((el: string) => el !== '*')
                 .join(""),
             true
         );
-
+        const formType = isValueAnObject ? 'FormGroup' : 'FormControl';
         this.getters.push(
-            `get ${getterFunctionName}(): FormControl {
-                return this.f.get('${keyNameDotNotation}') as FormControl;
+            `get ${getterFunctionName}(): ${formType} {
+                return this.f.get(${path}) as ${formType};
             }`
         );
     }

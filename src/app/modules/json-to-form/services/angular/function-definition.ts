@@ -6,19 +6,19 @@ export class FunctionDefinition {
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';
 	private formBuilderGroup: string[] = [];
-	// private completeKeyName: string[] = [];
+	private completeKeyName: string[] = [];
 	private dotNotationSplit: string[] = [];
 
 	constructor(
 		completeKeyName: string[],
 		formBuilderGroup: string[] = []
 	) {
-		// this.completeKeyName = completeKeyName;
+		this.completeKeyName = completeKeyName;
 		this.dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
 	}
 
-	public getTotalAsterisks(): number {
+	private getTotalAsterisks(): number {
 		let counterAsterisk = 0;
 		for (let i = this.dotNotationSplit.length - 1; i >= 0; i--) {
 			if (this.dotNotationSplit[i] !== '*') {
@@ -31,37 +31,40 @@ export class FunctionDefinition {
 	}
 
 	public get(): Definition {
-		const functionName = ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
 		const definition: Definition = {
 			get: [],
 			formBuilder: []
 		};
+		const functionName = ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
 		const counterAsterisk = this.getTotalAsterisks();
-		const parameters = [...ValidatorRuleHelper.getParameters(this.dotNotationSplit)];
-		const returnFunction = this.generateReturnFunction(parameters);
+		const parameters = [...ValidatorRuleHelper.getParameters(this.completeKeyName)];
+		const path = [...ValidatorRuleHelper.getField(this.completeKeyName)];
 
 		for (let i = counterAsterisk - 1; i >= 0; i--) {
 			const dataMap: Map<string, string> = new Map();
-			const getFunctionName = `get${functionName}${i > 0 ? i : ''}`;
+			const getFunctionName = `get${functionName}${i > 0 ? i : ''}FormArray`;
 			const lastIndex = `${parameters[parameters.length - 1]}`;
 
 			parameters.pop();
-			returnFunction.pop();
+			path.pop();
 
 			const parametersWithLastIndex = [...parameters, lastIndex];
-
+			//(index1, index2)
 			dataMap.set(
 				'parameters',
 				`(${parameters.map((p: string) => `${p}`).join(",")})`
 			);
+			//(index1: number, index2: number)
 			dataMap.set(
 				'parameters_typed',
 				`(${parameters.map((p: string) => `${p}:number`).join(",")})`
 			);
+			//(index1, index2)
 			dataMap.set(
 				'parameters_with_last_index',
 				`(${parametersWithLastIndex.map((p: string) => `${p}`).join(",")})`
 			);
+			//(index1: number, index2: number, index3: number)
 			dataMap.set(
 				'parameters_with_last_index_typed',
 				`(${parametersWithLastIndex.map((p: string) => `${p}:number`).join(",")})`
@@ -76,7 +79,7 @@ export class FunctionDefinition {
 			);
 			dataMap.set(
 				'get_with_parameters',
-				`${getFunctionName}(${parameters.map((p: string) => `${p}`).join(",")})`
+				`${getFunctionName}${dataMap.get('parameters')}`
 			);
 			dataMap.set(
 				'get_at',
@@ -94,7 +97,8 @@ export class FunctionDefinition {
 				'get_function',
 				[
 					`${getFunctionName}${dataMap.get('parameters_typed')}: FormArray {`,
-					`return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
+					// `return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
+					`return this.f.get(${`[${path.join(",")}]`}) as FormArray;`,
 					`}`
 				]
 					.join("\n")
@@ -149,26 +153,5 @@ export class FunctionDefinition {
 		}
 
 		return definition;
-	}
-
-	private generateReturnFunction(parameters: string[]): string[] {
-		let returnFunction = [...this.dotNotationSplit];
-		let count = 0;
-
-		for (let i = 0; i < returnFunction.length; i++) {
-			const item = returnFunction[i];
-			if (item === '*') {
-				const currentParameter = parameters[count];
-				returnFunction[i] = ` as FormArray).at(${currentParameter})`
-				count++;
-			} else {
-				returnFunction[i] = `.get('${item}')`;
-				if (i === 0) {
-					returnFunction[i] = `this.form${returnFunction[i]}`;
-				}
-			}
-		}
-
-		return returnFunction;
 	}
 }

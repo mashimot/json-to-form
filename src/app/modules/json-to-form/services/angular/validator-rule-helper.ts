@@ -85,7 +85,7 @@ export class ValidatorRuleHelper {
                     errors.push(`Errors at:  "${names + rest}"`);
                 }
 
-                if (Object.prototype.toString.call(v) == '[object Object]') {
+                if (Object.prototype.toString.call(v) === '[object Object]') {
                     this.validateObject(v, names + rest, errors);
                 }
 
@@ -115,7 +115,6 @@ export class ValidatorRuleHelper {
                 ];
             }
 
-            let arr = [rule.join(",")]
             return [
                 'in',
                 rule
@@ -137,12 +136,12 @@ export class ValidatorRuleHelper {
         const onlyLettersAndNumber = stringToLowerCase.match(/[A-Z0-9]+/ig);
         let camelCase = '';
 
-        if(onlyLettersAndNumber) {
+        if (onlyLettersAndNumber) {
             camelCase = onlyLettersAndNumber.map((word: string, i: number) => {
                 if (!i) return word;
                 return word[0].toUpperCase() + word.slice(1); // return newly formed string
             })
-            .join("");
+                .join("");
         }
 
         const firstLetter = isFirstLetterLowerCase
@@ -205,30 +204,71 @@ export class ValidatorRuleHelper {
     //return parameter name
     //Ex. ['index1', 'index2']
     public static getParameters(dotNotation: string[]): string[] {
-		let count = 1;
-		return dotNotation.reduce((parameters: string[], item) => {
-			if (item === '*') {
-				parameters.push(`index${count}`);
-				count++;
-			}
+        let count = 0;
+        return dotNotation.reduce((parameters: string[], item) => {
+            if (item === '*') {
+                parameters.push(this.getIndexName(count));
+                count++;
+            }
 
-			return parameters;
-		}, []);
-	}
+            return parameters;
+        }, []);
+    }
 
-	public static uniqueId(dotNotation: string[]): string[] {
-        const parameters = this.getParameters(dotNotation);
-		const id = [...dotNotation];
-		let count = 0;
-		for (let i = 0; i < id.length; i++) {
-			const item = id[i];
-			if (item === '*') {
-				const currentParameter = parameters[count];
-				id[i] = `{{ ${currentParameter} }}`
-				count++;
-			}
-		}
+    public static getIndexName(count: number): string {
+        return `index${(count || 0) + 1}`;
+    }
 
-		return id;
-	}
+    public static uniqueId(dotNotation: string[]): string[] {
+        const id = [...dotNotation];
+        let count = 0;
+        for (let i = 0; i < id.length; i++) {
+            const item = id[i];
+            if (item === '*') {
+                // const currentParameter = parameters[count];
+                const currentParameter = this.getIndexName(count);
+                id[i] = `{{ ${currentParameter} }}`
+                count++;
+            }
+        }
+
+        return id;
+    }
+
+    public static getField(dotNotation: string[]): string[] {
+        const id = [...dotNotation];
+        let count = 0;
+        for (let i = 0; i < id.length; i++) {
+            const item = id[i];
+            if (item === '*') {
+                id[i] = this.getIndexName(count);
+                count++;
+            } else {
+                id[i] = `'${item}'`;
+            }
+        }
+
+        return id;
+    }
+
+    public static generateReturnFunction(dotNotation: string[]): string[] {
+        const returnFunction = [...dotNotation];
+        let count = 0;
+
+        for (let i = 0; i < returnFunction.length; i++) {
+            const item = returnFunction[i];
+            if (item === '*') {
+                const currentParameter = this.getIndexName(count);
+                returnFunction[i] = ` as FormArray).at(${currentParameter})`
+                count++;
+            } else {
+                returnFunction[i] = `.get('${item}')`;
+                if (i === 0) {
+                    returnFunction[i] = `this.form${returnFunction[i]}`;
+                }
+            }
+        }
+
+        return returnFunction;
+    }
 }

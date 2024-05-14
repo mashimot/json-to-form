@@ -6,6 +6,13 @@ interface Rules {
   [name: string]: any;
 }
 
+enum FormEnum {
+  FIELD = 'field',
+  ABSCTRACT_CONTROL = `field.abstractControl`,
+  IS_FIELD_VALID = `field.isFieldValid`,
+  FIELD_ID = `field.id`,
+}
+
 export class ReactiveDrivenHtml {
   rules!: any;
   triggerValidationOnSubmit: boolean = true;
@@ -99,12 +106,19 @@ export class ReactiveDrivenHtml {
        
         //ex: { keyName: [] }
         if (isValueAnArray) {
+          const validateAsString: boolean = true;
           const generateFormControlName = (lastName: string, nestedFormArray: Array<Map<string, string>>): string => {
+            return '[formControlName]';
             return (nestedFormArray.length > 0 && lastName === '*') 
               ? '[formControlName]' 
               : 'formControlName';
           };
           const generateGetField = (lastName: string, nestedFormArray: Array<Map<string, string>>, dotNotationSplit: string[]): string => {
+            if(validateAsString){
+              // console.log('dotNotationSplit', `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot)}]`)
+              return `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot)}]`;
+            }
+            
             if (nestedFormArray.length > 0) {
               const lastFormArray = nestedFormArray[nestedFormArray.length - 1];
               return lastName === '*'
@@ -112,43 +126,39 @@ export class ReactiveDrivenHtml {
               	: `${lastFormArray.get('get_at')}.get('${lastName}')`;
             }
 
-            return ValidatorRuleHelper.camelCasedString(
-              dotNotationSplit.filter((el: string) => el !== '*').join(""),
-              true    
-            );
+            return `f.get('${dotNotationSplit.filter((el: string) => el !== '*').join(".")}')`
+            // return ValidatorRuleHelper.camelCasedString(
+            //   dotNotationSplit.filter((el: string) => el !== '*').join(""),
+            //   true    
+            // );
           };
-          const generateIsFieldValid = (getField: string, nestedFormArray: Array<Map<string, string>>, keyNameDotNotation: string): string => {
-            return (nestedFormArray.length > 0)
-              ? `!${getField}?.valid`
-              : `isFieldValid('${keyNameDotNotation}')`
-          };
-          const generateFormInputsAndValidators = (
+          const generateFormInput = (
             INPUTS: { [key: string]: string }, 
-            rules: string[], 
-            getField: string, 
-            keyNameDotNotation: string
+            rules: string[]
           ) => {
-            return rules.reduce(
-              (
-                form: { validators: string[], input: string }, 
-                rule: string
-              ) => {
-                const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-    
-                if (ruleName === 'html') {
-                  form.input = INPUTS[ruleParameters[0]] || INPUTS.text;
-                }
-    
-                form.validators.push(
-                  this.getErrorsMessages({ ruleName, ruleParameters, getField, keyNameDotNotation })
-                );
-    
-                return form;
-              }, {
-                validators: [],
-                input: INPUTS.text
+            return rules.reduce((form: string, rule: string ) => {
+              const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+  
+              if (ruleName === 'html') {
+                form= INPUTS[ruleParameters[0]] || INPUTS.text;
               }
-            );
+  
+              return form;
+            }, INPUTS.text);
+          }
+          const generateFormValidators = (
+            rules: string[], 
+            getField: string
+          ) => {
+            return rules.reduce((validators: string[], rule: string) => {
+              const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+  
+              validators.push(
+                this.getErrorsMessages({ ruleName, ruleParameters, getField })
+              );
+  
+              return validators;
+            }, []);
           }
           const getIndex = (firstKeyNameBeforeDot: string, nestedFormArray: Array<Map<string, string>>): string => {
             if (nestedFormArray.length > 0) {
@@ -158,29 +168,20 @@ export class ReactiveDrivenHtml {
               }
             }
 
-            return firstKeyNameBeforeDot;
+            return lastName === '*' ? firstKeyNameBeforeDot : `'${firstKeyNameBeforeDot}'`;
           }
-          const getId = (dotNotationSplit: string[]) => ValidatorRuleHelper.uniqueId(dotNotationSplit).join("-");
           const rules = value;
-          const keyNameDotNotation: string = dotNotationSplit.join(".");
           const lastName = dotNotationSplit[dotNotationSplit.length - 1];
           const index = getIndex(firstKeyNameBeforeDot, nestedFormArray);
           const formControlName = generateFormControlName(lastName, nestedFormArray);
           const getField = generateGetField(lastName, nestedFormArray, dotNotationSplit);
-          const isFieldValid = generateIsFieldValid(getField, nestedFormArray, keyNameDotNotation);
-          const newIndex = lastName === '*' ? `{{ ${index} }}` : index;
-          const ngClass = `[class.is-invalid]="${isFieldValid}"`;
-          const id = getId(dotNotationSplit);
-          // const id = keyNameDotNotation;
           const INPUTS = this.generateFormInput(
             formControlName,
             index,
-            newIndex,
-            ngClass,
-						completeKeyNameSplitDot,
-            id
+						completeKeyNameSplitDot
           );
-          const FORM = generateFormInputsAndValidators(INPUTS, rules, getField, keyNameDotNotation);
+          const formInput = generateFormInput(INPUTS, rules);
+          const formValidators = generateFormValidators(rules, `${FormEnum.ABSCTRACT_CONTROL}`);
           let formArrayOpenTag: string[] = [];
           let formArrayCloseTag: string[] = [];
           
@@ -192,14 +193,14 @@ export class ReactiveDrivenHtml {
             
             nestedFormArray.pop();
           }
-
+  
           return [
             formArrayOpenTag.join(""),
-            `<div class="form-group">`,
-              `<label for="${id}">${id}</label>`,
-              `${FORM.input}`,
-              `<div *ngIf="${isFieldValid}" class="invalid-feedback">`,
-                `${FORM.validators.join("")}`,
+            `<div class="form-group" *ngIf="getField(${getField}) as field">`,
+              `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
+              `${formInput}`,
+              `<div *ngIf="${FormEnum.IS_FIELD_VALID}" class="invalid-feedback">`,
+                `${formValidators.join("")}`,
               `</div>`,
             `</div>`,
             formArrayCloseTag.join("")
@@ -215,19 +216,31 @@ export class ReactiveDrivenHtml {
     return reactiveDrivenHtml;
   }
 
-  protected getErrorsMessages({ getField, ruleName, ruleParameters, keyNameDotNotation }: any): string {
+  protected getErrorsMessages({ getField, ruleName, ruleParameters }: any): string {
     if (ruleName === 'required') {
-      return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
+      return `<div *ngIf="${getField}!.hasError('required')">{{ ${FormEnum.FIELD_ID}.toUpperCase() }} is required</div>`;
     }
     if (ruleName === 'min') {
-      return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
+      return `<div *ngIf="${getField}!.hasError('minlength')">{{ ${FormEnum.FIELD_ID}.toUpperCase() }} min must be ${ruleParameters[0]}</div>`
     }
     if (ruleName === 'max') {
-      return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
+      return `<div *ngIf="${getField}!.hasError('maxlength')">{{ ${FormEnum.FIELD_ID}.toUpperCase() }} max must be ${ruleParameters[0]}</div>`
     }
     if (ruleName === 'email') {
-      return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
+      return `<div *ngIf="${getField}!.hasError('email')">{{ ${FormEnum.FIELD_ID}.toUpperCase() }} an valid Email</div>`;
     }
+    // if (ruleName === 'required') {
+    //   return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
+    // }
+    // if (ruleName === 'min') {
+    //   return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
+    // }
+    // if (ruleName === 'max') {
+    //   return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
+    // }
+    // if (ruleName === 'email') {
+    //   return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
+    // }
    
     return '';
   }
@@ -239,26 +252,24 @@ export class ReactiveDrivenHtml {
   private generateFormInput(
     formControlName: string,
     index: string,
-    newIndex: string,
-    ngClass: string,
-		completeKeyNameSplitDot: string[],
-    id: string
+		completeKeyNameSplitDot: string[]
   ): {
     [key: string]: string
   } {
 		const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
 		const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
-    
+    const ngClass = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
+
     return {
-      text: `<input type="text" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      file: `<input type="file" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      password: `<input type="password" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      email: `<input type="email" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      number: `<input type="number" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      date: `<input type="date" ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
-      textarea: `<textarea ${formControlName}="${index}" id="${id}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
+      text: `<input type="text" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      file: `<input type="file" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      password: `<input type="password" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      email: `<input type="email" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      number: `<input type="number" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      date: `<input type="date" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      textarea: `<textarea ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
       select: [
-        `<select ${formControlName}="${index}" id="${id}" class="form-control" ${ngClass}>`,
+        `<select ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
           `<option *ngFor="let data of (${async}$ | async)" [ngValue]="data">`,
           `{{ data | json }}`,
           `</option>`,
@@ -268,16 +279,23 @@ export class ReactiveDrivenHtml {
         `<div *ngIf="(${async}$ | async) as asyncData">`,
           `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;">`,
             `<div class="form-check">`,
-              `<input type="radio" formControlName="${newIndex}" [value]="data" ${ngClass}>{{ data | json }}`,
+              `<input type="radio" formControlName="{{ ${index} }}" [value]="data" ${ngClass}>{{ data | json }}`,
             `</div>`,
           `</div>`,
         `</div>`
       ].join('\n'),
       checkbox: [
         `<div *ngIf="(${async}$ | async) as asyncData">`,
-          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;">`,                                    
+          `<div`,
+            `*ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;"`,
+          `>`,
             `<div class="form-check">`,
-              `<input type="checkbox" ${formControlName}="${index}" class="form-check-input" ${ngClass} [value]="data"> {{ data }}`,
+              `<input`,
+                `type="checkbox" `,
+                `class="form-check-input"`,
+                `${ngClass}`,
+                // `[formControl]="data"`,
+              `> {{ asyncData[index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))}] | json }}`,
             `</div>`,
           `</div>`,
         `</div>`
@@ -325,7 +343,7 @@ export class ReactiveDrivenHtml {
 
     functionDefinition.get.forEach((item: Map<string, string>, i: number) => {
       const formArrayName: string = i <= 0
-        ? `formArrayName="${firstKeyNameBeforeDot}"`
+        ? `[formArrayName]="'${firstKeyNameBeforeDot}'"`
         : `[formArrayName]="${item.get('second_to_last_index')}"`;
 
       formArrayOpenTag.push(
