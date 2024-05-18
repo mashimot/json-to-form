@@ -91,7 +91,7 @@ export class ReactiveDrivenHtml {
 
           //ex: { keyName.*: {} }{
           const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
-            functionDefinition, firstKeyNameBeforeDot, isValueAnObject
+            functionDefinition, firstKeyNameBeforeDot, isValueAnObject, completeKeyName
           );
           const FORM_ARRAY: string[] = [
             formArrayOpenTag.join("\n"),
@@ -188,7 +188,7 @@ export class ReactiveDrivenHtml {
           //ex.*: { keyName: [] }
           if (completeKeyNameSplitDotEndsWithAsterisk) {
             [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
-              functionDefinition, firstKeyNameBeforeDot, isValueAnObject
+              functionDefinition, firstKeyNameBeforeDot, isValueAnObject, completeKeyName
             );
             
             nestedFormArray.pop();
@@ -336,10 +336,12 @@ export class ReactiveDrivenHtml {
   private generateFormArray(
     functionDefinition: Definition, 
     firstKeyNameBeforeDot: string,
-    isValueAnObject: boolean
+    isValueAnObject: boolean,
+    completeKeyName: string
   ): [string[], string[]] {
     const formArrayOpenTag: string[] = []
     const formArrayCloseTag: string[] = [];
+    const varName = ValidatorRuleHelper.camelCasedString(completeKeyName, true);
 
     functionDefinition.get.forEach((item: Map<string, string>, i: number) => {
       const formArrayName: string = i <= 0
@@ -350,7 +352,7 @@ export class ReactiveDrivenHtml {
         `<fieldset ${formArrayName} class="form-group">
           ${this.generateAddButton(item).join("\n")}
           <div
-            *ngFor="let ${item.get('function_name')}${i + 1}Data of ${item.get('get_with_parameters')}.controls; let ${item.get('last_index')} = index;"
+            *ngFor="let _${varName}${i + 1} of ${item.get('get_with_parameters')}?.controls; let ${item.get('last_index')} = index;"
             ${
               isValueAnObject === true && i === functionDefinition.get.length - 1
                 ? `[formGroupName]="${item.get('last_index')}"`
