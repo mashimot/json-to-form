@@ -107,15 +107,9 @@ export class ReactiveDrivenHtml {
         //ex: { keyName: [] }
         if (isValueAnArray) {
           const validateAsString: boolean = true;
-          const generateFormControlName = (lastName: string, nestedFormArray: Array<Map<string, string>>): string => {
-            return '[formControlName]';
-            return (nestedFormArray.length > 0 && lastName === '*') 
-              ? '[formControlName]' 
-              : 'formControlName';
-          };
+          const generateFormControlName = (): string => '[formControlName]';
           const generateGetField = (lastName: string, nestedFormArray: Array<Map<string, string>>, dotNotationSplit: string[]): string => {
             if(validateAsString){
-              // console.log('dotNotationSplit', `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot)}]`)
               return `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot)}]`;
             }
             
@@ -126,11 +120,7 @@ export class ReactiveDrivenHtml {
               	: `${lastFormArray.get('get_at')}.get('${lastName}')`;
             }
 
-            return `f.get('${dotNotationSplit.filter((el: string) => el !== '*').join(".")}')`
-            // return ValidatorRuleHelper.camelCasedString(
-            //   dotNotationSplit.filter((el: string) => el !== '*').join(""),
-            //   true    
-            // );
+            return `f.get('${dotNotationSplit.filter((el: string) => el !== '*').join(".")}')`;
           };
           const generateFormInput = (
             INPUTS: { [key: string]: string }, 
@@ -173,7 +163,7 @@ export class ReactiveDrivenHtml {
           const rules = value;
           const lastName = dotNotationSplit[dotNotationSplit.length - 1];
           const index = getIndex(firstKeyNameBeforeDot, nestedFormArray);
-          const formControlName = generateFormControlName(lastName, nestedFormArray);
+          const formControlName = generateFormControlName();
           const getField = generateGetField(lastName, nestedFormArray, dotNotationSplit);
           const INPUTS = this.generateFormInput(
             formControlName,
@@ -229,18 +219,6 @@ export class ReactiveDrivenHtml {
     if (ruleName === 'email') {
       return `<div *ngIf="${getField}!.hasError('email')">{{ ${FormEnum.FIELD_ID}.toUpperCase() }} an valid Email</div>`;
     }
-    // if (ruleName === 'required') {
-    //   return `<div *ngIf="${getField}!.hasError('required')">${keyNameDotNotation.toUpperCase()} is required</div>`;
-    // }
-    // if (ruleName === 'min') {
-    //   return `<div *ngIf="${getField}!.hasError('minlength')">${keyNameDotNotation.toUpperCase()} min must be ${ruleParameters[0]}</div>`
-    // }
-    // if (ruleName === 'max') {
-    //   return `<div *ngIf="${getField}!.hasError('maxlength')">${keyNameDotNotation.toUpperCase()} max must be ${ruleParameters[0]}</div>`
-    // }
-    // if (ruleName === 'email') {
-    //   return `<div *ngIf="${getField}!.hasError('email')">${keyNameDotNotation.toUpperCase()} an valid Email</div>`;
-    // }
    
     return '';
   }
@@ -259,14 +237,16 @@ export class ReactiveDrivenHtml {
 		const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
 		const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
     const ngClass = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
+    const input = ['text', 'file', 'password', 'email', 'number', 'date'].reduce(
+      (form: { [key: string]: string }, type: string) => {
+        form[type] = `<input type="${type}" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`;
+        return form;
+      },
+      {}
+    );
 
     return {
-      text: `<input type="text" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-      file: `<input type="file" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-      password: `<input type="password" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-      email: `<input type="email" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-      number: `<input type="number" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-      date: `<input type="date" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
+      ...input,
       textarea: `<textarea ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
       select: [
         `<select ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
