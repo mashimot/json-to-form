@@ -11,11 +11,11 @@ export class JsonToFormService {
 
   getExamples(): Observable<any[]> {
     return of([
+      this.user(),
       this.userMedications(),
       this.getMoviesDetails(),
       this.usersJson(),
       this.bigAssArrayOfObjects(),
-      this.user(),
       this.randomJson(),
     ]);
   }
@@ -30,46 +30,45 @@ export class JsonToFormService {
 
   public getValidInvalid(): {
     valid: {
-        [key: string]: Object
+      [key: string]: Object
     },
     invalid: {
-        [key: string]: Object
+      [key: string]: Object
     }
-  }
-  {
+  } {
     return {
-        valid: {
-            "users.*.*": {
-                "users.*.*": {
-                    first_name: "required|min:3|max:255",
-                    last_name: "required|min:3|max:255"
-                },                
-            }
-        },
-        invalid: {
-            "users.*.id": {
-                "users.*.id": {
-                    first_name: "required|min:3|max:255",
-                    last_name: "required|min:3|max:255"
-                },                
-            },
-            ".*users": {
-                ".*users": {
-                    first_name: "required|min:3|max:255",
-                    last_name: "required|min:3|max:255"
-                },                
-            },
-            "  users ": {
-                "  users ": {
-                    first_name: "required|min:3|max:255",
-                    last_name: "required|min:3|max:255"
-                },                
-            }
+      valid: {
+        "users.*.*": {
+          "users.*.*": {
+            first_name: "required|min:3|max:255",
+            last_name: "required|min:3|max:255"
+          },
         }
+      },
+      invalid: {
+        "users.*.id": {
+          "users.*.id": {
+            first_name: "required|min:3|max:255",
+            last_name: "required|min:3|max:255"
+          },
+        },
+        ".*users": {
+          ".*users": {
+            first_name: "required|min:3|max:255",
+            last_name: "required|min:3|max:255"
+          },
+        },
+        "  users ": {
+          "  users ": {
+            first_name: "required|min:3|max:255",
+            last_name: "required|min:3|max:255"
+          },
+        }
+      }
     };
   }
 
-  public bigAssArrayOfObjects(){
+  public bigAssArrayOfObjects() {
     return {
       "name": "Big Ass Array of Objects",
       "data": {
@@ -81,7 +80,7 @@ export class JsonToFormService {
     }
   }
 
-  public getMoviesDetails(){
+  public getMoviesDetails() {
     return {
       "name": "https://developers.themoviedb.org/3/movies/get-movie-details",
       "data": {
@@ -102,10 +101,10 @@ export class JsonToFormService {
         "popularity": "nullable|html:number|numeric",
         "poster_path": "nullable|html:text|string",
         "production_companies.*": {
-            "id": "html:number|nullable",
-            "logo_path": "nullable|string",
-            "name": "nullable|min:2|max:255",
-            "origin_country": "nullable|min:2|max:2"
+          "id": "html:number|nullable",
+          "logo_path": "nullable|string",
+          "name": "nullable|min:2|max:255",
+          "origin_country": "nullable|min:2|max:2"
         },
         "production_countries.*": {
           "iso_3166_1": "nullable|min:2|max:2",
@@ -122,11 +121,11 @@ export class JsonToFormService {
           "nullable",
           "html:radio",
           [
-            "Rumored", 
-            "Planned", 
-            "In Production", 
-            "Post Production", 
-            "Released", 
+            "Rumored",
+            "Planned",
+            "In Production",
+            "Post Production",
+            "Released",
             "Canceled"
           ]
         ],
@@ -139,24 +138,52 @@ export class JsonToFormService {
     }
   }
 
-  public user(){
+  public user() {
     return {
       "name": "User",
       "data": {
-        "user": {
-          "first_name": "required|min:30",
-          "surname": "required|min:2",
-          "cell": "required|html:number",
-          "location.*": "required|min:30",
-          "profession.*":  "required|min:3|max:255",
-          "cars.*": {
-            "model": "required|min:2",
-            "year": "required|html:number|min:4|max:4",
-            "value": "required|min:2|max:10"
+        "users.*": {
+          "name": {
+            "first": "html:text|required|min:3|max:255",
+            "middle": "html:text|nullable|min:3|max:255",
+            "last": "html:text|required|min:3|max:255"
+          },
+          "username": "html:text|required|min:3|max:10",
+          "password": "html:password|required|min:3|max:10",
+          "emails.*": "html:email|required|min:10|max:40",
+          "contacts.*": {
+            "name": "required|min:3|max:255",
+            "email": "required|email|max:255"
           },
           "medications.*": {
             "medication_name": "required|min:3|max:255",
             "medication_details": "html:textarea|nullable|min:3|max:4000"
+          },
+          "phoneNumber": "html:text|required|min:4|max:15",
+          "location": {
+            "street": "html:text|required|min:4|max:15",
+            "city": "html:text|required|min:4|max:15",
+            "state": "html:text|required|min:4|max:15",
+            "country": "html:text|required|min:4|max:15",
+            "zip": "html:number|required|min:4|max:15",
+            "coordinates": {
+              "latitude": "html:number|required|min:1|max:255",
+              "longitude": "html:number|required|min:1|max:255",
+            }
+          },
+          "website": "html:text|required|min:5|max:255",
+          "domain": "html:text|required|min:5|max:255",
+          "job": {
+            "title": "html:text|required|min:1|max:255",
+            "descriptor": "html:text|required|min:1|max:255",
+            "area": "html:text|required|min:4|max:255",
+            "type": "html:text|required|min:4|max:255",
+            "company": "html:text|required|min:4|max:255"
+          },
+          "creditCard": {
+            "number": "html:text|required|min:4|max:40",
+            "cvv": "html:number|required|min:4|max:15",
+            "issuer": "html:text|required|min:3|max:3",
           }
         }
       }
@@ -164,7 +191,7 @@ export class JsonToFormService {
   }
 
 
-  public userMedications(){
+  public userMedications() {
     return {
       "name": "User Medication Form",
       "data": {
@@ -190,19 +217,19 @@ export class JsonToFormService {
           "medication_name": "required|min:3|max:255",
           "medication_details": "html:textarea|nullable|min:3|max:4000"
         }
-      } 
+      }
     }
   }
 
-  public usersJson(){
+  public usersJson() {
     return {
-        'name': "Users Form",
-        'data' : {
-          'users': {
+      'name': "Users Form",
+      'data': {
+        'users': {
           'first_name': 'required|min:3|max:255',
           'last_name': 'required|min:3|max:255',
           'email.*': 'email|unique:users',
-          'nickname': "nullable|min:3|max:255", 
+          'nickname': "nullable|min:3|max:255",
           'description': "html:textarea|required|min:3|max:4000",
           'birthdate': "html:date|required"
         }
@@ -210,15 +237,15 @@ export class JsonToFormService {
     }
   }
 
-  public randomJson(){
+  public randomJson() {
     return {
       'name': 'Random',
       'data': {
         "user": {
-            "first_name": "required|min:30",
-            "last_name": "required|min:2",
-            "birthday_date": "required|html:date",
-            "favorite_fruits.*": "required|min:30"
+          "first_name": "required|min:30",
+          "last_name": "required|min:2",
+          "birthday_date": "required|html:date",
+          "favorite_fruits.*": "required|min:30"
         },
         "password": "html:password|required|max:10",
         "rank": "html:text|required|numeric|",
@@ -226,42 +253,42 @@ export class JsonToFormService {
         "is_active": "html:text|required|boolean",
         "type": "html:text|string|max:255",
         "tag": {
-            "id": "html:hidden|required|numeric",
-            "name": "html:text|string|max:255",
-            "coin_counter": "html:number|required|numeric",
-            "ico_counter": "html:number|required|min:3"
+          "id": "html:hidden|required|numeric",
+          "name": "html:text|string|max:255",
+          "coin_counter": "html:number|required|numeric",
+          "ico_counter": "html:number|required|min:3"
         },
         "favorite_bass_player": [
-            "html:select",
-            "required",
-            [
-                "Les Claypool",
-                "Geddy Lee",
-                "Flea",
-                "Victor Wooten",
-                "Jaco Pastorius"
-            ]            
+          "html:select",
+          "required",
+          [
+            "Les Claypool",
+            "Geddy Lee",
+            "Flea",
+            "Victor Wooten",
+            "Jaco Pastorius"
+          ]
         ],
         "favorite_fruits.*": [
-            "html:radio",
-            "required",
-            [{
-                id: 1,
-                name: "Banana"
-            },{
-                id: 2,
-                name: "Apple"
-            },{
-                id: 3,
-                name: "Pear"
-            },{
-                id: 4,
-                name: "Pineapple"
-            }] 
+          "html:radio",
+          "required",
+          [{
+            id: 1,
+            name: "Banana"
+          }, {
+            id: 2,
+            name: "Apple"
+          }, {
+            id: 3,
+            name: "Pear"
+          }, {
+            id: 4,
+            name: "Pineapple"
+          }]
         ]
       }
     }
-    
-    ;
+
+      ;
   }
 }

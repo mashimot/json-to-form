@@ -82,7 +82,7 @@ export class ReactiveDrivenHtml {
         if (isValueAnObject) {
           if (!completeKeyNameSplitDotEndsWithAsterisk){
             return [
-              `<div formGroupName="${key}">`,
+              `<div [formGroupName]="'${key}'">`,
                 `${this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray)}`,
               `</div>`
             ]
