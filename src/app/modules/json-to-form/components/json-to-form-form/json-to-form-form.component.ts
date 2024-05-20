@@ -4,6 +4,7 @@ import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 import { html_beautify, js_beautify } from 'js-beautify';
 import { Observable, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, startWith, switchMap, tap } from 'rxjs/operators';
+import { InputTypeEnum } from '../../enums/input-type.enum';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
@@ -32,7 +33,8 @@ export class JsonToFormFormComponent implements OnInit {
         'ng g c :path:/containers/:feature_name:',
         'ng g s :path:/services/:feature_name:',
         'ng g i :path:/models/:feature_name:',
-    ]
+    ];
+    public inputTypesEnum = Object.values(InputTypeEnum);
 
     constructor(
         private formBuilder: FormBuilder,

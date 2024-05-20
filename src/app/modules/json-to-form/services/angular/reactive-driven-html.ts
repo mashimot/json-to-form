@@ -1,5 +1,6 @@
-import { Definition } from './models/Definition';
+import { InputTypeEnum } from '../../enums/input-type.enum';
 import { FunctionDefinition } from './function-definition';
+import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -237,7 +238,7 @@ export class ReactiveDrivenHtml {
 		const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
 		const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
     const ngClass = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
-    const input = ['text', 'file', 'password', 'email', 'number', 'date'].reduce(
+    const input = Object.values(InputTypeEnum).reduce(
       (form: { [key: string]: string }, type: string) => {
         form[type] = `<input type="${type}" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`;
         return form;
