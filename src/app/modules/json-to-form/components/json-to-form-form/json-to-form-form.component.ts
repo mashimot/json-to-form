@@ -10,17 +10,28 @@ import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
 import { JsonValidators } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 
 @Component({
     selector: 'app-json-to-form-form',
     templateUrl: './json-to-form-form.component.html',
-    styleUrls: ['./json-to-form-form.component.scss']
+    styleUrls: ['./json-to-form-form.component.scss'],
+    animations: [  
+        trigger('fade', [
+            state('false', style({ opacity:1 })),
+            state('true', style({ opacity:0 })),
+            transition('* <=> *',[
+                animate(500)
+            ])
+        ])
+    ]
 })
 export class JsonToFormFormComponent implements OnInit {
     @Input() json: any;
 
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
 
+    public state:boolean = false;
     public form!: FormGroup;
     public childComponents: FormControl = new FormControl('', []);
     public editorOptions: JsonEditorOptions;
@@ -57,14 +68,20 @@ export class JsonToFormFormComponent implements OnInit {
                 this.json,
                 [JsonValidators.validateObject()]
             ],
-            path: this.formBuilder.control('modules/tasks', [
-                Validators.required,
-                Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
-            ]),
-            feature_name: this.formBuilder.control('task', [
-                Validators.required,
-                Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
-            ]),
+            path: this.formBuilder.control(
+                'modules/tasks', 
+                [
+                    Validators.required,
+                    Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+                ]
+            ),
+            feature_name: this.formBuilder.control(
+                'task', 
+                [
+                    Validators.required,
+                    Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
+                ]
+            ),
             options: this.formBuilder.group({
                 convert_to: [
                     'angular',
@@ -96,6 +113,7 @@ export class JsonToFormFormComponent implements OnInit {
                         this.loadingService.isLoading(false);
                         return true;
                     }
+                    
                     return false;
                 }),
                 switchMap(({ json, feature_name }) => {
@@ -110,6 +128,7 @@ export class JsonToFormFormComponent implements OnInit {
 
                         return of({
                             component: js_beautify(component.join("\n")),
+                            // html: '',
                             html: html_beautify(html.join("\n"))
                         });
                     }
@@ -120,8 +139,20 @@ export class JsonToFormFormComponent implements OnInit {
             );
     }
 
-    copy(text: string): void {
-        alert('still working on it!')
+    copyToClipboard(val: string): void {
+        this.state = !this.state
+
+        const selBox = document.createElement('textarea');
+        selBox.style.position = 'fixed';
+        selBox.style.left = '0';
+        selBox.style.top = '0';
+        selBox.style.opacity = '0';
+        selBox.value = val;
+        document.body.appendChild(selBox);
+        selBox.focus();
+        selBox.select();
+        document.execCommand('copy');
+        document.body.removeChild(selBox);
     }
 
     onSubmit(): void {

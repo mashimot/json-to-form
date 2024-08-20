@@ -1,4 +1,16 @@
+import { ReservedWordEnum } from "../../enums/reserved-name.enum";
+import { ValueType } from "./models/value.type.";
+
 export class ValidatorRuleHelper {
+    static removeAsteriskFromString(completeKeyNameSplitDot: string[]): string[] {
+        return (completeKeyNameSplitDot || []).reduce((acc: any, item: any) => {
+            if (item !== ReservedWordEnum.__ARRAY__) {
+                acc.push(item);
+            }
+
+            return acc;
+        }, []);
+    }
 
     static str_getcsv(text: string) {
         let p = '', row = [''], ret = [row], i = 0, r = 0, s = !0, l;
@@ -20,7 +32,7 @@ export class ValidatorRuleHelper {
         let indexName: string[] = []
         let index = 0;
         for (let i = completeKeyName.length - 1; i >= 0; i--) {
-            if (completeKeyName[i] !== '*') {
+            if (completeKeyName[i] !== ReservedWordEnum.__ARRAY__) {
                 break;
             }
 
@@ -37,7 +49,7 @@ export class ValidatorRuleHelper {
 
         for (let i = n.length - 1; i >= 0; i--) {
             let item = n[i];
-            if (item !== '*') {
+            if (item !== ReservedWordEnum.__ARRAY__) {
                 break;
             }
             parameters.splice(-1, 1);
@@ -60,7 +72,7 @@ export class ValidatorRuleHelper {
         let id: any = []
         string.forEach((v, index) => {
             //let v = item.split(".");
-            if (v.trim() == "*") {
+            if (v.trim() == ReservedWordEnum.__ARRAY__) {
                 v = '';;
             }
             id[index] = `[${v}]`;
@@ -163,9 +175,9 @@ export class ValidatorRuleHelper {
         }
 
         return string.join(".")
-            .split('*')
+            .split(ReservedWordEnum.__ARRAY__)
             .map(str => str.replace(/(^\.+|\.+$)/mg, ''))
-            .join("|*|")
+            .join("|" + ReservedWordEnum.__ARRAY__ + "|")
             .split("|")
             .filter(el => el);
     }
@@ -206,7 +218,7 @@ export class ValidatorRuleHelper {
     public static getParameters(dotNotation: string[]): string[] {
         let count = 0;
         return dotNotation.reduce((parameters: string[], item) => {
-            if (item === '*') {
+            if (item === ReservedWordEnum.__ARRAY__) {
                 parameters.push(this.getIndexName(count));
                 count++;
             }
@@ -224,7 +236,7 @@ export class ValidatorRuleHelper {
         let count = 0;
         for (let i = 0; i < id.length; i++) {
             const item = id[i];
-            if (item === '*') {
+            if (item === ReservedWordEnum.__ARRAY__) {
                 // const currentParameter = parameters[count];
                 const currentParameter = this.getIndexName(count);
                 id[i] = `{{ ${currentParameter} }}`
@@ -240,7 +252,7 @@ export class ValidatorRuleHelper {
         let count = 0;
         for (let i = 0; i < id.length; i++) {
             const item = id[i];
-            if (item === '*') {
+            if (item === ReservedWordEnum.__ARRAY__) {
                 id[i] = this.getIndexName(count);
                 count++;
             } else {
@@ -257,7 +269,7 @@ export class ValidatorRuleHelper {
 
         for (let i = 0; i < returnFunction.length; i++) {
             const item = returnFunction[i];
-            if (item === '*') {
+            if (item === ReservedWordEnum.__ARRAY__) {
                 const currentParameter = this.getIndexName(count);
                 returnFunction[i] = ` as FormArray).at(${currentParameter})`
                 count++;
@@ -271,4 +283,36 @@ export class ValidatorRuleHelper {
 
         return returnFunction;
     }
+
+    public static getType(obj: any): ValueType {
+        const objToString = ({}).toString;
+        const types = [
+            "Boolean",
+            "Number",
+            "String",
+            "Function",
+            "Array",
+            "Date",
+            "RegExp",
+            "Object",
+            "Error"
+        ];
+        const typeMap = types.reduce((acc: any, item) => {
+            acc[`[object ${item}]`] = item.toLowerCase();
+            return acc;
+        }, {});
+
+        return typeof obj === "object" || typeof obj === "function"
+            ? typeMap[objToString.call(obj)] || "object"
+            : typeof obj;
+    }
+
+    public static changeValue(value: any): any {
+        if (['array', 'object', 'string'].includes(this.getType(value))) {
+            return value;
+        }
+
+        return "";
+    }
+
 }

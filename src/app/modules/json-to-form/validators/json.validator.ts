@@ -33,6 +33,7 @@ export class JsonValidators {
             }
 
             let errors: string[] = ValidatorRuleHelper.validateObject(object);
+
             if (errors.length > 0) {
                 error.messages = errors;
                 control.setErrors(error);

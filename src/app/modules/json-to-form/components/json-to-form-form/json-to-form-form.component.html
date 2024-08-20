@@ -1,141 +1,151 @@
-<mat-card class="mat-elevation-z8 card-prop">
-    <mat-card-content>
-        <div class="rules">
-            <mat-card-title>Rules for Key Names</mat-card-title>
-            <ul>
-                <li>Keys have to be surrounded by double quotes.</li>
-                <li>White Spaces are not allowed.</li>            
-                <li>Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)</li>
-            </ul>
-        </div>
-        <mat-divider inset [style.margin-top]="'24px'" [style.margin-bottom]="'24px'"></mat-divider>
-        <div class="rules">
-            <mat-card-title>Key name ends with a dot followed by an asterisk (<b>.*</b>)</mat-card-title>
-            <ul>
-                <li>
-                    It's going to be a HTML of an Array of Objects or Elements.
-                </li>
-                <li>
-                    <h3>Array of Objects</h3>
-                    <ul> 
-                        <li>Ex: "users.*": {{ '{ "name": "required" }' }} (Array of users).</li>
-                        <li>Ex: "users.*.*": {{ '{ "name": "required" }' }} (2 level deep nested Array of users).</li>
-                    </ul>
-                </li>
-                <li>
-                    <h3>Array of Elements</h3>
-                    <ul> 
-                        <li>Ex: "emails.*": "required|html:email"</li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
-    </mat-card-content>
-</mat-card>
-<div 
-    [style.margin-top]="'24px'"
->
-    <mat-card class="mat-elevation-z8 card-prop">
-        <mat-card-content>
-            <div fxLayout="row wrap">
-                <!-- <div fxFlex="20">
-                    form
-                    <ng-container *ngFor="let inputType of inputTypesEnum; let indexInputType = index;">
-                        <span>{{ inputType }}</span><br/>
-                    </ng-container>
-                </div> -->
-                <div fxFlex="100">
-                    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-                        <div class="form-field-json" [style.margin-bottom]="'12px'">
-                            <label for="__json">JSON</label>
-                            <json-editor
-                                [options]="editorOptions"
-                                formControlName="json"
-                                [class.is-invalid]="isFieldValid('json')"
-                            ></json-editor>
-                            <ng-container *ngIf="form.get('json')?.errors">
-                                <div *ngIf="getField('json')!.errors?.invalidJson">
-                                    <mat-error>
-                                        Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
-                                    </mat-error>
-                                    <ng-container *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;">
-                                        <mat-error>
-                                            <b style="white-space:pre;">{{ error }}</b>
-                                        </mat-error>
-                                    </ng-container>
-                                </div>
+<div class="mt-3">
+    <h3>
+        <strong>
+            You need to import ReactiveFormsModule in order to create reactive forms
+        </strong>
+    </h3>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <div class="row">
+            <div class="col-12 col-md-7 mt-3">
+                <div class="shadow">
+                    <json-editor
+                        [options]="editorOptions"
+                        formControlName="json"
+                        [class.is-invalid]="isFieldValid('json')"
+                    ></json-editor>
+
+                    <ng-container *ngIf="form.get('json')?.errors">
+                        <div *ngIf="getField('json')!.errors?.invalidJson"  class="invalid-feedback">
+                            <div>
+                                Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
+                            </div>
+                            <ng-container
+                                *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;"
+                            >
+                                <b style="white-space:pre;">{{ error }}</b>
                             </ng-container>
                         </div>
-                        <div 
-                            fxLayout="row" 
-                            fxLayoutGap="30px"
-                            fxLayout.xs="row wrap" 
-                            fxLayoutGap.xs="0px"
-                        >
-                            <div fxFlex="35" fxFlex.xs="100">
-                                <mat-form-field class="full-width-field">
-                                    <mat-label>Main folder name</mat-label>
-                                    <input type="text" matInput formControlName="path">
-                                </mat-form-field>
-
-                                <mat-form-field class="full-width-field">
-                                    <mat-label>Feature name</mat-label>
-                                    <input type="text" matInput formControlName="feature_name">
-                                </mat-form-field>
-                            </div>
-                            <div fxFlex="65" fxFlex.xs="100">
-                                <ng-container *ngIf="f.valid">
-                                    <h1>Smart and Dumb Components</h1>
-                                    <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
-                                        <p>{{ 
-                                                sB | 
-                                                replace : ':path:' : path?.value | 
-                                                replace : ':feature_name:' : featureName?.value  
-                                            }}
-                                        </p>                    
-                                    </ng-container>
-                                </ng-container>
-                            </div>
-                        </div>
-                    </form>
+                    </ng-container>
                 </div>
-            </div>                    
-        </mat-card-content>
-    </mat-card>
+            </div>
+            <div  class="col-12 col-md-5 mt-3">
+                <div class="shadow p-3 bg-body border border-light">
+                    <div class="form-group">
+                        <label for="input-main-folder-name">Main folder name</label>
+                        <input 
+                            type="text" 
+                            class="form-control form-control-sm" 
+                            id="input-main-folder-name" 
+                            formControlName="path"
+                        >
+                    </div>
+                    <div class="form-group mt-3">
+                        <label for="input-feature-name">Feature name</label>
+                        <input 
+                            type="text"
+                            class="form-control form-control-sm" 
+                            id="input-feature-name"
+                            formControlName="feature_name"
+                        >
+                    </div>
+                </div>
+
+                <ng-container *ngIf="f.valid">
+                    <div class="shadow p-3 mt-3 bg-body border border-light">
+                        <h3>Smart and Dumb Components</h3>
+                        <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
+                            <p class="my-0">
+                                {{ 
+                                    sB | 
+                                    replace : ':path:' : path?.value | 
+                                    replace : ':feature_name:' : featureName?.value  
+                                }}
+                            </p>                    
+                        </ng-container>
+                    </div>
+                </ng-container>
+            </div>
+        </div>
+    </form>
 </div>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
-    <div fxLayoutAlign="center center" [style.margin-top]="'24px'" [style.margin-bottom]="'24px'">
-        LOADING...
-        <mat-spinner></mat-spinner>
+    <div class="py-3">
+        <div class="spinner-border text-primary" style="width: 5rem; height: 5rem;" role="status">
+            <span class="visually-hidden">LOADING...</span>
+        </div>
     </div>
 </ng-container>
+
 <ng-container *ngIf="(formBuilder$ | async) as formBuilder">
     <ng-container *ngIf="!(isLoadingAction$ | async )">
         <ng-container *ngIf="form.valid">
-            <mat-card class="mat-elevation-z8 card-prop" [style.margin-top]="'24px'"> 
-                <mat-card-header>
-                    <mat-card-title>
-                        <h1>
-                            <strong>
-                                You need to import ReactiveFormsModule in order to create reactive forms
-                            </strong>
-                        </h1>
-                    </mat-card-title>
-                </mat-card-header>
-                <mat-card-content>
-                    <h1>{{ featureNamePlusForm }}.component.ts</h1>
-                    <code id="__form-component"><pre>{{ formBuilder.component }}</pre></code>
-                </mat-card-content>
-            </mat-card>
-            <mat-card class="mat-elevation-z8 card-prop" [style.margin-top]="'24px'"> 
-                <mat-card-content>
-                    <h1>{{ featureNamePlusForm }}.component.html</h1>
-                    <code id="__form-html"><pre>{{ formBuilder.html }}</pre></code>
-                </mat-card-content>
-            </mat-card>
+            <div class="mt-3">
+
+                <div class="row">
+                    <div class="col-12 col-md-6">
+                        <!-- <div class="shadow p-3 mb-5 bg-body border border-light">
+                            <h1>{{ featureNamePlusForm }}.component.ts</h1>
+                            <code id="__form-component"><pre>{{ formBuilder.component }}</pre></code>
+                        </div> -->
+                        <ng-container 
+                            [ngTemplateOutlet]="hueTemplate"
+                            [ngTemplateOutletContext]="{ 
+                                $implicit: formBuilder.component, 
+                                title: featureNamePlusForm + '.component.ts'
+                            }"
+                        ></ng-container>
+                    </div>                    
+                    <div class="col-12 col-md-6">
+                        <!-- <div class="shadow p-3 mb-5 bg-body border border-light">
+                            <h1>{{ featureNamePlusForm }}.component.html</h1>
+                            <code id="__form-html"><pre>{{ formBuilder.html }}</pre></code>
+                        </div> -->
+                        <ng-container 
+                            [ngTemplateOutlet]="hueTemplate"
+                            [ngTemplateOutletContext]="{ 
+                                $implicit: formBuilder.html, 
+                                title: featureNamePlusForm + '.component.html'
+                            }"
+                        ></ng-container>                        
+                    </div>
+                </div>
+
+                  
+            </div>
         </ng-container>
     </ng-container>
 </ng-container>
 
-
+<ng-template #hueTemplate let-code let-title="title">
+    <div class="shadow p-3 mb-5">
+        <div class="d-flex align-items-center highlight-toolbar py-2 border-0 border-top border-bottom position-sticky">
+            <small class="font-monospace text-uppercase">
+                <b>{{ title }}</b>
+            </small>
+            <div class="d-flex ms-auto">
+                <button 
+                    type="button"
+                    class="btn"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="top"
+                    data-bs-custom-class="custom-tooltip"
+                    data-bs-title="Copy to clipboard"
+                    (click)="copyToClipboard(code)"
+                >
+                    <div [@fade]="state">BUNDA</div>
+                    <div [@fade]="!state">BUNDAAOOOOOOOOOOOOO</div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="highlight pt-5">
+            <code class="text-black">
+                <pre>{{ code }}</pre>
+            </code>
+        </div>
+    </div>
+</ng-template>

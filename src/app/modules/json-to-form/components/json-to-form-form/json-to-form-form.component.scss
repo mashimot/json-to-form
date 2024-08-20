@@ -18,11 +18,3 @@
 .example-radio-button {
     margin: 5px;
 }
-
-::ng-deep .mat-radio-group.ng-invalid.ng-touched .mat-radio-outer-circle {
-    border-color: red;
-}
-::ng-deep .mat-radio-group.ng-invalid.ng-touched .mat-radio-label-content {
-     color: #f44336;
-     border-bottom: 2px solid #f44336;
-}

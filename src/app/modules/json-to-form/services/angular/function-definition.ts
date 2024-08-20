@@ -1,3 +1,4 @@
+import { ReservedWordEnum } from '../../enums/reserved-name.enum';
 import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
@@ -21,7 +22,7 @@ export class FunctionDefinition {
 	private getTotalAsterisks(): number {
 		let counterAsterisk = 0;
 		for (let i = this.dotNotationSplit.length - 1; i >= 0; i--) {
-			if (this.dotNotationSplit[i] !== '*') {
+			if (this.dotNotationSplit[i] !== ReservedWordEnum.__ARRAY__) {
 				break;
 			}
 			counterAsterisk++;
