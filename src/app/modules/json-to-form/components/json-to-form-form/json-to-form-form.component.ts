@@ -1,5 +1,5 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import { AbstractControl, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { AbstractControl, UntypedFormArray, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 import { html_beautify, js_beautify } from 'js-beautify';
 import { Observable, of } from 'rxjs';
@@ -32,8 +32,8 @@ export class JsonToFormFormComponent implements OnInit {
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
 
     public state:boolean = false;
-    public form!: FormGroup;
-    public childComponents: FormControl = new FormControl('', []);
+    public form!: UntypedFormGroup;
+    public childComponents: UntypedFormControl = new UntypedFormControl('', []);
     public editorOptions: JsonEditorOptions;
     public formBuilder$!: Observable<any>;
     public isLoadingAction$?: Observable<boolean>;
@@ -48,7 +48,7 @@ export class JsonToFormFormComponent implements OnInit {
     public inputTypesEnum = Object.values(InputTypeEnum);
 
     constructor(
-        private formBuilder: FormBuilder,
+        private formBuilder: UntypedFormBuilder,
         private loadingService: LoadingService
     ) {
         this.editorOptions = new JsonEditorOptions();
@@ -163,31 +163,31 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     validateAllFormFields(control: AbstractControl): void {
-        if (control instanceof FormControl) {
+        if (control instanceof UntypedFormControl) {
             control.markAsTouched({
                 onlySelf: true
             });
-        } else if (control instanceof FormGroup) {
+        } else if (control instanceof UntypedFormGroup) {
             Object.keys(control.controls).forEach((field: string) => {
                 const groupControl = control.get(field)!;
                 this.validateAllFormFields(groupControl);
             });
-        } else if (control instanceof FormArray) {
-            const controlAsFormArray = control as FormArray;
+        } else if (control instanceof UntypedFormArray) {
+            const controlAsFormArray = control as UntypedFormArray;
             controlAsFormArray.controls.forEach((arrayControl: AbstractControl) => this.validateAllFormFields(arrayControl));
         }
     }
 
-    get f(): FormGroup {
-        return this.form as FormGroup;
+    get f(): UntypedFormGroup {
+        return this.form as UntypedFormGroup;
     }
 
-    get featureName(): FormControl {
-        return this.f.get('feature_name') as FormControl;
+    get featureName(): UntypedFormControl {
+        return this.f.get('feature_name') as UntypedFormControl;
     }
 
-    get path(): FormControl {
-        return this.f.get('path') as FormControl;
+    get path(): UntypedFormControl {
+        return this.f.get('path') as UntypedFormControl;
     }
 
     get featureNamePlusForm(): string {
@@ -198,8 +198,8 @@ export class JsonToFormFormComponent implements OnInit {
         return !this.f.get(field)?.valid && this.f.get(field)?.touched;
     }
 
-    getField(field: string): FormControl {
-        return this.f.get(field) as FormControl;
+    getField(field: string): UntypedFormControl {
+        return this.f.get(field) as UntypedFormControl;
     }
 
 }
