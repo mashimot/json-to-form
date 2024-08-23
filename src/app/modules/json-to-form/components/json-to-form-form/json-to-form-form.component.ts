@@ -31,9 +31,10 @@ export class JsonToFormFormComponent implements OnInit {
 
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
 
-    public state:boolean = false;
+    public iconToggle: string[] = ['bi-clipboard', 'bi-clipboard'];
     public form!: UntypedFormGroup;
     public childComponents: UntypedFormControl = new UntypedFormControl('', []);
+    public inputTypesEnum = Object.values(InputTypeEnum);
     public editorOptions: JsonEditorOptions;
     public formBuilder$!: Observable<any>;
     public isLoadingAction$?: Observable<boolean>;
@@ -45,7 +46,6 @@ export class JsonToFormFormComponent implements OnInit {
         'ng g s :path:/services/:feature_name:',
         'ng g i :path:/models/:feature_name:',
     ];
-    public inputTypesEnum = Object.values(InputTypeEnum);
 
     constructor(
         private formBuilder: UntypedFormBuilder,
@@ -96,7 +96,7 @@ export class JsonToFormFormComponent implements OnInit {
         this.formBuilder$ = this.form.valueChanges
             .pipe(
                 tap(response => {
-                    this.loadingService.isLoading(true)
+                    this.loadingService.isLoading(true);
                 }),
                 startWith(this.form.value),
                 filter(value => {
@@ -138,9 +138,11 @@ export class JsonToFormFormComponent implements OnInit {
                 tap(() => this.loadingService.isLoading(false))
             );
     }
+    
+    copyToClipboard(val: string, index: number): void {
+        this.iconToggle[index] = 'bi-check-lg';
 
-    copyToClipboard(val: string): void {
-        this.state = !this.state
+        setTimeout(() => { this.iconToggle[index] = "bi-clipboard"}, 800);
 
         const selBox = document.createElement('textarea');
         selBox.style.position = 'fixed';
@@ -183,11 +185,11 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     get featureName(): UntypedFormControl {
-        return this.f.get('feature_name') as UntypedFormControl;
+        return this.f?.get('feature_name') as UntypedFormControl;
     }
 
     get path(): UntypedFormControl {
-        return this.f.get('path') as UntypedFormControl;
+        return this.f?.get('path') as UntypedFormControl;
     }
 
     get featureNamePlusForm(): string {
@@ -195,11 +197,11 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     isFieldValid(field: string): boolean | undefined {
-        return !this.f.get(field)?.valid && this.f.get(field)?.touched;
+        return !this.f?.get(field)?.valid && this.f.get(field)?.touched;
     }
 
     getField(field: string): UntypedFormControl {
-        return this.f.get(field) as UntypedFormControl;
+        return this.f?.get(field) as UntypedFormControl;
     }
 
 }
