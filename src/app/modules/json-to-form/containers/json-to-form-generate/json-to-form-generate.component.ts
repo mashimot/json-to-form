@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { filter, map, switchMap, tap } from 'rxjs/operators';
@@ -10,12 +10,12 @@ import { JsonToFormService } from '../../services/json-to-form.service';
   styleUrls: ['./json-to-form-generate.component.scss']
 })
 export class JsonToFormGenerateComponent implements OnInit {
+  private jsonToFormService = inject(JsonToFormService);
+  private route = inject(ActivatedRoute);
+
   public formExample$!: Observable<any>;
 
-  constructor(
-    private jsonToFormService: JsonToFormService,
-    private route: ActivatedRoute
-  ) { }
+  constructor() { }
 
   ngOnInit(): void {
     this.formExample$ = this.route.paramMap

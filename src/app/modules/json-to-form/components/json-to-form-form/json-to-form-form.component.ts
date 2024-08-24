@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
 import { AbstractControl, UntypedFormArray, UntypedFormBuilder, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import { JsonEditorComponent, JsonEditorOptions } from 'ang-jsoneditor';
 import { html_beautify, js_beautify } from 'js-beautify';
@@ -16,11 +16,11 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
     selector: 'app-json-to-form-form',
     templateUrl: './json-to-form-form.component.html',
     styleUrls: ['./json-to-form-form.component.scss'],
-    animations: [  
+    animations: [
         trigger('fade', [
-            state('false', style({ opacity:1 })),
-            state('true', style({ opacity:0 })),
-            transition('* <=> *',[
+            state('false', style({ opacity: 1 })),
+            state('true', style({ opacity: 0 })),
+            transition('* <=> *', [
                 animate(500)
             ])
         ])
@@ -30,6 +30,9 @@ export class JsonToFormFormComponent implements OnInit {
     @Input() json: any;
 
     @ViewChild(JsonEditorComponent, { static: false }) editor?: JsonEditorComponent;
+
+    private formBuilder = inject(UntypedFormBuilder);
+    private loadingService = inject(LoadingService);
 
     public iconToggle: string[] = ['bi-clipboard', 'bi-clipboard'];
     public form!: UntypedFormGroup;
@@ -47,10 +50,7 @@ export class JsonToFormFormComponent implements OnInit {
         'ng g i :path:/models/:feature_name:',
     ];
 
-    constructor(
-        private formBuilder: UntypedFormBuilder,
-        private loadingService: LoadingService
-    ) {
+    constructor() {
         this.editorOptions = new JsonEditorOptions();
         this.editorOptions.mode = 'code'; // set all allowed modes
         this.editorOptions.modes = ['code']; // set all allowed modes
@@ -69,14 +69,14 @@ export class JsonToFormFormComponent implements OnInit {
                 [JsonValidators.validateObject()]
             ],
             path: this.formBuilder.control(
-                'modules/tasks', 
+                'modules/tasks',
                 [
                     Validators.required,
                     Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
                 ]
             ),
             feature_name: this.formBuilder.control(
-                'task', 
+                'task',
                 [
                     Validators.required,
                     Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
@@ -113,7 +113,7 @@ export class JsonToFormFormComponent implements OnInit {
                         this.loadingService.isLoading(false);
                         return true;
                     }
-                    
+
                     return false;
                 }),
                 switchMap(({ json, feature_name }) => {
@@ -138,11 +138,11 @@ export class JsonToFormFormComponent implements OnInit {
                 tap(() => this.loadingService.isLoading(false))
             );
     }
-    
+
     copyToClipboard(val: string, index: number): void {
         this.iconToggle[index] = 'bi-check-lg';
 
-        setTimeout(() => { this.iconToggle[index] = "bi-clipboard"}, 800);
+        setTimeout(() => { this.iconToggle[index] = "bi-clipboard" }, 800);
 
         const selBox = document.createElement('textarea');
         selBox.style.position = 'fixed';

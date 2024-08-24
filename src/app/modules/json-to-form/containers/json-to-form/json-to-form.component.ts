@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { JsonToFormService } from '../../services/json-to-form.service';
 import { Observable } from 'rxjs';
@@ -9,11 +9,12 @@ import { Observable } from 'rxjs';
   styleUrls: ['./json-to-form.component.css']
 })
 export class JsonToFormComponent implements OnInit {
-  formExamples$: Observable<any> = this.jsonToFormService.getExamples();
+  private router = inject(Router);
+  private jsonToFormService = inject(JsonToFormService);
+  public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
 
   constructor(
-    private router: Router,
-    private jsonToFormService: JsonToFormService
+
   ) { }
 
   ngOnInit(): void {
