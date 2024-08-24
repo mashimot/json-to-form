@@ -4,30 +4,28 @@
             You need to import ReactiveFormsModule in order to create reactive forms
         </strong>
     </div>
+</div>
 
+<section class="pb-3">
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
         <div class="row">
             <div class="col-12 col-md-7 mt-3">
-                <div class="shadow">
-                    <json-editor
-                        [options]="editorOptions"
-                        formControlName="json"
-                        [class.is-invalid]="isFieldValid('json')"
-                    ></json-editor>
+                <json-editor
+                    [options]="editorOptions"
+                    formControlName="json"
+                ></json-editor>
 
-                    <ng-container *ngIf="form.get('json')?.errors">
-                        <div *ngIf="getField('json')!.errors?.invalidJson"  class="invalid-feedback">
-                            <div>
-                                Key accepts only words, underscore (_), numbers and can end (or not) with a dot followed by an asterisk (<b>.*</b>)
-                            </div>
+                <ng-container *ngIf="form.get('json')?.errors">
+                    <div *ngIf="getField('json')!.errors?.invalidJson">
+                        <div class="alert alert-danger" role="alert">
                             <ng-container
                                 *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;"
                             >
-                                <b style="white-space:pre;">{{ error }}</b>
+                                <p class="my-0" style="white-space:pre;">{{ error }}</p>
                             </ng-container>
                         </div>
-                    </ng-container>
-                </div>
+                    </div>
+                </ng-container>
             </div>
             <div  class="col-12 col-md-5 mt-3">
                 <div class="shadow p-3 bg-body border border-light">
@@ -82,7 +80,7 @@
             </div>
         </div>
     </form>
-</div>
+</section>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
     <div class="my-3">
