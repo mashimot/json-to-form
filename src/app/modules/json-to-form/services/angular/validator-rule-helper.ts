@@ -303,7 +303,7 @@ export class ValidatorRuleHelper {
         }, {});
 
         return typeof obj === "object" || typeof obj === "function"
-            ? typeMap[objToString.call(obj)] || "object"
+            ? typeMap[objToString.call(obj)]
             : typeof obj;
     }
 
