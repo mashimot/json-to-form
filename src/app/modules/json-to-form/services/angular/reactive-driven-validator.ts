@@ -317,16 +317,6 @@ export class ReactiveDrivenValidator {
                 }
 
                 if (isValueString) {
-                    if (previousValueType === 'array') {
-                        const key = ValidatorRuleHelper.removeAsteriskFromString(completeKeyNameSplitDot);
-                        const newKey = key[key.length - 1];
-                        return [
-                            `"${newKey}":`,
-                            functionDefinition.formBuilder.join("\n"),
-                        ]
-                            .join('\n');
-                    }
-
                     const rules = value.split('|');
                     const ruleParameters = new Validator(rules).get();
                     const values = this.generateValues(rules);
@@ -337,6 +327,16 @@ export class ReactiveDrivenValidator {
                             get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
                             values: values
                         }
+                    }
+
+                    if (previousValueType === 'array') {
+                        const key = ValidatorRuleHelper.removeAsteriskFromString(completeKeyNameSplitDot);
+                        const newKey = key[key.length - 1];
+                        return [
+                            `"${newKey}":`,
+                            functionDefinition.formBuilder.join("\n"),
+                        ]
+                            .join('\n');
                     }
 
                     return [`"${key}": ['', [${ruleParameters.join(",")}]],`];
