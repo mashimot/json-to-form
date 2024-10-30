@@ -9,14 +9,17 @@ export class FormArrayBuilder {
 	private formBuilderGroup: string[] = [];
 	private completeKeyName: string[] = [];
 	private dotNotationSplit: string[] = [];
+	private functionName: string = '';
 
 	constructor(
 		completeKeyName: string[],
-		formBuilderGroup: string[] = []
+		formBuilderGroup: string[] = [],
+		functionName?: string
 	) {
 		this.completeKeyName = completeKeyName;
 		this.dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
+		this.functionName = functionName || ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
 	}
 
 	private getTotalAsterisks(): number {
@@ -31,12 +34,9 @@ export class FormArrayBuilder {
 		return counterAsterisk;
 	}
 
-	public get(): Definition {
-		const definition: Definition = {
-			get: [],
-			formBuilder: []
-		};
-		const functionName = ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
+	private createDataMap(): Map<string, string>[] {
+		const dataMaps: Map<string, string>[] = [];
+		const functionName = this.functionName;
 		const counterAsterisk = this.getTotalAsterisks();
 		const parameters = [...ValidatorRuleHelper.getParameters(this.completeKeyName)];
 		const path = [...ValidatorRuleHelper.getField(this.completeKeyName)];
@@ -50,64 +50,33 @@ export class FormArrayBuilder {
 			path.pop();
 
 			const parametersWithLastIndex = [...parameters, lastIndex];
-			//(index1, index2)
-			dataMap.set(
-				'parameters',
-				`(${parameters.map((p: string) => `${p}`).join(",")})`
-			);
-			//(index1: number, index2: number)
-			dataMap.set(
-				'parameters_typed',
-				`(${parameters.map((p: string) => `${p}:number`).join(",")})`
-			);
-			//(index1, index2)
-			dataMap.set(
-				'parameters_with_last_index',
-				`(${parametersWithLastIndex.map((p: string) => `${p}`).join(",")})`
-			);
-			//(index1: number, index2: number, index3: number)
-			dataMap.set(
-				'parameters_with_last_index_typed',
-				`(${parametersWithLastIndex.map((p: string) => `${p}:number`).join(",")})`
-			);
-			dataMap.set(
-				'function_name',
-				`${functionName}${i > 0 ? i : ''}`
-			);
-			dataMap.set(
-				'get_function_name',
-				getFunctionName
-			);
-			dataMap.set(
-				'get_with_parameters',
-				`${getFunctionName}${dataMap.get('parameters')}`
-			);
-			dataMap.set(
-				'get_at',
-				`${dataMap.get('get_with_parameters')}.at(${lastIndex})`
-			);
-			dataMap.set(
-				'second_to_last_index',
-				parameters[parameters.length - 1]
-			);
-			dataMap.set(
-				'last_index',
-				lastIndex
-			);
-			dataMap.set(
-				'get_function',
-				[
-					`${getFunctionName}${dataMap.get('parameters_typed')}: FormArray {`,
-					// `return ${parameters.map(() => '(').join("")}${returnFunction.join("")} as FormArray;`,
-					`return this.f.get(${`[${path.join(",")}]`}) as FormArray;`,
-					`}`
-				]
-					.join("\n")
-			);
+
+			dataMap.set('parameters', `(${parameters.join(",")})`);
+			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.join(",")})`);
+			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('function_name', `${functionName}${i > 0 ? i : ''}`);
+			dataMap.set('get_function_name', getFunctionName);
+			dataMap.set('create_function_name', `${this.CREATE}${dataMap.get('function_name')}`);
+			dataMap.set('delete_function_name', `${this.DELETE}${dataMap.get('function_name')}`);
+			dataMap.set('get_with_parameters', `${getFunctionName}(${parameters.join(",")})`);
+			dataMap.set('get_at', `${getFunctionName}(${parameters.join(",")}).at(${lastIndex})`);
+			dataMap.set('second_to_last_index', parameters[parameters.length - 1]);
+			dataMap.set('last_index', lastIndex);
+			dataMap.set('path', path.join(",")),
+				dataMap.set(
+					'get_function',
+					[
+						`${getFunctionName}${dataMap.get('parameters_typed')}: FormArray {`,
+						`return this.f.get(${`[${dataMap.get("path")}]`}) as FormArray;`,
+						`}`
+					]
+						.join("\n")
+				);
 			dataMap.set(
 				'delete_function',
 				[
-					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
+					`${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
 					`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
 					`}`
 				].join("\n")
@@ -141,14 +110,23 @@ export class FormArrayBuilder {
 				].join("\n")
 			);
 
-			definition.get.unshift(dataMap);
-		}
+			dataMaps.unshift(dataMap);
+		};
+
+		return dataMaps;
+	}
+
+	public get(): Definition {
+		const definition: Definition = {
+			get: this.createDataMap(),
+			formBuilder: []
+		};
 
 		if (definition.get.length > 0) {
-			const firstFunctionName = definition.get[0].get('function_name');
+			const firstCreateFunctionName = definition.get[0].get('create_function_name');
 			definition.formBuilder = [
 				`this.${this.FORM_BUILDER}.array([`,
-				`this.${this.CREATE}${firstFunctionName}()`,
+				`this.${firstCreateFunctionName}()`,
 				`]),`
 			];
 		}

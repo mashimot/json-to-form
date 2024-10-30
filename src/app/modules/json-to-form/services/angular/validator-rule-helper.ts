@@ -140,28 +140,53 @@ export class ValidatorRuleHelper {
         ];
     }
 
+    public static capitalizeFirstLetter(str: string): string {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    public static lowercaseFirstLetter(str: string): string {
+        if (!str) return '';
+        return str.charAt(0).toLowerCase() + str.slice(1);
+    }
+
+    public static toCamelCase(parts: string[], isFirstLetterLowerCase: boolean = false): string {
+        const words = parts
+            .map((part, index) => {
+                if (index === 0) {
+                    return part.toLowerCase(); // Primeira palavra em minúsculo
+                }
+
+                return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(); // Demais palavras capitalizadas
+            })
+            .join('');
+
+        return isFirstLetterLowerCase
+            ? ValidatorRuleHelper.lowercaseFirstLetter(words)
+            : ValidatorRuleHelper.capitalizeFirstLetter(words);
+    }
+
     public static camelCasedString(string: string, isFirstLetterLowerCase: boolean = false): string {
         if (!string) {
             return '';
         }
 
         const stringToLowerCase = ((string || '')?.toLowerCase());
-        const onlyLettersAndNumber = stringToLowerCase.match(/[A-Z0-9]+/ig);
+        const onlyLettersAndNumbers = stringToLowerCase.match(/[A-Z0-9]+/ig);
         let camelCase = '';
 
-        if (onlyLettersAndNumber) {
-            camelCase = onlyLettersAndNumber.map((word: string, i: number) => {
+        if (onlyLettersAndNumbers) {
+            camelCase = onlyLettersAndNumbers.map((word: string, i: number) => {
                 if (!i) return word;
                 return word[0].toUpperCase() + word.slice(1); // return newly formed string
             })
                 .join("");
         }
 
-        const firstLetter = isFirstLetterLowerCase
-            ? camelCase[0].toLowerCase()
-            : camelCase[0].toUpperCase();
 
-        return `${firstLetter}${camelCase.slice(1)}`;
+        return isFirstLetterLowerCase
+            ? ValidatorRuleHelper.lowercaseFirstLetter(camelCase)
+            : ValidatorRuleHelper.capitalizeFirstLetter(camelCase);
     }
 
     //input: ['users', '*', 'address', 'number']
@@ -311,17 +336,40 @@ export class ValidatorRuleHelper {
 
     public static createRemainingKeys(namesList: string[], previousType: string, currentKey: string, isArray: boolean): any[] {
         const remainingKeys = [];
-    
+
         // Adiciona a chave se a lista de nomes estiver vazia ou se o tipo anterior não for 'array'
         if (!namesList.length || previousType !== 'array') {
             remainingKeys.push(currentKey);
         }
-    
+
         // Adiciona 'true' se o valor atual for um array
         if (isArray) {
             remainingKeys.push(ReservedWordEnum.__ARRAY__);
         }
-    
+
         return remainingKeys;
+    }
+
+    public static generateMethodName(path: string[]): string {
+        // const cleanedPath = path.map(key => ValidatorRuleHelper.cleanKey(key.toString()));
+        return ValidatorRuleHelper.camelCasedString(path.join(""));
+    }
+
+    public static getUniqueMethodName(
+        path: string[],
+        cleanKey: string,
+        methodsSet: Set<string>
+    ): string {
+        let methodName = ValidatorRuleHelper.generateMethodName([...path, cleanKey]);
+        let count = 1;
+
+        // Incrementa o nome do método até que seja único
+        while (methodsSet.has(methodName)) {
+            const updatedPath = [...path.slice(0, path.length), cleanKey + count];
+            methodName = ValidatorRuleHelper.generateMethodName(updatedPath);
+            count++;
+        }
+
+        return methodName;
     }
 }

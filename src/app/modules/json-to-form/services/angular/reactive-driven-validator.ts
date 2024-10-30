@@ -227,7 +227,9 @@ export class ReactiveDrivenValidator {
                 const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
                 const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
                 const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
-
+                const functionName = ValidatorRuleHelper.generateMethodName(
+                    dotNotationSplit                    
+                );
                 let formArrayBuilder: Definition = {
                     get: [],
                     formBuilder: []
@@ -262,7 +264,8 @@ export class ReactiveDrivenValidator {
 
                     formArrayBuilder = new FormArrayBuilder(
                         completeKeyNameSplitDot,
-                        formBuilder
+                        formBuilder,
+                        ValidatorRuleHelper.capitalizeFirstLetter(functionName)
                     )
                         .get();
 
