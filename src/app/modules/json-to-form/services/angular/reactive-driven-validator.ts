@@ -1,9 +1,9 @@
 import { FormBuilder } from '@angular/forms';
-import { FunctionDefinition } from './function-definition';
+import { FormArrayBuilder } from './function-definition';
 import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 import { ReservedWordEnum } from '../../enums/reserved-name.enum';
-import { ValueType } from './models/value.type.';
+import { ValueType } from './models/value.type';
 
 interface Rules {
     [name: string]: any;
@@ -210,40 +210,34 @@ export class ReactiveDrivenValidator {
 
     public reactiveDrivenValidators(
         object: { [key: string]: any },
-        namesArr: (string | boolean)[] = [],
+        namesArr: string[] = [],
         previousValueType: ValueType = 'object'
     ): string {
         return Object
             .keys(object)
-            .map((key: any, index: number) => {
+            .map((key: string, index: number) => {
                 const value = ValidatorRuleHelper.changeValue(object[key]);
                 const valueType = ValidatorRuleHelper.getType(value);
                 const isValueString = valueType === 'string';
                 const isValueAnArray = valueType === 'array';
                 const isValueAnObject = valueType === 'object';
-                const restArr = [];
-                if(namesArr.length <= 0 || previousValueType !== 'array') {
-                    restArr.push(key);
-                }
-                if (isValueAnArray) {
-                    this.index = value.length;
-                    restArr.push(true);
-                }
-                const completeKeyName = [ ...namesArr, ...restArr ];
-                const completeKeyNameSplitDot = completeKeyName.map(keyName => {
-                    return keyName === true ? ReservedWordEnum.__ARRAY__ : keyName;
-                });
+                const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, isValueAnArray);
+                const completeKeyName = [...namesArr, ...remainingKeys];
+                const completeKeyNameSplitDot = completeKeyName;
                 const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
-                let functionDefinition: Definition = {
+                const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
+                const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
+
+                let formArrayBuilder: Definition = {
                     get: [],
                     formBuilder: []
                 };
 
-                if(!isValueAnArray && previousValueType === 'array' && this.index - 1 !== index) {
-                    return '';
-                }
-                
                 if (!isValueAnArray && previousValueType === 'array') {
+                    if(this.index - 1 !== index) {
+                        return '';
+                    }
+
                     let formBuilder: string[] = [];
 
                     if (isValueString) {
@@ -258,7 +252,7 @@ export class ReactiveDrivenValidator {
                                 }
                             }
                         });
-                    }  else {
+                    } else {
                         formBuilder = [
                             `this.formBuilder.group({`,
                                 `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
@@ -266,51 +260,45 @@ export class ReactiveDrivenValidator {
                         ];
                     }
 
-                    functionDefinition = new FunctionDefinition(
+                    formArrayBuilder = new FormArrayBuilder(
                         completeKeyNameSplitDot,
                         formBuilder
                     )
-                    .get();
+                        .get();
 
-                    this.functions.push(functionDefinition);
+                    this.functions.push(formArrayBuilder);
                 }
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
                 if (isValueAnArray) {
+                    this.index = value.length;
+
                     return this.reactiveDrivenValidators(value, completeKeyName, 'array');
                 } else {
                     if (!completeKeyNameSplitDot.includes(ReservedWordEnum.__ARRAY__)) {
-                        this.generateGetters(completeKeyNameSplitDot, dotNotationSplit, isValueAnObject);
+                        this.getters.push(
+                            this.generateGetters(
+                                completeKeyNameSplitDot, 
+                                dotNotationSplit,
+                                isValueAnObject
+                            )
+                        );
                     }
                 }
 
                 if (isValueAnObject) {
-                    //key has asterisk
-                    if (previousValueType === 'array' && this.index - 1 !== index) {
-                        const key = ValidatorRuleHelper.removeAsteriskFromString(completeKeyNameSplitDot);
-                        const newKey = key[key.length - 1];
+                    if (previousValueType === 'array') {
                         return [
-                            `"${newKey}":`,
-                            functionDefinition.formBuilder.join("\n"),
-                        ]
-                            .join('\n');
-                    }
-
-                    if(previousValueType === 'array') {
-                        const key = ValidatorRuleHelper.removeAsteriskFromString(completeKeyNameSplitDot);
-                        const newKey = key[key.length - 1];
-
-                        return [
-                            `"${newKey}":`,
-                            functionDefinition.formBuilder.join("\n"),
+                            `"${firstKeyNameBeforeDot}":`,
+                            formArrayBuilder.formBuilder.join("\n"),
                         ]
                             .join('\n');
                     }
 
                     return [
                         `"${key}": this.formBuilder.group({`,
-                            `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
+                        `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
                         `}),`
                     ]
                         .join('\n');
@@ -322,7 +310,7 @@ export class ReactiveDrivenValidator {
                     const values = this.generateValues(rules);
 
                     if (values.length > 0) {
-                        functionDefinition.mockData = {
+                        formArrayBuilder.mockData = {
                             parameter_name: ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."), true),
                             get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
                             values: values
@@ -330,11 +318,9 @@ export class ReactiveDrivenValidator {
                     }
 
                     if (previousValueType === 'array') {
-                        const key = ValidatorRuleHelper.removeAsteriskFromString(completeKeyNameSplitDot);
-                        const newKey = key[key.length - 1];
                         return [
-                            `"${newKey}":`,
-                            functionDefinition.formBuilder.join("\n"),
+                            `"${firstKeyNameBeforeDot}":`,
+                            formArrayBuilder.formBuilder.join("\n"),
                         ]
                             .join('\n');
                     }
@@ -344,6 +330,7 @@ export class ReactiveDrivenValidator {
 
                 return '';
             })
+            .filter(el => el)
             .join("\n");
     }
 
@@ -374,20 +361,22 @@ export class ReactiveDrivenValidator {
         }, []);
     }
 
-    private generateGetters(completeKeyNameSplitDot: string[], dotNotationSplit: string[], isValueAnObject: boolean): void {
+    private generateGetters(completeKeyNameSplitDot: string[], dotNotationSplit: string[], isValueAnObject: boolean): string {
         const path: string = `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot).join(",")}]`;
         const getterFunctionName = ValidatorRuleHelper.camelCasedString(
             dotNotationSplit
-                .filter((el: any) => el !== ReservedWordEnum.__ARRAY__)
+                .filter((el: string) => el !== ReservedWordEnum.__ARRAY__)
                 .join(""),
             true
         );
         const formType = isValueAnObject ? 'FormGroup' : 'FormControl';
-        this.getters.push(
-            `get ${getterFunctionName}(): ${formType} {
-                return this.f.get(${path}) as ${formType};
-            }`
-        );
+
+        return [
+            `get ${getterFunctionName}(): ${formType} {`,
+                `return this.f.get(${path}) as ${formType};`,
+            `}`
+        ]
+            .join("\n")
     }
 
     private setRules(rules: Rules): void {

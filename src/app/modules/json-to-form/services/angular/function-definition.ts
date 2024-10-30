@@ -2,7 +2,7 @@ import { ReservedWordEnum } from '../../enums/reserved-name.enum';
 import { Definition } from './models/Definition';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
-export class FunctionDefinition {
+export class FormArrayBuilder {
 	private CREATE: string = 'create';
 	private DELETE: string = 'delete';
 	private FORM_BUILDER: string = 'formBuilder';

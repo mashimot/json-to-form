@@ -1,8 +1,9 @@
+import { typeMap } from "../../constants/type-map.constant";
 import { ReservedWordEnum } from "../../enums/reserved-name.enum";
-import { ValueType } from "./models/value.type.";
+import { ValueType } from "./models/value.type";
 
 export class ValidatorRuleHelper {
-    static removeAsteriskFromString(completeKeyNameSplitDot: string[]): string[] {
+    static removeReservedWordFromString(completeKeyNameSplitDot: string[]): string[] {
         return (completeKeyNameSplitDot || []).reduce((acc: any, item: any) => {
             if (item !== ReservedWordEnum.__ARRAY__) {
                 acc.push(item);
@@ -163,12 +164,12 @@ export class ValidatorRuleHelper {
         return `${firstLetter}${camelCase.slice(1)}`;
     }
 
-    //['users', '*', 'address', 'number']
-    //users.*.address.number
-    //['users.', '*', '.address.number']
-    //['users', '*', 'address.number']
-    //'users|*|address.number'
-    //['users', '*', 'address.number']
+    //input: ['users', '*', 'address', 'number']
+    //1. users.*.address.number
+    //2. ['users.', '*', '.address.number']
+    //3. ['users', '*', 'address.number']
+    //4. 'users|*|address.number'
+    //5. ['users', '*', 'address.number']
     public static dotNotation(string: string[]): string[] {
         if (string.length <= 0) {
             return [];
@@ -263,6 +264,13 @@ export class ValidatorRuleHelper {
         return id;
     }
 
+    public static getterFunctionName(keyNamesWithoutReservedWord: string): string {
+        return ValidatorRuleHelper.camelCasedString(
+            keyNamesWithoutReservedWord,
+            true
+        );
+    }
+
     public static generateReturnFunction(dotNotation: string[]): string[] {
         const returnFunction = [...dotNotation];
         let count = 0;
@@ -285,26 +293,12 @@ export class ValidatorRuleHelper {
     }
 
     public static getType(obj: any): ValueType {
-        const objToString = ({}).toString;
-        const types = [
-            "Boolean",
-            "Number",
-            "String",
-            "Function",
-            "Array",
-            "Date",
-            "RegExp",
-            "Object",
-            "Error"
-        ];
-        const typeMap = types.reduce((acc: any, item) => {
-            acc[`[object ${item}]`] = item.toLowerCase();
-            return acc;
-        }, {});
+        const objToString = Object.prototype.toString.call(obj);
+        const objType = typeof obj;
 
-        return typeof obj === "object" || typeof obj === "function"
-            ? typeMap[objToString.call(obj)]
-            : typeof obj;
+        return objType === "object" || objType === "function"
+            ? typeMap[objToString] || objType as ValueType
+            : objType as ValueType;
     }
 
     public static changeValue(value: any): any {
@@ -315,4 +309,19 @@ export class ValidatorRuleHelper {
         return "";
     }
 
+    public static createRemainingKeys(namesList: string[], previousType: string, currentKey: string, isArray: boolean): any[] {
+        const remainingKeys = [];
+    
+        // Adiciona a chave se a lista de nomes estiver vazia ou se o tipo anterior não for 'array'
+        if (!namesList.length || previousType !== 'array') {
+            remainingKeys.push(currentKey);
+        }
+    
+        // Adiciona 'true' se o valor atual for um array
+        if (isArray) {
+            remainingKeys.push(ReservedWordEnum.__ARRAY__);
+        }
+    
+        return remainingKeys;
+    }
 }
