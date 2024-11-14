@@ -273,7 +273,7 @@ export class ValidatorRuleHelper {
         return id;
     }
 
-    public static getField(dotNotation: string[]): string[] {
+    public static getPath(dotNotation: string[]): string[] {
         const id = [...dotNotation];
         let count = 0;
         for (let i = 0; i < id.length; i++) {

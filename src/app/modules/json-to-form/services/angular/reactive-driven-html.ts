@@ -134,12 +134,12 @@ export class ReactiveDrivenHtml {
           const formInput = this.generateFormInput(INPUTS, rules);
           const formValidators = this.generateFormValidators(rules, `${FormEnum.ABSCTRACT_CONTROL}`);
 
-          let formArrayOpenTag: string[] = [];
-          let formArrayCloseTag: string[] = [];
+          let formArrayOpenWrapper: string[] = [];
+          let formArrayCloseWrapper: string[] = [];
 
           //ex.*: { keyName: [] }
           if (formArrayBuilder.get.length > 0) {
-            [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
+            [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArray(
               formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject, completeKeyNameSplitDot.join(".")
             );
 
@@ -147,7 +147,7 @@ export class ReactiveDrivenHtml {
           }
 
           return [
-            formArrayOpenTag.join(""),
+            formArrayOpenWrapper.join(""),
             `<div class="form-group" *ngIf="getField(${getField}) as field">`,
               `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
               `${formInput}`,
@@ -155,8 +155,25 @@ export class ReactiveDrivenHtml {
                 `${formValidators.join("")}`,
               `</div>`,
             `</div>`,
-            formArrayCloseTag.join("")
+            formArrayCloseWrapper.join("")
           ]
+
+          // return [
+          //   formArrayOpenWrapper.join(""),
+          //   // `<div class="form-group" *ngIf="getField(${getField}) as field">`,
+          //   this.ifOpenWrapper(`getField(${getField}) as field`),
+          //   `<div class="form-group">`,
+          //     `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
+          //     `${formInput}`,
+          //     this.ifOpenWrapper(`${FormEnum.IS_FIELD_VALID}`),
+          //     `<div class="invalid-feedback">`,
+          //       `${formValidators.join("")}`,
+          //     `</div>`,
+          //     this.ifCloseWrapper(),
+          //   `</div>`,
+          //   this.ifCloseWrapper(),
+          //   formArrayCloseWrapper.join("")
+          // ]
             .filter(el => el)
             .join("\n");
         }
@@ -183,7 +200,7 @@ export class ReactiveDrivenHtml {
     previousValueType: string
   ): string {
     if (validateAsString) {
-      return `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot)}]`;
+      return `[${ValidatorRuleHelper.getPath(completeKeyNameSplitDot)}]`;
     }
 
     if (nestedFormArray.length > 0) {
@@ -192,8 +209,15 @@ export class ReactiveDrivenHtml {
         ? `${lastFormArray.get('get_at')}`
         : `${lastFormArray.get('get_at')}.get('${lastName}')`;
     }
+    
+    return ValidatorRuleHelper.camelCasedString(
+      dotNotationSplit
+          .filter((el: string) => el !== ReservedWordEnum.__ARRAY__)
+          .join(""),
+      true
+    );
 
-    return `f.get('${dotNotationSplit.filter((el: string) => el !== ReservedWordEnum.__ARRAY__).join(".")}')`;
+    // return `f.get('${dotNotationSplit.filter((el: string) => el !== ReservedWordEnum.__ARRAY__).join(".")}')`;
   }
 
   private generateFormInput(INPUTS: { [key: string]: string }, rules: string[]): string {
@@ -241,6 +265,14 @@ export class ReactiveDrivenHtml {
     };
 
     return errorMessages[ruleName] || '';
+  }
+
+  public ifOpenWrapper(condition: string): string {
+    return `@if(${condition}) {`;
+  }
+
+  public ifCloseWrapper(): string {
+    return '}';
   }
 
   private setRules(rules: Rules): void {

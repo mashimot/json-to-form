@@ -113,9 +113,13 @@ export class ReactiveDrivenValidator {
         this.functions.forEach((item: Definition) => {
             if (item.get) {
                 item.get.forEach((currentGet: any) => {
-                    definitions.push(currentGet.get('get_function'));
-                    definitions.push(currentGet.get('delete_function'));
-                    definitions.push(currentGet.get('create_function'));
+                    if(currentGet.get('has_reserved_word') === 'S') {
+                        definitions.push(currentGet.get('get_function'));
+                        definitions.push(currentGet.get('delete_function'));
+                        definitions.push(currentGet.get('create_function'));
+                    } else {
+                        this.getters.push(currentGet.get('get_function'))
+                    }
                 })
             }
             if (item.mockData) {
@@ -132,7 +136,7 @@ export class ReactiveDrivenValidator {
                 observables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
-
+        console.log('this.getters', this.getters)
         let component = [
             `import { Component, OnInit } from '@angular/core'`,
             `import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn } from '@angular/forms'`,
@@ -228,44 +232,49 @@ export class ReactiveDrivenValidator {
                 const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
                 const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
                 const functionName = ValidatorRuleHelper.generateMethodName(
-                    dotNotationSplit                    
+                    dotNotationSplit
                 );
                 let formArrayBuilder: Definition = {
                     get: [],
                     formBuilder: []
                 };
+                let formBuilder: string[] = [];
 
-                if (!isValueAnArray && previousValueType === 'array') {
-                    if(this.index - 1 !== index) {
-                        return '';
+                if (isValueString) {
+                    const rules = value.split("|");
+                    const ruleParameters = new Validator(rules).get();
+                    formBuilder = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
+
+                    const hasCheckboxRule = rules.some((rule: string) => {
+                        const [ruleName, ruleParams] = ValidatorRuleHelper.parseStringRule(rule);
+                        return ruleName === 'html' && ruleParams?.[0] === 'checkbox';
+                    });
+
+                    if (hasCheckboxRule) {
+                        formBuilder = [`this.formBuilder.array([])`];
                     }
+                }
 
-                    let formBuilder: string[] = [];
+                if (!isValueAnArray) {
+                    if (previousValueType === 'array') {
+                        if (this.index - 1 !== index) {
+                            return '';
+                        }
 
-                    if (isValueString) {
-                        const rules = value.split("|");
-                        const ruleParameters = new Validator(rules).get();
-                        formBuilder = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
-                        rules.forEach((rule: any) => {
-                            const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-                            if (ruleName === 'html') {
-                                if (ruleParameters?.[0] === 'checkbox') {
-                                    formBuilder = [`this.formBuilder.array([])`];
-                                }
-                            }
-                        });
-                    } else {
-                        formBuilder = [
-                            `this.formBuilder.group({`,
+                        if (isValueAnObject) {
+                            formBuilder = [
+                                `this.formBuilder.group({`,
                                 `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
-                            `})`
-                        ];
+                                `})`
+                            ];
+                        }
                     }
 
                     formArrayBuilder = new FormArrayBuilder(
                         completeKeyNameSplitDot,
                         formBuilder,
-                        ValidatorRuleHelper.capitalizeFirstLetter(functionName)
+                        functionName,
+                        valueType
                     )
                         .get();
 
@@ -278,16 +287,6 @@ export class ReactiveDrivenValidator {
                     this.index = value.length;
 
                     return this.reactiveDrivenValidators(value, completeKeyName, 'array');
-                } else {
-                    if (!completeKeyNameSplitDot.includes(ReservedWordEnum.__ARRAY__)) {
-                        this.getters.push(
-                            this.generateGetters(
-                                completeKeyNameSplitDot, 
-                                dotNotationSplit,
-                                isValueAnObject
-                            )
-                        );
-                    }
                 }
 
                 if (isValueAnObject) {
@@ -365,7 +364,7 @@ export class ReactiveDrivenValidator {
     }
 
     private generateGetters(completeKeyNameSplitDot: string[], dotNotationSplit: string[], isValueAnObject: boolean): string {
-        const path: string = `[${ValidatorRuleHelper.getField(completeKeyNameSplitDot).join(",")}]`;
+        const path: string = `[${ValidatorRuleHelper.getPath(completeKeyNameSplitDot).join(",")}]`;
         const getterFunctionName = ValidatorRuleHelper.camelCasedString(
             dotNotationSplit
                 .filter((el: string) => el !== ReservedWordEnum.__ARRAY__)
@@ -376,7 +375,7 @@ export class ReactiveDrivenValidator {
 
         return [
             `get ${getterFunctionName}(): ${formType} {`,
-                `return this.f.get(${path}) as ${formType};`,
+            `return this.f.get(${path}) as ${formType};`,
             `}`
         ]
             .join("\n")
