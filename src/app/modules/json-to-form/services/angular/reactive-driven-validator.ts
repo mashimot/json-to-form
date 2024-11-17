@@ -109,6 +109,7 @@ export class ReactiveDrivenValidator {
         const observables: string[] = [];
         const definitions: string[] = [];
         const formGroup: string[] = this.generateFormBuilder();
+        const getters: string[] = [];
 
         this.functions.forEach((item: Definition) => {
             if (item.get) {
@@ -118,7 +119,7 @@ export class ReactiveDrivenValidator {
                         definitions.push(currentGet.get('delete_function'));
                         definitions.push(currentGet.get('create_function'));
                     } else {
-                        this.getters.push(currentGet.get('get_function'))
+                        getters.push(currentGet.get('get_function'))
                     }
                 })
             }
@@ -136,7 +137,7 @@ export class ReactiveDrivenValidator {
                 observables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
             }
         });
-        console.log('this.getters', this.getters)
+
         let component = [
             `import { Component, OnInit } from '@angular/core'`,
             `import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn } from '@angular/forms'`,
@@ -202,7 +203,7 @@ export class ReactiveDrivenValidator {
                     return this.form as FormGroup;
                 }
 
-                ${this.getters.join("\n")}
+                ${getters.join("\n")}
                 ${definitions.join("\n")}                
             }
             `
@@ -361,24 +362,6 @@ export class ReactiveDrivenValidator {
 
             return acc;
         }, []);
-    }
-
-    private generateGetters(completeKeyNameSplitDot: string[], dotNotationSplit: string[], isValueAnObject: boolean): string {
-        const path: string = `[${ValidatorRuleHelper.getPath(completeKeyNameSplitDot).join(",")}]`;
-        const getterFunctionName = ValidatorRuleHelper.camelCasedString(
-            dotNotationSplit
-                .filter((el: string) => el !== ReservedWordEnum.__ARRAY__)
-                .join(""),
-            true
-        );
-        const formType = isValueAnObject ? 'FormGroup' : 'FormControl';
-
-        return [
-            `get ${getterFunctionName}(): ${formType} {`,
-            `return this.f.get(${path}) as ${formType};`,
-            `}`
-        ]
-            .join("\n")
     }
 
     private setRules(rules: Rules): void {

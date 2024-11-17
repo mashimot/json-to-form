@@ -31,7 +31,7 @@ export class FormArrayBuilder {
 	private completeKeyName: string[] = [];
 	private dotNotationSplit: string[] = [];
 	private functionName: string = '';
-	private valueType: any;
+	private valueType: string;
 	private hasReservedWordEnum: boolean = false;
 
 	constructor(
@@ -80,6 +80,7 @@ export class FormArrayBuilder {
 		const path = [...ValidatorRuleHelper.getPath(this.completeKeyName)];
 
 		dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
+		dataMap.set('attribute_name', ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true));
 		dataMap.set('form_type', this.formType())
 		dataMap.set('parameters', `()`);
 		dataMap.set('parameters_typed', `()`);
@@ -146,13 +147,16 @@ export class FormArrayBuilder {
 			const dataMap: Map<string, string> = new Map();
 			const getFunctionName = `get${functionName}${i > 0 ? i : ''}FormArray`;
 			const lastIndex = `${parameters[parameters.length - 1]}`;
-
+			// const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}${i > 0 ? i : ''}`
+			const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}${i + 1}`
+			
 			parameters.pop();
 			path.pop();
 
 			const parametersWithLastIndex = [...parameters, lastIndex];
 
 			dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
+			dataMap.set('attribute_name', attributeName);
 			dataMap.set('form_type', this.formType())
 			dataMap.set('parameters', `(${parameters.join(",")})`);
 			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",")})`);
@@ -220,6 +224,7 @@ export class FormArrayBuilder {
 	}
 
 	public get(): Definition {
+		console.log('this.createFormArrayDataMap()', this.createFormArrayDataMap())
 		const definition: Definition = {
 			// get: this.createFormArrayDataMap(),
 			// getters: this.createFormGroupDataMap(),

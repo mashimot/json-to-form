@@ -13,6 +13,7 @@ enum FormEnum {
   FIELD = 'field',
   ABSCTRACT_CONTROL = `field.abstractControl`,
   IS_FIELD_VALID = `field.isFieldValid`,
+  IS_FIELD_VALID2 = `isFieldInvalid(field)`,
   FIELD_ID = `field.id`,
 }
 
@@ -71,13 +72,14 @@ export class ReactiveDrivenHtml {
           get: [],
           formBuilder: []
         };
+        formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
 
         if (!isValueAnArray && previousValueType === 'array') {
           if (isLastIndexFromValueArray === false) {
             return '';
           }
 
-          formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
+          // formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
           if (formArrayBuilder.get.length > 0) {
             nestedFormArray.push(formArrayBuilder.get[formArrayBuilder.get.length - 1]);
           }
@@ -97,7 +99,7 @@ export class ReactiveDrivenHtml {
             }
 
             const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
-              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject, completeKeyNameSplitDot.join(".")
+              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject
             );
             const FORM_ARRAY: string[] = [
               formArrayOpenTag.join("\n"),
@@ -138,13 +140,21 @@ export class ReactiveDrivenHtml {
           let formArrayCloseWrapper: string[] = [];
 
           //ex.*: { keyName: [] }
-          if (formArrayBuilder.get.length > 0) {
+          if (nestedFormArray.length > 0) {
             [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArray(
-              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject, completeKeyNameSplitDot.join(".")
+              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject
             );
 
             nestedFormArray.pop();
           }
+
+          // return [
+          //   formArrayOpenWrapper.join(""),
+          //   this.formWrapper(formInput, formValidators, formArrayBuilder.get[0]), 
+          //   formArrayCloseWrapper.join("")
+          // ]
+          //   .filter(el => el)
+          //   .join("\n");
 
           return [
             formArrayOpenWrapper.join(""),
@@ -157,23 +167,6 @@ export class ReactiveDrivenHtml {
             `</div>`,
             formArrayCloseWrapper.join("")
           ]
-
-          // return [
-          //   formArrayOpenWrapper.join(""),
-          //   // `<div class="form-group" *ngIf="getField(${getField}) as field">`,
-          //   this.ifOpenWrapper(`getField(${getField}) as field`),
-          //   `<div class="form-group">`,
-          //     `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
-          //     `${formInput}`,
-          //     this.ifOpenWrapper(`${FormEnum.IS_FIELD_VALID}`),
-          //     `<div class="invalid-feedback">`,
-          //       `${formValidators.join("")}`,
-          //     `</div>`,
-          //     this.ifCloseWrapper(),
-          //   `</div>`,
-          //   this.ifCloseWrapper(),
-          //   formArrayCloseWrapper.join("")
-          // ]
             .filter(el => el)
             .join("\n");
         }
@@ -186,12 +179,28 @@ export class ReactiveDrivenHtml {
     return reactiveDrivenHtml;
   }
 
+  protected formWrapper(formInput: string, formValidators: string[], item: Map<string, string>): string {
+    return [
+      // this.ifOpenWrapper(`getField(${'getField'}) as field`),
+        `<div class="form-group">`,
+          `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
+          `${formInput}`,
+          `<div *ngIf="${FormEnum.IS_FIELD_VALID}" class="invalid-feedback">`,
+          `${formValidators.join("")}`,
+          `</div>`,
+        `</div>`,
+      // this.ifCloseWrapper()
+    ]
+      .filter(el => el)
+      .join("\n")
+  }
+
   // Métodos separados
   private generateFormControlName(): string {
     return '[formControlName]';
   }
 
-  private generateGetField(
+  protected generateGetField(
     lastName: string,
     nestedFormArray: Array<Map<string, string>>,
     dotNotationSplit: string[],
@@ -268,10 +277,12 @@ export class ReactiveDrivenHtml {
   }
 
   public ifOpenWrapper(condition: string): string {
+    return `<ng-container *ngIf="${condition}">`;
     return `@if(${condition}) {`;
   }
 
   public ifCloseWrapper(): string {
+    return `</ng-container>`;
     return '}';
   }
 
@@ -335,7 +346,7 @@ export class ReactiveDrivenHtml {
     };
   }
 
-  public generateDeleteButton(item: Map<string, string>): string[] {
+  protected generateDeleteButton(item: Map<string, string>): string[] {
     return [
       `<div class="btn-group">`,
         `<button`,
@@ -350,7 +361,7 @@ export class ReactiveDrivenHtml {
     ];
   }
 
-  public generateAddButton(item: Map<string, string>): string[] {
+  protected generateAddButton(item: Map<string, string>): string[] {
     return [
       `<div class="btn-group">`,
         `<button`,
@@ -368,14 +379,13 @@ export class ReactiveDrivenHtml {
   private generateFormArray(
     formArrayBuilder: Definition,
     firstKeyNameBeforeDot: string,
-    isValueAnObject: boolean,
-    completeKeyName: string
+    isValueAnObject: boolean
   ): [string[], string[]] {
     const formArrayOpenTag: string[] = []
     const formArrayCloseTag: string[] = [];
-    const variableName = ValidatorRuleHelper.camelCasedString(completeKeyName, true);
 
     formArrayBuilder.get.forEach((item: Map<string, string>, i: number) => {
+      console.log('item', item)
       const formArrayName: string = i <= 0
         ? `[formArrayName]="'${firstKeyNameBeforeDot}'"`
         : `[formArrayName]="${item.get('second_to_last_index')}"`;
@@ -384,11 +394,12 @@ export class ReactiveDrivenHtml {
         `<fieldset ${formArrayName} class="form-group">
           ${this.generateAddButton(item).join("\n")}
           <div
-            *ngFor="let _${variableName}${i + 1} of ${item.get('get_with_parameters')}?.controls; let ${item.get('last_index')} = index;"
-            ${isValueAnObject === true && i === formArrayBuilder.get.length - 1
-          ? `[formGroupName]="${item.get('last_index')}"`
-          : ''
-        }
+            *ngFor="let _${item.get('attribute_name')} of ${item.get('get_with_parameters')}?.controls; let ${item.get('last_index')} = index;"
+            ${
+              isValueAnObject === true && i === formArrayBuilder.get.length - 1
+                ? `[formGroupName]="${item.get('last_index')}"`
+                : ''
+            }
           >
           `
       );
