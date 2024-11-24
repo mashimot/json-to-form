@@ -56,54 +56,61 @@ export class ReactiveDrivenHtml {
     const reactiveDrivenHtml = Object.keys(object)
       .map((key: string, index: number) => {
         const value = ValidatorRuleHelper.changeValue(object[key]);
-        const valueType = ValidatorRuleHelper.getType(value);
-        const isValueString = valueType === 'string';
-        const isValueAnArray = valueType === 'array';
-        const isValueAnObject = valueType === 'object';
-        const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, isValueAnArray);
-        const completeKeyName = [...namesArr, ...remainingKeys];
-        const completeKeyNameSplitDot = completeKeyName;
+        const currentValueType = ValidatorRuleHelper.getType(value);
+        const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
+        const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
         const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
         const isLastIndexFromValueArray = this.index - 1 === index ? true : false;
         const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
         const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
-
+        // const formArrayBuilder: Definition = new FormArrayBuilder(completeKeyNameSplitDot, [], currentValueType, previousValueType).get();
         let formArrayBuilder: Definition = {
           get: [],
           formBuilder: []
         };
-        formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
 
-        if (!isValueAnArray && previousValueType === 'array') {
-          if (isLastIndexFromValueArray === false) {
-            return '';
+        if (currentValueType !== 'array') {
+          if (previousValueType === 'array') {
+              if (this.index - 1 !== index) {
+                  return '';
+              }
           }
+          
+          formArrayBuilder = new FormArrayBuilder(
+              completeKeyNameSplitDot,
+              [],
+              currentValueType,
+              previousValueType
+          )
+              .get();
 
-          // formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
+              // formArrayBuilder = new FormArrayBuilder(completeKeyNameSplitDot).get();
           if (formArrayBuilder.get.length > 0) {
-            nestedFormArray.push(formArrayBuilder.get[formArrayBuilder.get.length - 1]);
+            if(previousValueType === 'array' && currentValueType === 'string'){
+              nestedFormArray.push(formArrayBuilder.get[formArrayBuilder.get.length - 1]);
+            }
           }
         }
 
-        if (isValueAnArray) {
+        if (currentValueType === 'array') {
           this.index = value.length;
 
-          return this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray, 'array');
+          return this.reactiveDrivenHtml(value, completeKeyNameSplitDot, nestedFormArray, 'array');
         }
 
         //ex: { keyName: {} }
-        if (isValueAnObject) {
+        if (currentValueType === 'object') {
           if (previousValueType === 'array') {
             if (isLastIndexFromValueArray === false) {
               return '';
             }
 
             const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
-              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject
+              formArrayBuilder, firstKeyNameBeforeDot, currentValueType
             );
             const FORM_ARRAY: string[] = [
               formArrayOpenTag.join("\n"),
-              this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray, 'object'),
+              this.reactiveDrivenHtml(value, completeKeyNameSplitDot, nestedFormArray, 'object'),
               formArrayCloseTag.join("\n"),
             ];
 
@@ -114,14 +121,14 @@ export class ReactiveDrivenHtml {
 
           return [
             `<div [formGroupName]="'${key}'">`,
-            `${this.reactiveDrivenHtml(value, completeKeyName, nestedFormArray, 'object')}`,
+            `${this.reactiveDrivenHtml(value, completeKeyNameSplitDot, nestedFormArray, 'object')}`,
             `</div>`
           ]
             .join('\n');
         }
 
         //ex: { keyName: [] }
-        if (isValueString) {
+        if (currentValueType === 'string') {
           const validateAsString: boolean = true;
           const rules = value.split("|");
           const lastName = previousValueType === 'array' ? namesArr[namesArr.length - 1] : key;
@@ -142,12 +149,12 @@ export class ReactiveDrivenHtml {
           //ex.*: { keyName: [] }
           if (nestedFormArray.length > 0) {
             [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArray(
-              formArrayBuilder, firstKeyNameBeforeDot, isValueAnObject
+              formArrayBuilder, firstKeyNameBeforeDot, currentValueType
             );
 
             nestedFormArray.pop();
           }
-
+          
           // return [
           //   formArrayOpenWrapper.join(""),
           //   this.formWrapper(formInput, formValidators, formArrayBuilder.get[0]), 
@@ -155,7 +162,6 @@ export class ReactiveDrivenHtml {
           // ]
           //   .filter(el => el)
           //   .join("\n");
-
           return [
             formArrayOpenWrapper.join(""),
             `<div class="form-group" *ngIf="getField(${getField}) as field">`,
@@ -379,13 +385,12 @@ export class ReactiveDrivenHtml {
   private generateFormArray(
     formArrayBuilder: Definition,
     firstKeyNameBeforeDot: string,
-    isValueAnObject: boolean
+    currentValueType: ValueType
   ): [string[], string[]] {
     const formArrayOpenTag: string[] = []
     const formArrayCloseTag: string[] = [];
 
     formArrayBuilder.get.forEach((item: Map<string, string>, i: number) => {
-      console.log('item', item)
       const formArrayName: string = i <= 0
         ? `[formArrayName]="'${firstKeyNameBeforeDot}'"`
         : `[formArrayName]="${item.get('second_to_last_index')}"`;
@@ -394,9 +399,9 @@ export class ReactiveDrivenHtml {
         `<fieldset ${formArrayName} class="form-group">
           ${this.generateAddButton(item).join("\n")}
           <div
-            *ngFor="let _${item.get('attribute_name')} of ${item.get('get_with_parameters')}?.controls; let ${item.get('last_index')} = index;"
+            *ngFor="let _${item.get('attribute_name')} of ${item.get('get_function_name')}${item.get('parameters')}?.controls; let ${item.get('last_index')} = index;"
             ${
-              isValueAnObject === true && i === formArrayBuilder.get.length - 1
+              currentValueType === 'object' && i === formArrayBuilder.get.length - 1
                 ? `[formGroupName]="${item.get('last_index')}"`
                 : ''
             }

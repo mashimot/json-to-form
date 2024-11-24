@@ -2,26 +2,6 @@ import { ReservedWordEnum } from '../../enums/reserved-name.enum';
 import { Definition } from './models/Definition';
 import { ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
-type DataMapType = {
-	parameters: string;
-	parameters_typed: string;
-	parameters_with_last_index: string;
-	parameters_with_last_index_typed: string;
-	function_name: string;
-	get_function_name: string;
-	create_function_name: string;
-	delete_function_name: string;
-	get_with_parameters: string;
-	get_at: string;
-	second_to_last_index: string;
-	last_index: string;
-	path: string;
-	get_function: string;
-	delete_function: string;
-	delete: string;
-	create_function: string;
-	create: string;
-};
 
 export class FormArrayBuilder {
 	private CREATE: string = 'create';
@@ -33,19 +13,21 @@ export class FormArrayBuilder {
 	private functionName: string = '';
 	private valueType: string;
 	private hasReservedWordEnum: boolean = false;
+	private previousValueType: string;
 
 	constructor(
 		completeKeyName: string[],
 		formBuilderGroup: string[] = [],
-		functionName?: string,
-		valueType?: any
+		valueType?: any,
+		previousValueType?: any
 	) {
 		this.completeKeyName = completeKeyName;
 		this.hasReservedWordEnum = completeKeyName.includes(ReservedWordEnum.__ARRAY__) ? true : false;
 		this.dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyName);
 		this.formBuilderGroup = formBuilderGroup;
 		this.valueType = valueType;
-		this.functionName = functionName || ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
+		this.previousValueType = previousValueType;
+		this.functionName = ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
 	}
 
 	private formType(): 'FormGroup' | 'FormArray' | 'FormControl' | '' {
@@ -60,14 +42,27 @@ export class FormArrayBuilder {
 
 		return '';
 	}
+	
+	public bunda: string[] = [];
 
-	private getTotalAsterisks(): number {
+	public getTotalAsterisks(): number {
 		let counterAsterisk = 0;
-		for (let i = this.dotNotationSplit.length - 1; i >= 0; i--) {
-			if (this.dotNotationSplit[i] !== ReservedWordEnum.__ARRAY__) {
-				break;
-			}
-			counterAsterisk++;
+		this.bunda = [];
+
+		if(this.dotNotationSplit.length > 0) {
+			if(this.dotNotationSplit[this.dotNotationSplit.length - 1] === ReservedWordEnum.__ARRAY__) {
+				for (let i = this.dotNotationSplit.length - 1; i >= 0; i--) {
+					const item = this.dotNotationSplit[i];
+	
+					if (this.dotNotationSplit[i] !== ReservedWordEnum.__ARRAY__) {
+						// this.bunda.push(item);
+						break;
+					}
+
+					this.bunda.push(item);
+					counterAsterisk++;
+				}
+			} 
 		}
 
 		return counterAsterisk;
@@ -102,7 +97,8 @@ export class FormArrayBuilder {
 				`return this.f.get(${`[${dataMap.get("path")}]`}) as ${dataMap.get('form_type')};`,
 				`}`
 			]
-				.join("\n")
+				// .join("\n")
+				.join("")
 		);
 		dataMap.set(
 			'delete_function',
@@ -110,7 +106,9 @@ export class FormArrayBuilder {
 				// `${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
 				// `this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
 				// `}`
-			].join("\n")
+			]
+			// .join("\n")
+				.join("")
 		);
 		dataMap.set(
 			'delete',
@@ -136,41 +134,113 @@ export class FormArrayBuilder {
 		return dataMap;
 	}
 
-	private createFormArrayDataMap(): Map<string, string>[] {
+	public createFormArrayDataMap(): Map<string, string>[] {
 		const dataMaps: Map<string, string>[] = [];
 		const functionName = this.functionName;
-		const counterAsterisk = this.getTotalAsterisks();
+		const counterAsterisk = this.getTotalAsterisks(); 
 		const parameters = [...ValidatorRuleHelper.getParameters(this.completeKeyName)];
 		const path = [...ValidatorRuleHelper.getPath(this.completeKeyName)];
 
-		for (let i = counterAsterisk - 1; i >= 0; i--) {
+		if(counterAsterisk <= 0) {
+			const endsWithHue = this.completeKeyName[this.completeKeyName.length - 1] === ReservedWordEnum.__ARRAY__ ? true : false
 			const dataMap: Map<string, string> = new Map();
-			const getFunctionName = `get${functionName}${i > 0 ? i : ''}FormArray`;
+			const getFunctionName = `get${functionName}${this.formType()}`;
+			const lastIndex = `${parameters.length > 0 ? parameters[parameters.length - 1] : ''}`;
+			const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}`
+			const parametersWithLastIndex = [...(parameters || []), lastIndex].filter(el => el) || [];
+
+			dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
+			dataMap.set('attribute_name', attributeName);
+			dataMap.set('form_type', this.formType())
+			dataMap.set('parameters', `(${parameters.join(",")})`);
+			dataMap.set('parameters_typed', `(${parameters.length > 0 ? parameters.map(p => `${p}:number`).join(",") : ''})`);
+			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.length > 0 ? parametersWithLastIndex.join(",") : ''})`);
+			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.length > 0 ? parametersWithLastIndex.map(p => `${p}:number`).join(",") : ''})`);
+			dataMap.set('function_name', `${functionName}`);
+			dataMap.set('get_function_name', getFunctionName);
+			dataMap.set('create_function_name', endsWithHue ? `${this.CREATE}${dataMap.get('function_name')}` : '');
+			dataMap.set('delete_function_name', endsWithHue ? `${this.DELETE}${dataMap.get('function_name')}` : '');
+			dataMap.set('get_with_parameters', `${getFunctionName}(${parameters.join(",")})`);
+			dataMap.set('get_at', `${getFunctionName}(${parameters.join(",")}).at(${lastIndex})`);
+			dataMap.set('second_to_last_index', parameters.length > 0 ? parameters[parameters.length - 1] : '');
+			dataMap.set('last_index', lastIndex);
+			dataMap.set('path', path.join(",")),
+			dataMap.set(
+				'get_function',
+				[
+					//AHEUAEHUHUEAUHEUHAEHUEUH
+					// `${getFunctionName}${dataMap.get('parameters_typed')}: ${this.formType()} {`,
+					// `return this.f.get(${`[${dataMap.get("path")}]`}) as ${this.formType()};`,
+					// `}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'delete_function',
+				[
+					// `${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
+					// `this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
+					// `}`
+				].join("\n")
+			);
+			dataMap.set(
+				'delete',
+				[
+					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index')}`
+				].join("\n")
+			);
+			dataMap.set(
+				'create_function',
+				[
+					// `${this.CREATE}${dataMap.get('function_name')}(){`,
+					// `return ${this.formBuilderGroup.join("")}`,
+					// `}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'create',
+				[
+					`${dataMap.get('get_with_parameters')}.push(${this.CREATE}${dataMap.get('function_name')}())`
+				].join("\n")
+			);
+
+			return [dataMap];
+		}
+
+		for(let i = this.bunda.length - 1; i >= 0; i--){
+			const bunda = this.bunda[i];
+			const oi = bunda === ReservedWordEnum.__ARRAY__;
+			const ass = oi && (i > 0) ? i : '';
+			const dataMap: Map<string, string> = new Map();
+			const getFunctionName = `get${functionName}${ass}FormArray`;
 			const lastIndex = `${parameters[parameters.length - 1]}`;
-			// const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}${i > 0 ? i : ''}`
+			const lastPathIndex = `${path[path.length - 1]}`;
 			const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}${i + 1}`
 			
 			parameters.pop();
 			path.pop();
 
 			const parametersWithLastIndex = [...parameters, lastIndex];
+			const fullPath = [...path, lastPathIndex];
 
 			dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
 			dataMap.set('attribute_name', attributeName);
-			dataMap.set('form_type', this.formType())
+			dataMap.set('form_type', 'FormArray')
 			dataMap.set('parameters', `(${parameters.join(",")})`);
-			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",")})`);
-			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.join(",")})`);
-			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.map(p => `${p}:number`).join(",")})`);
-			dataMap.set('function_name', `${functionName}${i > 0 ? i : ''}`);
+			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",") })`);
+			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.join(",") || ''})`);
+			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.map(p => `${p}:number`).join(",") || ''})`);
+			dataMap.set('function_name', `${functionName}${ass}`);
 			dataMap.set('get_function_name', getFunctionName);
-			dataMap.set('create_function_name', `${this.CREATE}${dataMap.get('function_name')}`);
+			dataMap.set('create_function_name', oi ? `${this.CREATE}${dataMap.get('function_name')}` : '');
 			dataMap.set('delete_function_name', `${this.DELETE}${dataMap.get('function_name')}`);
 			dataMap.set('get_with_parameters', `${getFunctionName}(${parameters.join(",")})`);
 			dataMap.set('get_at', `${getFunctionName}(${parameters.join(",")}).at(${lastIndex})`);
 			dataMap.set('second_to_last_index', parameters[parameters.length - 1]);
 			dataMap.set('last_index', lastIndex);
 			dataMap.set('path', path.join(",")),
+			dataMap.set('full_path', fullPath.join(",")),
 			dataMap.set(
 				'get_function',
 				[
@@ -216,6 +286,172 @@ export class FormArrayBuilder {
 					`${dataMap.get('get_with_parameters')}.push(${this.CREATE}${dataMap.get('function_name')}())`
 				].join("\n")
 			);
+			if(bunda === ReservedWordEnum.__ARRAY__) {
+
+			}
+
+			dataMaps.unshift(dataMap);
+		};
+
+		return dataMaps;
+	}
+
+	
+	private createFormArrayDataMap33(): Map<string, string>[] {
+		const dataMaps: Map<string, string>[] = [];
+		const functionName = this.functionName;
+		const counterAsterisk = this.getTotalAsterisks(); 
+		const parameters = [...ValidatorRuleHelper.getParameters(this.completeKeyName)];
+		const path = [...ValidatorRuleHelper.getPath(this.completeKeyName)];
+
+		if(counterAsterisk <= 0) {
+			const endsWithHue = this.completeKeyName[this.completeKeyName.length - 1] === ReservedWordEnum.__ARRAY__ ? true : false
+			const dataMap: Map<string, string> = new Map();
+			const getFunctionName = `get${functionName}${this.formType()}`;
+			const lastIndex = `${parameters[parameters.length - 1]}`;
+			const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}`
+			const parametersWithLastIndex = [...parameters, lastIndex];
+
+			dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
+			dataMap.set('attribute_name', attributeName);
+			dataMap.set('form_type', this.formType())
+			dataMap.set('parameters', `(${parameters.join(",")})`);
+			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.join(",")})`);
+			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('function_name', `${functionName}`);
+			dataMap.set('get_function_name', getFunctionName);
+			dataMap.set('create_function_name', endsWithHue ? `${this.CREATE}${dataMap.get('function_name')}` : '');
+			dataMap.set('delete_function_name', endsWithHue ? `${this.DELETE}${dataMap.get('function_name')}` : '');
+			dataMap.set('get_with_parameters', `${getFunctionName}(${parameters.join(",")})`);
+			dataMap.set('get_at', `${getFunctionName}(${parameters.join(",")}).at(${lastIndex})`);
+			dataMap.set('second_to_last_index', parameters[parameters.length - 1]);
+			dataMap.set('last_index', lastIndex);
+			dataMap.set('path', path.join(",")),
+			dataMap.set(
+				'get_function',
+				[
+					//AHEUAEHUHUEAUHEUHAEHUEUH
+					// `${getFunctionName}${dataMap.get('parameters_typed')}: ${this.formType()} {`,
+					// `return this.f.get(${`[${dataMap.get("path")}]`}) as ${this.formType()};`,
+					// `}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'delete_function',
+				[
+					// `${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
+					// `this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
+					// `}`
+				].join("\n")
+			);
+			dataMap.set(
+				'delete',
+				[
+					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index')}`
+				].join("\n")
+			);
+			dataMap.set(
+				'create_function',
+				[
+					// `${this.CREATE}${dataMap.get('function_name')}(){`,
+					// `return ${this.formBuilderGroup.join("")}`,
+					// `}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'create',
+				[
+					`${dataMap.get('get_with_parameters')}.push(${this.CREATE}${dataMap.get('function_name')}())`
+				].join("\n")
+			);
+
+			return [dataMap];
+		}
+
+		for(let i = this.bunda.length - 1; i >= 0; i--){
+			const bunda = this.bunda[i];
+			const oi = bunda === ReservedWordEnum.__ARRAY__;
+			const ass = oi && (i > 0) ? i : '';
+			const dataMap: Map<string, string> = new Map();
+			const getFunctionName = `get${functionName}${ass}FormArray`;
+			const lastIndex = `${parameters[parameters.length - 1]}`;
+			const pathIndex = `${path[path.length - 1]}`;
+			const attributeName = `${ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true)}${i + 1}`
+			
+			parameters.pop();
+			path.pop();
+
+			const parametersWithLastIndex = [...parameters, lastIndex];
+			const fullPath = [...path, pathIndex];
+
+			dataMap.set('has_reserved_word', this.hasReservedWordEnum ? 'S' : 'N');
+			dataMap.set('attribute_name', attributeName);
+			dataMap.set('form_type', 'FormArray')
+			dataMap.set('parameters', `(${parameters.join(",")})`);
+			dataMap.set('parameters_typed', `(${parameters.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('parameters_with_last_index', `(${parametersWithLastIndex.join(",")})`);
+			dataMap.set('parameters_with_last_index_typed', `(${parametersWithLastIndex.map(p => `${p}:number`).join(",")})`);
+			dataMap.set('function_name', `${functionName}${ass}`);
+			dataMap.set('get_function_name', getFunctionName);
+			dataMap.set('create_function_name', oi ? `${this.CREATE}${dataMap.get('function_name')}` : '');
+			dataMap.set('delete_function_name', `${this.DELETE}${dataMap.get('function_name')}`);
+			dataMap.set('get_with_parameters', `${getFunctionName}(${parameters.join(",")})`);
+			dataMap.set('get_at', `${getFunctionName}(${parameters.join(",")}).at(${lastIndex})`);
+			dataMap.set('second_to_last_index', parameters[parameters.length - 1]);
+			dataMap.set('last_index', lastIndex);
+			dataMap.set('path', path.join(",")),
+			dataMap.set('full_path', fullPath.join(",")),
+			dataMap.set(
+				'get_function',
+				[
+					`${getFunctionName}${dataMap.get('parameters_typed')}: FormArray {`,
+					`return this.f.get(${`[${dataMap.get("path")}]`}) as FormArray;`,
+					`}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'delete_function',
+				[
+					`${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index_typed')}:void {`,
+					`this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
+					`}`
+				].join("\n")
+			);
+			dataMap.set(
+				'delete',
+				[
+					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index')}`
+				].join("\n")
+			);
+			dataMap.set(
+				'create_function',
+				[
+					`${this.CREATE}${dataMap.get('function_name')}(){`,
+					`return ${i === counterAsterisk - 1
+						? this.formBuilderGroup.join("")
+						: [
+							`this.${this.FORM_BUILDER}.array([`,
+							`this.${this.CREATE}${functionName}${i + 1}()`,
+							`])`
+						].join("\n")
+					}`,
+					`}`
+				]
+					.join("\n")
+			);
+			dataMap.set(
+				'create',
+				[
+					`${dataMap.get('get_with_parameters')}.push(${this.CREATE}${dataMap.get('function_name')}())`
+				].join("\n")
+			);
+			if(bunda === ReservedWordEnum.__ARRAY__) {
+
+			}
 
 			dataMaps.unshift(dataMap);
 		};
@@ -224,7 +460,6 @@ export class FormArrayBuilder {
 	}
 
 	public get(): Definition {
-		console.log('this.createFormArrayDataMap()', this.createFormArrayDataMap())
 		const definition: Definition = {
 			// get: this.createFormArrayDataMap(),
 			// getters: this.createFormGroupDataMap(),
@@ -233,6 +468,8 @@ export class FormArrayBuilder {
 				: [this.createFormGroupDataMap()],
 			formBuilder: []
 		};
+
+		console.log('-> ',definition.get);
 
 		if (definition.get.length > 0) {
 			const firstCreateFunctionName = definition.get[0].get('create_function_name');

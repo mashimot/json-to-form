@@ -243,14 +243,19 @@ export class ValidatorRuleHelper {
     //Ex. ['index1', 'index2']
     public static getParameters(dotNotation: string[]): string[] {
         let count = 0;
-        return dotNotation.reduce((parameters: string[], item) => {
+        let parameters = dotNotation.reduce((parameters: string[], item) => {
             if (item === ReservedWordEnum.__ARRAY__) {
                 parameters.push(this.getIndexName(count));
                 count++;
             }
-
+            
             return parameters;
         }, []);
+
+        // count++;
+        // parameters.push(this.getIndexName(count));
+
+        return parameters;
     }
 
     public static getIndexName(count: number): string {
@@ -334,7 +339,7 @@ export class ValidatorRuleHelper {
         return "";
     }
 
-    public static createRemainingKeys(namesList: string[], previousType: string, currentKey: string, isArray: boolean): any[] {
+    public static createRemainingKeys(namesList: string[], previousType: string, currentKey: string, currentValueType: ValueType): any[] {
         const remainingKeys = [];
 
         // Adiciona a chave se a lista de nomes estiver vazia ou se o tipo anterior não for 'array'
@@ -343,7 +348,7 @@ export class ValidatorRuleHelper {
         }
 
         // Adiciona 'true' se o valor atual for um array
-        if (isArray) {
+        if (currentValueType === 'array') {
             remainingKeys.push(ReservedWordEnum.__ARRAY__);
         }
 
