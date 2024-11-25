@@ -263,7 +263,7 @@ export class ReactiveDrivenHtml {
     if (nestedFormArray.length > 0) {
       const lastFormArray = nestedFormArray[nestedFormArray.length - 1];
       if (previousValueType === 'array') {
-        return `${lastFormArray.get('last_index')}`;
+        return `${lastFormArray.get('second_to_last_index')}`;
       }
     }
 
@@ -389,28 +389,29 @@ export class ReactiveDrivenHtml {
   ): [string[], string[]] {
     const formArrayOpenTag: string[] = []
     const formArrayCloseTag: string[] = [];
+    const bundas = [...formArrayBuilder.get.slice(0, -1)];
 
-    formArrayBuilder.get.forEach((item: Map<string, string>, i: number) => {
-      const formArrayName: string = i <= 0
-        ? `[formArrayName]="'${firstKeyNameBeforeDot}'"`
-        : `[formArrayName]="${item.get('second_to_last_index')}"`;
+    bundas.forEach((item: Map<string, string>, i: number) => {
+        const formArrayName: string = i <= 0
+          ? `[formArrayName]="'${firstKeyNameBeforeDot}'"`
+          : `[formArrayName]="${item.get('second_to_last_index')}"`;
 
-      formArrayOpenTag.push(
-        `<fieldset ${formArrayName} class="form-group">
-          ${this.generateAddButton(item).join("\n")}
-          <div
-            *ngFor="let _${item.get('attribute_name')} of ${item.get('get_function_name')}${item.get('parameters')}?.controls; let ${item.get('last_index')} = index;"
-            ${
-              currentValueType === 'object' && i === formArrayBuilder.get.length - 1
-                ? `[formGroupName]="${item.get('last_index')}"`
-                : ''
-            }
-          >
-          `
-      );
-      formArrayOpenTag.push(this.generateDeleteButton(item).join("\n"));
-      formArrayCloseTag.push('</div>');
-      formArrayCloseTag.push('</fieldset>');
+        formArrayOpenTag.push(
+          `<fieldset ${formArrayName} class="form-group">
+            ${this.generateAddButton(item).join("\n")}
+            <div
+              *ngFor="let _${item.get('attribute_name')} of ${item.get('get_function_name')}${item.get('parameters')}?.controls; let ${item.get('last_index')} = index;"
+              ${
+                currentValueType === 'object' && i === bundas.length - 1
+                  ? `[formGroupName]="${item.get('last_index')}"`
+                  : ''
+              }
+            >
+            `
+        );
+        formArrayOpenTag.push(this.generateDeleteButton(item).join("\n"));
+        formArrayCloseTag.push('</div>');
+        formArrayCloseTag.push('</fieldset>');
     });
 
     return [formArrayOpenTag, formArrayCloseTag];

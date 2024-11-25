@@ -55,7 +55,7 @@ export class FormArrayBuilder {
 					const item = this.dotNotationSplit[i];
 	
 					if (this.dotNotationSplit[i] !== ReservedWordEnum.__ARRAY__) {
-						// this.bunda.push(item);
+						this.bunda.push(item);
 						break;
 					}
 
