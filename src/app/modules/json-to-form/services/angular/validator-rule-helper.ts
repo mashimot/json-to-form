@@ -252,8 +252,8 @@ export class ValidatorRuleHelper {
             return parameters;
         }, []);
 
-        // count++;
-        // parameters.push(this.getIndexName(count));
+        count++;
+        parameters.push(this.getIndexName(count));
 
         return parameters;
     }

@@ -111,13 +111,17 @@ export class ReactiveDrivenValidator {
         const formGroup: string[] = this.generateFormBuilder();
         const getters: string[] = [];
 
+        console.log('this.functions', this.functions)
+
         this.functions.forEach((item: Definition) => {
             if (item.get) {
-                item.get.forEach((currentGet: any) => {
+                item.get.forEach((currentGet: any, index: number) => {
                     if(currentGet.get('has_reserved_word') === 'S') {
-                        definitions.push(currentGet.get('get_function'));
-                        definitions.push(currentGet.get('delete_function'));
-                        definitions.push(currentGet.get('create_function'));
+                        if(index !== item.get.length - 1) {
+                            definitions.push(currentGet.get('get_function'));
+                            definitions.push(currentGet.get('delete_function'));
+                            definitions.push(currentGet.get('create_function'));
+                        }
                     } else {
                         getters.push(currentGet.get('get_function'))
                     }
@@ -203,8 +207,8 @@ export class ReactiveDrivenValidator {
                     return this.form as FormGroup;
                 }
 
-                ${getters.join("\n")}
-                ${definitions.join("\n")}                
+                ${getters.filter(el => el).join("\n")}
+                ${definitions.filter(el => el).join("\n")}                
             }
             `
         ];
@@ -222,26 +226,19 @@ export class ReactiveDrivenValidator {
             .keys(object)
             .map((key: string, index: number) => {
                 const value = ValidatorRuleHelper.changeValue(object[key]);
-                const valueType = ValidatorRuleHelper.getType(value);
-                const isValueString = valueType === 'string';
-                const isValueAnArray = valueType === 'array';
-                const isValueAnObject = valueType === 'object';
-                const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, isValueAnArray);
-                const completeKeyName = [...namesArr, ...remainingKeys];
-                const completeKeyNameSplitDot = completeKeyName;
+                const currentValueType = ValidatorRuleHelper.getType(value);
+                const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
+                const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
                 const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
                 const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
                 const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
-                const functionName = ValidatorRuleHelper.generateMethodName(
-                    dotNotationSplit
-                );
                 let formArrayBuilder: Definition = {
                     get: [],
                     formBuilder: []
                 };
                 let formBuilder: string[] = [];
 
-                if (isValueString) {
+                if (currentValueType === 'string') {
                     const rules = value.split("|");
                     const ruleParameters = new Validator(rules).get();
                     formBuilder = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
@@ -256,16 +253,16 @@ export class ReactiveDrivenValidator {
                     }
                 }
 
-                if (!isValueAnArray) {
+                if (currentValueType !== 'array') {
                     if (previousValueType === 'array') {
                         if (this.index - 1 !== index) {
                             return '';
                         }
 
-                        if (isValueAnObject) {
+                        if (currentValueType === 'object') {
                             formBuilder = [
                                 `this.formBuilder.group({`,
-                                `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
+                                `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
                                 `})`
                             ];
                         }
@@ -274,8 +271,8 @@ export class ReactiveDrivenValidator {
                     formArrayBuilder = new FormArrayBuilder(
                         completeKeyNameSplitDot,
                         formBuilder,
-                        functionName,
-                        valueType
+                        currentValueType,
+                        previousValueType
                     )
                         .get();
 
@@ -284,13 +281,13 @@ export class ReactiveDrivenValidator {
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
-                if (isValueAnArray) {
+                if (currentValueType === 'array') {
                     this.index = value.length;
 
-                    return this.reactiveDrivenValidators(value, completeKeyName, 'array');
+                    return this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'array');
                 }
 
-                if (isValueAnObject) {
+                if (currentValueType === 'object') {
                     if (previousValueType === 'array') {
                         return [
                             `"${firstKeyNameBeforeDot}":`,
@@ -301,13 +298,13 @@ export class ReactiveDrivenValidator {
 
                     return [
                         `"${key}": this.formBuilder.group({`,
-                        `${this.reactiveDrivenValidators(value, completeKeyName, 'object')}`,
+                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
                         `}),`
                     ]
                         .join('\n');
                 }
 
-                if (isValueString) {
+                if (currentValueType === 'string') {
                     const rules = value.split('|');
                     const ruleParameters = new Validator(rules).get();
                     const values = this.generateValues(rules);
