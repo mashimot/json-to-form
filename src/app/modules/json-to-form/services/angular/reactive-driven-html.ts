@@ -1,5 +1,4 @@
 import { InputTypeEnum } from '../../enums/input-type.enum';
-import { ReservedWordEnum } from '../../enums/reserved-name.enum';
 import { FormArrayBuilder } from './function-definition';
 import { Definition } from './models/Definition';
 import { ValueType } from './models/value.type';
@@ -22,6 +21,7 @@ export class ReactiveDrivenHtml {
   triggerValidationOnSubmit: boolean = true;
   formName: string = 'form';
   private index: number = 0;
+  private formControlName: string = '[formControlName]';
 
   constructor(rules: Rules) {
     this.setRules(rules);
@@ -58,7 +58,6 @@ export class ReactiveDrivenHtml {
         const currentValueType = ValidatorRuleHelper.getType(value);
         const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
         const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
-        const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
         const isLastIndexFromValueArray = this.index - 1 === index ? true : false;
         let formArrayBuilder: Definition = {
           get: [],
@@ -66,17 +65,15 @@ export class ReactiveDrivenHtml {
         };
      
         if (currentValueType !== 'array') {
-          if (previousValueType === 'array') {
-              if (this.index - 1 !== index) {
-                  return '';
-              }
+          if (previousValueType === 'array' && this.index - 1 !== index) {
+            return '';
           }
-          
+
           formArrayBuilder = new FormArrayBuilder(
-              completeKeyNameSplitDot,
-              [],
-              currentValueType,
-              previousValueType
+            completeKeyNameSplitDot,
+            [],
+            currentValueType,
+            previousValueType
           )
             .get();
         }
@@ -94,7 +91,7 @@ export class ReactiveDrivenHtml {
               return '';
             }
 
-            const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArray(
+            const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArrayWrapper(
               formArrayBuilder, currentValueType
             );
             const FORM_ARRAY: string[] = [
@@ -118,35 +115,27 @@ export class ReactiveDrivenHtml {
         if (currentValueType === 'string') {
           const rules = value.split("|");
           const index = this.getIndex(previousValueType, formArrayBuilder?.get || []);
-          const formControlName = this.generateFormControlName();
           const INPUTS = this.generateFormInput2(
-            formControlName,
             index,
             completeKeyNameSplitDot
           );
           const formInput = this.generateFormInput(INPUTS, rules);
           const formValidators = this.generateFormValidators(rules, `${FormEnum.ABSCTRACT_CONTROL}`);
-          const name = formArrayBuilder.get?.[formArrayBuilder.get.length - 1]?.get('full_path');
+          const lastItem = formArrayBuilder.get?.[formArrayBuilder.get.length - 1];
 
           let formArrayOpenWrapper: string[] = [];
           let formArrayCloseWrapper: string[] = [];
 
           //ex.*: { keyName: [] }
           if (formArrayBuilder.get.length > 0) {
-            [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArray(
+            [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArrayWrapper(
               formArrayBuilder, currentValueType
             );
           }
           
           return [
             formArrayOpenWrapper.join(""),
-            `<div class="form-group" *ngIf="getField([${name}]) as field">`,
-              `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
-              `${formInput}`,
-              `<div *ngIf="${FormEnum.IS_FIELD_VALID}" class="invalid-feedback">`,
-                `${formValidators.join("")}`,
-              `</div>`,
-            `</div>`,
+            this.formWrapper(formInput, formValidators, lastItem),
             formArrayCloseWrapper.join("")
           ]
             .filter(el => el)
@@ -164,7 +153,7 @@ export class ReactiveDrivenHtml {
   protected formWrapper(formInput: string, formValidators: string[], item: Map<string, string>): string {
     return [
       // this.ifOpenWrapper(`getField(${'getField'}) as field`),
-        `<div class="form-group">`,
+      `<div class="form-group" *ngIf="getField([${item?.get('full_path')}]) as field">`,
           `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
           `${formInput}`,
           `<div *ngIf="${FormEnum.IS_FIELD_VALID}" class="invalid-feedback">`,
@@ -175,11 +164,6 @@ export class ReactiveDrivenHtml {
     ]
       .filter(el => el)
       .join("\n")
-  }
-
-  // Métodos separados
-  private generateFormControlName(): string {
-    return '[formControlName]';
   }
 
   private generateFormInput(INPUTS: { [key: string]: string }, rules: string[]): string {
@@ -199,7 +183,7 @@ export class ReactiveDrivenHtml {
       const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
       validators.push(
-        this.getErrorsMessages({ ruleName, ruleParameters, getField })
+        this.getErrorsMessages(getField, ruleName, ruleParameters)
       );
 
       return validators;
@@ -219,7 +203,7 @@ export class ReactiveDrivenHtml {
     return '';
   }
 
-  protected getErrorsMessages({ getField, ruleName, ruleParameters }: any): string {
+  protected getErrorsMessages(getField: string, ruleName: string, ruleParameters: string[]): string {
     const fieldId = `${FormEnum.FIELD_ID}.toUpperCase()`;
     const errorMessages: { [key: string]: string } = {
       required: `<div *ngIf="${getField}!.hasError('required')">{{ ${fieldId} }} is required</div>`,
@@ -246,12 +230,12 @@ export class ReactiveDrivenHtml {
   }
 
   private generateFormInput2(
-    formControlName: string,
     index: string,
     completeKeyNameSplitDot: string[]
   ): {
     [key: string]: string
   } {
+    const formControlName = this.formControlName;
     const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
     const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
     const ngClass = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
@@ -331,7 +315,7 @@ export class ReactiveDrivenHtml {
     ];
   }
 
-  private generateFormArray(
+  private generateFormArrayWrapper(
     formArrayBuilder: Definition,
     currentValueType: ValueType
   ): [string[], string[]] {

@@ -116,8 +116,9 @@ export class ReactiveDrivenValidator {
         this.functions.forEach((item: Definition) => {
             if (item.get) {
                 item.get.forEach((currentGet: any, index: number) => {
-                    if(currentGet.get('has_reserved_word') === 'S') {
-                        if(index !== item.get.length - 1) {
+                    if (currentGet.get('has_reserved_word') === 'S') {
+                        const isLastIndex = (index === item.get.length - 1) ? true : false;
+                        if (!isLastIndex) {
                             definitions.push(currentGet.get('get_function'));
                             definitions.push(currentGet.get('delete_function'));
                             definitions.push(currentGet.get('create_function'));
@@ -216,7 +217,6 @@ export class ReactiveDrivenValidator {
         return component;
     }
 
-
     public reactiveDrivenValidators(
         object: { [key: string]: any },
         namesArr: string[] = [],
@@ -229,48 +229,50 @@ export class ReactiveDrivenValidator {
                 const currentValueType = ValidatorRuleHelper.getType(value);
                 const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
                 const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
-                const dotNotationSplit = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
-                const keyNamesWithoutReservedWord = ValidatorRuleHelper.removeReservedWordFromString(completeKeyNameSplitDot);
-                const firstKeyNameBeforeDot = keyNamesWithoutReservedWord[keyNamesWithoutReservedWord.length - 1];
+                const formBuilder = (): string[] => {
+                    if (currentValueType === 'array') {
+                        return [];
+                    }
+
+                    if (currentValueType === 'string') {
+                        const rules = value.split("|");
+                        const ruleParameters = new Validator(rules).get();
+
+                        const hasCheckboxRule = rules.some((rule: string) => {
+                            const [ruleName, ruleParams] = ValidatorRuleHelper.parseStringRule(rule);
+                            return ruleName === 'html' && ruleParams?.[0] === 'checkbox';
+                        });
+
+                        if (hasCheckboxRule) {
+                            return [`this.formBuilder.array([])`];
+                        }
+
+                        return [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
+                    }
+
+                    if (previousValueType === 'array' && currentValueType === 'object') {
+                        return [
+                            `this.formBuilder.group({`,
+                            `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
+                            `})`
+                        ];
+                    }
+
+                    return [];
+                }
                 let formArrayBuilder: Definition = {
                     get: [],
                     formBuilder: []
                 };
-                let formBuilder: string[] = [];
-
-                if (currentValueType === 'string') {
-                    const rules = value.split("|");
-                    const ruleParameters = new Validator(rules).get();
-                    formBuilder = [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
-
-                    const hasCheckboxRule = rules.some((rule: string) => {
-                        const [ruleName, ruleParams] = ValidatorRuleHelper.parseStringRule(rule);
-                        return ruleName === 'html' && ruleParams?.[0] === 'checkbox';
-                    });
-
-                    if (hasCheckboxRule) {
-                        formBuilder = [`this.formBuilder.array([])`];
-                    }
-                }
 
                 if (currentValueType !== 'array') {
-                    if (previousValueType === 'array') {
-                        if (this.index - 1 !== index) {
-                            return '';
-                        }
-
-                        if (currentValueType === 'object') {
-                            formBuilder = [
-                                `this.formBuilder.group({`,
-                                `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
-                                `})`
-                            ];
-                        }
+                    if (previousValueType === 'array' && this.index - 1 !== index) {
+                        return '';
                     }
-
+                    
                     formArrayBuilder = new FormArrayBuilder(
                         completeKeyNameSplitDot,
-                        formBuilder,
+                        formBuilder(),
                         currentValueType,
                         previousValueType
                     )
@@ -289,8 +291,11 @@ export class ReactiveDrivenValidator {
 
                 if (currentValueType === 'object') {
                     if (previousValueType === 'array') {
+                        const lastItem = formArrayBuilder.get?.[0];
+
                         return [
-                            `"${firstKeyNameBeforeDot}":`,
+                            // `"${firstKeyNameBeforeDot}":`,
+                            `"${lastItem.get('first_key_before_dot')}":`,
                             formArrayBuilder.formBuilder.join("\n"),
                         ]
                             .join('\n');
@@ -310,16 +315,18 @@ export class ReactiveDrivenValidator {
                     const values = this.generateValues(rules);
 
                     if (values.length > 0) {
-                        formArrayBuilder.mockData = {
-                            parameter_name: ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."), true),
-                            get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
-                            values: values
-                        }
+                        // formArrayBuilder.mockData = {
+                        //     // parameter_name: ValidatorRuleHelper.camelCasedString(formArrayBuilder.dotNotationSplit.join("."), true),
+                        //     // get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
+                        //     // values: values
+                        // }
                     }
 
                     if (previousValueType === 'array') {
+                        const lastItem = formArrayBuilder.get?.[0];
                         return [
-                            `"${firstKeyNameBeforeDot}":`,
+                            // `"${firstKeyNameBeforeDot}":`,
+                            `"${lastItem.get('first_key_before_dot')}":`,
                             formArrayBuilder.formBuilder.join("\n"),
                         ]
                             .join('\n');
