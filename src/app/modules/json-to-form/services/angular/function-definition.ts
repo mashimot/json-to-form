@@ -11,8 +11,12 @@ export class FormArrayBuilder {
 	private completeKeyName: string[] = [];
 	private currentValueType: ValueType | undefined;
 	private previousValueType: ValueType | undefined;
-	private hasReservedWordEnum: boolean = false;
+	// private hasReservedWordEnum: boolean = false;
 	private formArray: string[] = [];
+
+	private get hasReservedWordEnum(): boolean {
+		return this.completeKeyName.includes(ReservedWordEnum.__ARRAY__) ? true : false;
+	}
 
 	private get functionName(): string {
 		return ValidatorRuleHelper.camelCasedString(this.dotNotationSplit.join(""));
@@ -39,16 +43,15 @@ export class FormArrayBuilder {
 	}
 
 	constructor(
-		completeKeyName: string[],
+		completeKeyName: string[] = [],
 		formBuilderGroup: string[] = [],
 		currentValueType?: ValueType | undefined,
 		previousValueType?: ValueType | undefined,
 	) {
 		this.completeKeyName = completeKeyName;
-		this.hasReservedWordEnum = completeKeyName.includes(ReservedWordEnum.__ARRAY__) ? true : false;
 		this.formBuilderGroup = formBuilderGroup;
 		this.currentValueType = currentValueType;
-		this.previousValueType = previousValueType; 
+		this.previousValueType = previousValueType;
 	}
 
 	private formType(valueType?: ValueType): 'FormGroup' | 'FormArray' | 'FormControl' | '' {
@@ -65,7 +68,7 @@ export class FormArrayBuilder {
 	}
 
 	public getTotalReservedWords(): number {
-		let counterAsterisk = 0;
+		let counterReservedWords = 0;
 		this.formArray = [];
 
 		if (this.dotNotationSplit.length > 0) {
@@ -79,12 +82,12 @@ export class FormArrayBuilder {
 					}
 
 					this.formArray.push(item);
-					counterAsterisk++;
+					counterReservedWords++;
 				}
 			}
 		}
 
-		return counterAsterisk;
+		return counterReservedWords;
 	}
 
 	public createFormGroupDataMap(): Map<string, string> {
@@ -110,8 +113,8 @@ export class FormArrayBuilder {
 		dataMap.set('second_to_last_index', '');
 		dataMap.set('last_index', '');
 		dataMap.set('path', path.join(",")),
-		dataMap.set('full_path', path.join(",")),
-		dataMap.set('first_key_before_dot', path[path.length - 1].replace(/'/g, ""));
+			dataMap.set('full_path', path.join(",")),
+			dataMap.set('first_key_before_dot', path[path.length - 1].replace(/'/g, ""));
 		dataMap.set(
 			'get_function',
 			[
@@ -129,7 +132,7 @@ export class FormArrayBuilder {
 				// `this.${dataMap.get('get_with_parameters')}.removeAt(${lastIndex})`,
 				// `}`
 			]
-			// .join("\n")
+				// .join("\n")
 				.join("")
 		);
 		dataMap.set(
@@ -177,20 +180,20 @@ export class FormArrayBuilder {
 	}
 
 	public createFormArrayDataMap(): Map<string, string>[] {
-		const counterAsterisk = this.getTotalReservedWords();
-	
-		if (counterAsterisk <= 0) {
+		const counterReservedWords = this.getTotalReservedWords();
+
+		if (counterReservedWords <= 0) {
 			return [this.createSingleDataMap()];
 		}
-	
-		return this.createMultipleDataMaps(counterAsterisk);
+
+		return this.createMultipleDataMaps(counterReservedWords);
 	}
-	
+
 	public createSingleDataMap(): Map<string, string> {
 		const parameters = this.parameters;
 		const path = this.path;
 		const lastIndex = this.getLastIndex(parameters);
-		const endsWithAsterisk = this.endsWithAsterisk();
+		const endsWithReservedWord = this.endsWithReservedWord();
 		const parametersWithLastIndex = this.getParametersWithLastIndex(parameters, lastIndex);
 		const object = {
 			has_reserved_word: this.getHasReservedWordEnum(),
@@ -203,10 +206,10 @@ export class FormArrayBuilder {
 			parameters_with_last_index_typed: this.formatParametersTyped(parametersWithLastIndex),
 			function_name: this.functionName,
 			get_function_name: this.getFunctionName(this.formType()),
-			create_function_name: endsWithAsterisk ? this.getCreateFunctionName() : '',
-			delete_function_name: endsWithAsterisk ? this.getDeleteFunctionName() : '',
+			create_function_name: endsWithReservedWord ? this.getCreateFunctionName() : '',
+			delete_function_name: endsWithReservedWord ? this.getDeleteFunctionName() : '',
 			get_with_parameters: this.getWithParameters(parameters),
-			get_at: this.getAt(parameters, lastIndex),
+			get_at: this.getWithParametersWithGetAt(parameters, lastIndex),
 			second_to_last_index: this.getSecondToLastIndex(parameters),
 			last_index: lastIndex,
 			path: path.join(","),
@@ -225,40 +228,40 @@ export class FormArrayBuilder {
 
 		return dataMap;
 	}
-	
-	private createMultipleDataMaps(counterAsterisk: number): Map<string, string>[] {
+
+	private createMultipleDataMaps(counterReservedWords: number): Map<string, string>[] {
 		const dataMaps: Map<string, string>[] = [];
 		const parameters = this.parameters;
 		const path = this.path;
 
 		for (let i = this.formArray.length - 1; i >= 0; i--) {
 			const formArray = this.formArray[i];
-			const hasAsterisk = formArray === ReservedWordEnum.__ARRAY__;
-			const prefix = hasAsterisk && (i > 0) ? i.toString() : '';
-			const getFunctionName = `get${this.functionName}${prefix}FormArray`;
-			const lastIndex = `${parameters.pop()}`;
-			const lastPathIndex = `${path.pop()}`;
-			const parametersWithLastIndex = [...parameters, lastIndex];
-			const fullPath = [...path, lastPathIndex];
+			const hasReservedWord = formArray === ReservedWordEnum.__ARRAY__;
+			const preffix = hasReservedWord && (i > 0) ? i.toString() : '';
+			const getFunctionName = `get${this.functionName}${preffix}FormArray`;
+			const lastIndex = `${parameters.length > 0 ? parameters.pop() : ''}`;
+			const lastPathIndex = `${path.length > 0 ? path.pop() : ''}`;
+			const parametersWithLastIndex = [...parameters, lastIndex].filter(el => el);
+			const fullPath = [...path, lastPathIndex].filter(el => el);
 			const object = {
 				has_reserved_word: this.getHasReservedWordEnum(),
 				attribute_name: this.getAttributeName(i + 1),
 				form_type: 'FormArray',
 				parameters: this.formatParameters(parameters),
 				parameters_typed: this.formatParametersTyped(parameters),
-				parameters_with_last_index: this.formatParameters(parametersWithLastIndex as string[]),
-				parameters_with_last_index_typed: this.formatParametersTyped(parametersWithLastIndex as string[]),
-				function_name: this.functionNameWithPreffix(prefix),
-				get_function_name: this.getFunctionName(prefix + 'FormArray'),
-				create_function_name: hasAsterisk ? this.getCreateFunctionName(prefix) : '',
-				delete_function_name: hasAsterisk ? this.getDeleteFunctionName(prefix) : '',
-				get_with_parameters: this.getWithParameters(parameters, prefix + 'FormArray'),
-				get_at: this.getAt(parameters, lastIndex as string, prefix),
+				parameters_with_last_index: this.formatParameters(parametersWithLastIndex),
+				parameters_with_last_index_typed: this.formatParametersTyped(parametersWithLastIndex),
+				function_name: this.functionNameWithPreffix(preffix),
+				get_function_name: this.getFunctionName(preffix + 'FormArray'),
+				create_function_name: this.getCreateFunctionName(preffix),
+				delete_function_name: this.getDeleteFunctionName(preffix),
+				get_with_parameters: this.getWithParameters(parameters, preffix + 'FormArray'),
+				get_at: this.getWithParametersWithGetAt(parameters, lastIndex, preffix),
 				second_to_last_index: this.getSecondToLastIndex(parameters),
 				last_index: lastIndex || '',
 				path: path.join(","),
 				full_path: fullPath.join(","),
-				first_key_before_dot: this.getFirstKeyBeforeDot(fullPath as string[]),
+				first_key_before_dot: this.getFirstKeyBeforeDot(fullPath),
 			};
 
 			const dataMap = new Map(Object.entries(object));
@@ -282,14 +285,14 @@ export class FormArrayBuilder {
 			dataMap.set(
 				'delete',
 				[
-					`${this.DELETE}${dataMap.get('function_name')}${dataMap.get('parameters_with_last_index')}`
+					`${dataMap.get('delete_function_name')}${dataMap.get('parameters_with_last_index')}`
 				].join("\n")
 			);
 			dataMap.set(
 				'create_function',
 				[
-					`${this.CREATE}${dataMap.get('function_name')}(){`,
-					`return ${i === counterAsterisk - 1
+					`${dataMap.get('create_function_name')}(){`,
+					`return ${i === counterReservedWords - 1
 						? this.formBuilderGroup.join("")
 						: [
 							`this.${this.FORM_BUILDER}.array([`,
@@ -304,77 +307,77 @@ export class FormArrayBuilder {
 			dataMap.set(
 				'create',
 				[
-					`${dataMap.get('get_with_parameters')}.push(${this.CREATE}${dataMap.get('function_name')}())`
+					`${dataMap.get('get_with_parameters')}.push(${dataMap.get('create_function_name')}())`
 				].join("\n")
 			);
 
 			dataMaps.unshift(dataMap);
 		};
-	
+
 		return dataMaps;
 	}
 
 	private functionNameWithPreffix(preffix: string = ''): string {
 		return `${this.functionName}${preffix}`;
 	}
-	
-	private getFunctionName(prefix = ''): string {
-		return `get${this.functionName}${prefix}`;
+
+	private getFunctionName(preffix: string = ''): string {
+		return `get${this.functionName}${preffix}`;
 	}
-	
-	private getCreateFunctionName(prefix = ''): string {
-		return `${this.CREATE}${this.functionName}${prefix}`;
+
+	private getCreateFunctionName(preffix: string = ''): string {
+		return `${this.CREATE}${this.functionName}${preffix}`;
 	}
-	
-	private getDeleteFunctionName(prefix = ''): string {
-		return `${this.DELETE}${this.functionName}${prefix}`;
+
+	private getDeleteFunctionName(preffix: string = ''): string {
+		return `${this.DELETE}${this.functionName}${preffix}`;
 	}
-	
-	private getWithParameters(parameters: string[], prefix = ''): string {
-		return `${this.getFunctionName(prefix)}(${parameters.join(",")})`;
+
+	private getWithParameters(parameters: string[], preffix: string = ''): string {
+		return `${this.getFunctionName(preffix)}(${parameters.join(",")})`;
 	}
-	
-	private getAt(parameters: string[], lastIndex: string, prefix = ''): string {
-		return `${this.getWithParameters(parameters, prefix)}.at(${lastIndex})`;
+
+	private getWithParametersWithGetAt(parameters: string[], lastIndex: string, preffix: string = ''): string {
+		return `${this.getWithParameters(parameters, preffix)}.at(${lastIndex})`;
 	}
-	
+
 	private getAttributeName(suffix: number = 0): string {
 		const name = ValidatorRuleHelper.camelCasedString(this.completeKeyName.join("."), true);
 		return suffix > 0 ? `${name}${suffix}` : name;
 	}
-	
+
 	private getHasReservedWordEnum(): string {
 		return this.hasReservedWordEnum ? 'S' : 'N';
 	}
-	
+
 	private formatParameters(parameters: string[]): string {
 		return `(${parameters.join(",")})`;
 	}
-	
+
 	private formatParametersTyped(parameters: string[]): string {
 		return `(${parameters.map(p => `${p}:number`).join(",")})`;
 	}
-	
+
 	private getParametersWithLastIndex(parameters: string[], lastIndex: string): string[] {
 		return [...parameters, lastIndex].filter(el => el);
 	}
-	
+
 	private getLastIndex(parameters: string[]): string {
 		return parameters.length > 0 ? parameters[parameters.length - 1] : '';
 	}
-	
-	private endsWithAsterisk(): boolean {
+
+	private endsWithReservedWord(): boolean {
 		return this.completeKeyName[this.completeKeyName.length - 1] === ReservedWordEnum.__ARRAY__;
 	}
-	
+
 	private getSecondToLastIndex(parameters: string[]): string {
 		return parameters.length > 0 ? parameters[parameters.length - 1] : '';
 	}
-	
+
 	private getFirstKeyBeforeDot(path: string[]): string {
 		return path.length > 0 ? path[path.length - 1].replace(/'/g, "") : '';
 	}
-	
+
 	private getCreateFunction(parameters: string[]): string {
 		return `${this.getWithParameters(parameters)}.push(${this.getCreateFunctionName()})`;
 	}

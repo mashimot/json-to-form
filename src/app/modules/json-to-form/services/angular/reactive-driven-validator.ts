@@ -23,7 +23,7 @@ export class Validator {
         this.rules = rules;
     }
 
-    public get() {
+    public get(): string[] {
         return this.rules.reduce((acc: string[], rule: string) => {
             acc.push(this.validate('', rule));
 
@@ -75,7 +75,21 @@ export class Validator {
     public validateRequired(): string {
         return `Validators.required`;
     }
+}
 
+export const FORM_BUILDER_WRAPPER = {
+    array: {
+        OPEN_WRAPPER: 'this.formBuilder.array([',
+        CLOSE_WRAPPER: '])'
+    },
+    object: {
+        OPEN_WRAPPER: 'this.formBuilder.group({',
+        CLOSE_WRAPPER: '})'
+    },
+    default: {
+        OPEN_WRAPPER: 'this.formBuilder.control(',
+        CLOSE_WRAPPER: ')'
+    }
 }
 
 export class ReactiveDrivenValidator {
@@ -98,9 +112,9 @@ export class ReactiveDrivenValidator {
 
     public generateFormBuilder(): string[] {
         return [
-            `this.${this._options.formName} = this.formBuilder.group({`,
+            `this.${this._options.formName} = ${FORM_BUILDER_WRAPPER.object.OPEN_WRAPPER}`,
             this.reactiveDrivenValidators(this.rules),
-            `});`
+            `${FORM_BUILDER_WRAPPER.object.CLOSE_WRAPPER};`
         ];
     }
 
@@ -110,8 +124,6 @@ export class ReactiveDrivenValidator {
         const definitions: string[] = [];
         const formGroup: string[] = this.generateFormBuilder();
         const getters: string[] = [];
-
-        console.log('this.functions', this.functions)
 
         this.functions.forEach((item: Definition) => {
             if (item.get) {
@@ -244,17 +256,24 @@ export class ReactiveDrivenValidator {
                         });
 
                         if (hasCheckboxRule) {
-                            return [`this.formBuilder.array([])`];
+                            return [
+                                FORM_BUILDER_WRAPPER.array.OPEN_WRAPPER,
+                                FORM_BUILDER_WRAPPER.array.CLOSE_WRAPPER
+                            ];
                         }
 
-                        return [`this.formBuilder.control('', [${ruleParameters.join(",")}]);`];
+                        return [
+                            FORM_BUILDER_WRAPPER.default.OPEN_WRAPPER,
+                            `'', [${ruleParameters.join(",")}]`,
+                            `${FORM_BUILDER_WRAPPER.default.CLOSE_WRAPPER};`
+                        ]
                     }
 
                     if (previousValueType === 'array' && currentValueType === 'object') {
                         return [
-                            `this.formBuilder.group({`,
-                            `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
-                            `})`
+                            FORM_BUILDER_WRAPPER[currentValueType].OPEN_WRAPPER,
+                            `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, currentValueType)}`,
+                            FORM_BUILDER_WRAPPER[currentValueType].CLOSE_WRAPPER
                         ];
                     }
 
@@ -302,9 +321,10 @@ export class ReactiveDrivenValidator {
                     }
 
                     return [
-                        `"${key}": this.formBuilder.group({`,
-                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
-                        `}),`
+                        `"${key}":`,
+                        `${FORM_BUILDER_WRAPPER[currentValueType].OPEN_WRAPPER}`,
+                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, currentValueType)}`,
+                        `${FORM_BUILDER_WRAPPER[currentValueType].CLOSE_WRAPPER},`
                     ]
                         .join('\n');
                 }
