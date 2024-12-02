@@ -17,7 +17,7 @@ interface Options {
 }
 
 export class Validator {
-    rules: string[];
+    private rules: string[];
 
     public constructor(rules: string[]) {
         this.rules = rules;
@@ -103,7 +103,7 @@ export class ReactiveDrivenValidator {
         container: 'container'
     };
     componentName!: string;
-    private index = 0;
+    private arrayIndex: number = 0;
 
     constructor(rules: any, componentName: string) {
         this.componentName = componentName;
@@ -285,7 +285,7 @@ export class ReactiveDrivenValidator {
                 };
 
                 if (currentValueType !== 'array') {
-                    if (previousValueType === 'array' && this.index - 1 !== index) {
+                    if (previousValueType === 'array' && this.arrayIndex - 1 !== index) {
                         return '';
                     }
                     
@@ -303,7 +303,7 @@ export class ReactiveDrivenValidator {
                 //value: can be an array ['required', 'min:40'] or either an object {}
                 //rule when key ends with an asterisk, so must turn into an array
                 if (currentValueType === 'array') {
-                    this.index = value.length;
+                    this.arrayIndex = value.length;
 
                     return this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'array');
                 }
@@ -322,9 +322,9 @@ export class ReactiveDrivenValidator {
 
                     return [
                         `"${key}":`,
-                        `${FORM_BUILDER_WRAPPER[currentValueType].OPEN_WRAPPER}`,
-                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, currentValueType)}`,
-                        `${FORM_BUILDER_WRAPPER[currentValueType].CLOSE_WRAPPER},`
+                        `${FORM_BUILDER_WRAPPER.object.OPEN_WRAPPER}`,
+                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
+                        `${FORM_BUILDER_WRAPPER.object.CLOSE_WRAPPER},`
                     ]
                         .join('\n');
                 }
