@@ -1,7 +1,8 @@
+import { wrapLines } from 'src/app/shared/utils/string.utils';
 import { InputTypeEnum } from '../../enums/input-type.enum';
-import { FormArrayBuilder } from './function-definition';
-import { Definition } from './models/Definition';
-import { ValueType } from './models/value.type';
+import { FormStructure } from './function-definition';
+import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
+import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -10,20 +11,409 @@ interface Rules {
 
 enum FormEnum {
   FIELD = 'field',
-  ABSCTRACT_CONTROL = `field.abstractControl`,
-  IS_FIELD_VALID = `field.isFieldValid`,
-  IS_FIELD_VALID2 = `isFieldInvalid(field)`,
-  FIELD_ID = `field.id`,
+  ABSCTRACT_CONTROL = `f.get(path)`,
+  IS_FIELD_VALID = `f.get(path)?.invalid && f.get(path)?.touched`,
+  FIELD_ID = `path`,
+}
+
+export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
+  constructor(
+    private readonly item: FormStructure
+  ) {}
+
+  private formControlClass: string = 'class="form-control"';
+  private ngClass: string = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
+  private fieldId: string = FormEnum.FIELD_ID;
+  private id: string = `[id]="${this.fieldId}"`;
+  private formControlNameAttr: string = '[formControlName]';
+
+  private get index(): string {
+    return `${this.item.index}`;
+  }
+
+  private get asyncVar(): string {
+    return `${this.item.methodName}$`;
+  }
+
+  private get indexName(): string {
+    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
+  }
+
+  private html(...lines: string[]): string {
+    return lines.join('\n');
+  }
+
+  input(type: string): string {
+    return `<input type="${type}" ${this.formControlClass} ${this.id} ${this.ngClass} ${this.formControlNameAttr}="${this.index}">`;
+  }
+
+  textarea(): string {
+    return `<textarea ${this.formControlClass} ${this.id} ${this.ngClass} ${this.formControlNameAttr}="${this.index}" cols="30" rows="10"></textarea>`;
+  }
+
+  select(): string {
+    return this.html(
+      `<select ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} ${this.ngClass}>`,
+        `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
+          `{{ option | json }}`,
+        `</option>`,
+      `</select>`
+    );
+  }
+
+  radio(): string {
+    return this.html(
+      `<div *ngFor="let option of (${this.asyncVar} | async); let ${this.indexName} = index" class="form-check">`,
+        `<input type="radio" class="form-check-input" ${this.ngClass} [value]="option" formControlName="{{ ${this.index} }}">`,
+        `<label class="form-check-label">{{ option | json }}</label>`,
+      `</div>`
+    );
+  }
+
+  checkbox(): string {
+    return this.html(
+      `<div *ngFor="let option of (${this.asyncVar} | async); let ${this.indexName} = index" class="form-check">`,
+        `<input type="checkbox" class="form-check-input" ${this.ngClass}>`,
+        `<label class="form-check-label">{{ option }}</label>`,
+      `</div>`
+    );
+  }
+}
+
+export class PlainInputTemplateBuilder implements InputTemplateStrategy {
+  constructor(
+    private readonly item: FormStructure
+  ) {}
+
+  private id: string = '';
+  private ngClass: string = '';
+  private formControlClass: string = '';
+  private fieldId: string = FormEnum.FIELD_ID;
+  private formControlNameAttr: string = '[formControlName]';
+
+  private get index(): string {
+    return `${this.item.index}`;
+  }
+
+  private get asyncVar(): string {
+    return `${this.item.methodName}$`;
+  }
+  private get indexName(): string {
+    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
+  }
+
+  private html(...lines: string[]): string {
+    return lines.join('\n');
+  }
+
+  input(type: string): string {
+    return `<input type="${type}" ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} ${this.ngClass}>`;
+  }
+
+  textarea(): string {
+    return `<textarea ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} cols="30" rows="10" ${this.ngClass}></textarea>`;
+  }
+
+  select(): string {
+    return this.html(
+      `<select ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} ${this.ngClass}>`,
+        `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
+          `{{ option | json }}`,
+        `</option>`,
+      `</select>`
+    );
+  }
+
+  radio(): string {
+    return this.html(
+      `<ng-container *ngIf="(${this.asyncVar} | async) as options">`,
+        `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
+          `<div class="form-check">`,
+            `<input type="radio" formControlName="{{ ${this.index} }}" [value]="option" ${this.ngClass}>{{ option | json }}`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
+    );
+  }
+
+  checkbox(): string {
+    return this.html(
+      `<ng-container *ngIf="(${this.asyncVar} | async) as options">`,
+        `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
+          `<div class="form-check">`,
+            `<input type="checkbox" class="form-check-input" ${this.ngClass}> {{ options[${this.indexName}] | json }}`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
+    );
+  }
+}
+
+class FormValidatorGenerator {
+  generate(rules: string[], getField: string): string[] {
+    return rules.reduce((validators: string[], rule: string) => {
+      const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+
+      validators.push(
+        this.getErrorsMessages(getField, ruleName, ruleParameters)
+      );
+
+      return validators;
+    }, []);
+  }
+
+  private getErrorsMessages(getField: string, ruleName: string, ruleParameters: string[]): string {
+    const fieldId = `${FormEnum.FIELD_ID}`;
+    const errorMessages: { [key: string]: string } = {
+      required: `<div *ngIf="${getField}?.hasError('required')">{{ ${fieldId} }} is required</div>`,
+      min: `<div *ngIf="${getField}?.hasError('minlength')">{{ ${fieldId} }} min must be ${ruleParameters[0]}</div>`,
+      max: `<div *ngIf="${getField}?.hasError('maxlength')">{{ ${fieldId} }} max must be ${ruleParameters[0]}</div>`,
+      email: `<div *ngIf="${getField}?.hasError('email')">{{ ${fieldId} }} an valid Email</div>`
+    };
+
+    return errorMessages[ruleName] || '';
+  }
+}
+
+export class FormUtils {
+  generateLoopWrapper(item: FormStructure): [string[], string[]] {
+    const index = item.lastIndexParam;
+
+    return [
+      [
+        [
+          `<div`,
+            `*ngFor="let ${item.attributeName}Ctrl of ${item.getter.call}?.controls;`,
+            `let ${index} = index;"`,
+          `>`
+        ].join(" "),
+      ],
+      [
+        '</div>'
+      ]
+    ];
+  }
+
+  public generateDeleteButton(previousFormStructure: FormStructure | undefined, currentFormStructure: FormStructure | undefined): string[] {
+    const get = previousFormStructure?.getter.call;
+    const index = previousFormStructure?.lastIndexParam;
+
+    return [
+      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT 
+        ? `<div class="d-flex justify-content-end mb-2">`
+        : ``,
+        `<button`,
+          `type="button"`,
+          `(click)="${get}.removeAt(${index})"`,
+          `class="btn btn-danger btn-sm"`,
+        `>`,
+          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+          `&times; Delete`,
+        `</button>`,
+        currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT 
+          ? `</div>`
+          : ``,
+    ];
+  }
+
+  public generateAddButton(
+    previousFormStructure: FormStructure | undefined,
+    currentFormStructure: FormStructure
+  ): string[] {
+    const get = previousFormStructure?.getter.call;
+    const create = currentFormStructure.creator.call;
+
+    return [
+      `<div class="btn-group">`,
+        `<button`,
+          `type="button" `,
+          `class="btn btn-primary btn-block btn-sm" `,
+          `(click)="${get}.push(${create})"`,
+        `>`,
+          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+          `ADD`,
+        `</button>`,
+      `</div>`
+    ];
+  }
+}
+
+export enum FrameworkType {
+  BOOTSTRAP = 'bootstrap',
+  DEFAULT = 'default',
+}
+
+export interface InputTemplateStrategy {
+  input(type: InputTypeEnum): string;
+  textarea(): string;
+  select(): string;
+  radio(): string;
+  checkbox(): string;
+}
+
+export class InputTemplateDispatcher {
+  constructor(private readonly strategy: InputTemplateStrategy) {}
+
+  resolve(type: string): string {
+    switch (type) {
+      case InputTypeEnum.TEXTAREA:
+        return this.strategy.textarea();
+      case InputTypeEnum.SELECT:
+        return this.strategy.select();
+      case InputTypeEnum.RADIO:
+        return this.strategy.radio();
+      case InputTypeEnum.CHECKBOX:
+        return this.strategy.checkbox();
+      default:
+        return this.strategy.input(type as InputTypeEnum);
+    }
+  }
+}
+
+export class BootstrapFormWrapperBuilder {
+  constructor(
+    private readonly item: FormStructure,
+    private readonly inputHtml: string,
+    private readonly validationHtml: string,
+    private readonly deleleButton?: string
+  ) {}
+
+  build(): string {
+    const pathExpression = `[${this.item.path.join(', ')}] as path`;
+
+    return [
+      `<ng-container *ngIf="${pathExpression}">`,
+        `<div class="form-group">`,
+          `<label [for]="path" class="form-label">{{ path }}</label>`,
+          `<div class="input-group">`,
+            this.inputHtml,
+            this.deleleButton,
+            `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="invalid-feedback">`,
+              this.validationHtml,
+            `</div>`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
+    ]
+    .filter(Boolean)
+    .join('\n');
+  }
+}
+
+export class PlainFormWrapperBuilder {
+  constructor(
+    private readonly item: FormStructure,
+    private readonly inputHtml: string,
+    private readonly validationHtml: string
+  ) {}
+
+  build(): string {
+    const pathExpression = `[${this.item.path.join(', ')}] as path`;
+
+    return [this.inputHtml].join("\n");
+    return [
+      `<ng-container *ngIf="${pathExpression}">`,
+        `<div>`,
+          `<label [for]="path">{{ path }}</label>`,
+          this.inputHtml,
+          `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="validation-message">`,
+            this.validationHtml,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
+    ].join('\n');
+  }
+}
+
+export interface FormWrapperBuilder {
+  build(): string;
+}
+
+export class FormInputGenerator {
+  constructor(
+    private readonly framework: FrameworkType,
+    private readonly formContext: any,
+    private readonly rules: string[]
+  ) { }
+
+  public get currentFormStructure(): FormStructure {
+    return this.formContext.current;
+  }
+
+  public get previousFormStructure(): FormStructure {
+    return this.formContext.previous;
+  }
+
+  generate(): string {
+    const { builder, wrapper } = this.getDependenciesForFramework();
+
+    const dispatcher = new InputTemplateDispatcher(builder);
+    const inputType = this.getInputTypeFromRules(this.rules);
+    const inputHtml = dispatcher.resolve(inputType);
+    const validationHtml = new FormValidatorGenerator().generate(this.rules, `${FormEnum.ABSCTRACT_CONTROL}`).join('');
+
+    return wrapper(inputHtml, validationHtml).build();
+  }
+
+  public getInputTypeFromRules(rules: string[]): InputTypeEnum {
+    const htmlRule = rules
+      .map(rule => ValidatorRuleHelper.parseStringRule(rule))
+      .find(([name]) => name === 'html');
+
+    if (htmlRule) {
+      const [, [type]] = htmlRule;
+      return this.typeExists(type);
+    }
+
+    return InputTypeEnum.TEXT;
+  }
+
+  private typeExists(type: InputTypeEnum): InputTypeEnum {
+    return Object.values(InputTypeEnum).find(r => r === type) || InputTypeEnum.TEXT;
+  }
+
+  private getDependenciesForFramework(): {
+    builder: InputTemplateStrategy;
+    wrapper: (inputHtml: string, validationHtml: string) => FormWrapperBuilder;
+  } {
+    switch (this.framework) {
+      case FrameworkType.BOOTSTRAP:
+        return {
+          builder: new BootstrapInputTemplateBuilder(this.currentFormStructure),
+          wrapper: (inputHtml, validationHtml) => new BootstrapFormWrapperBuilder(
+            this.currentFormStructure,
+            inputHtml, 
+            validationHtml,
+            this.currentFormStructure.previousValueType === 'array' 
+              ? new FormUtils().generateDeleteButton(this.previousFormStructure, this.currentFormStructure).join("\n")
+              : ''
+          )
+        };
+      default:
+        return {
+          builder: new PlainInputTemplateBuilder(this.currentFormStructure),
+          wrapper: (inputHtml, validationHtml) => new PlainFormWrapperBuilder(this.currentFormStructure, inputHtml, validationHtml)
+        };
+    }
+  }
 }
 
 export class ReactiveDrivenHtml {
-  rules!: any;
-  triggerValidationOnSubmit: boolean = true;
-  formName: string = 'form';
+  private rules!: any;
+  private triggerValidationOnSubmit: boolean = true;
+  private formName: string = 'form';
   private index: number = 0;
-  private formControlName: string = '[formControlName]';
-
-  constructor(rules: Rules) {
+  private options = {
+    showAddButton: true,
+    showDeleteButton: true,
+    framework: FrameworkType.DEFAULT
+  }
+  
+  constructor(rules: Rules, options?: Object) {
+    this.options = {
+      ...this.options,
+      ...(options || {})
+    };
     this.setRules(rules);
   }
 
@@ -39,7 +429,7 @@ export class ReactiveDrivenHtml {
     return [
       `<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
         `<pre>{{ ${this.formName}.value | json }}</pre>`,
-        this.reactiveDrivenHtml(this.rules),
+        this.buildReactiveFormHtml(this.rules),
         `<button type="submit" class="btn btn-primary">`,
           `Submit`,
         `</button>`,
@@ -47,305 +437,117 @@ export class ReactiveDrivenHtml {
     ];
   }
 
-  public reactiveDrivenHtml(
+  public buildReactiveFormHtml(
     object: { [key: string]: any },
     namesArr: string[] = [],
-    previousValueType: ValueType = 'object'
+    previousValueType: ValueType = VALUE_TYPES.OBJECT,
+    formStructureStack: FormStructure[] = []
   ): string {
-    const reactiveDrivenHtml = Object.keys(object)
+    const reactiveFormHtml = Object.keys(object)
       .map((key: string, index: number) => {
-        const value = ValidatorRuleHelper.changeValue(object[key]);
-        const currentValueType = ValidatorRuleHelper.getType(value);
-        const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
-        const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
-        const isLastIndexFromValueArray = this.index - 1 === index ? true : false;
-        let formArrayBuilder: Definition = {
-          get: [],
-          formBuilder: []
+        const context = ValidatorFormContextHelper.buildContext({
+          object,
+          key,
+          namesArr,
+          previousValueType,
+          index,
+          currentIndex: this.index,
+        });
+  
+        if (!context) return '';
+  
+        const {
+          value,
+          currentValueType,
+          fullKeyPath,
+          isLastIndexFromValueArray,
+          currentFormStructure,
+        } = context;
+  
+        const previousFormStructure = formStructureStack[formStructureStack.length - 1];
+        const formContext = {
+          current: currentFormStructure,
+          previous: previousFormStructure,
         };
-     
-        if (currentValueType !== 'array') {
-          if (previousValueType === 'array' && this.index - 1 !== index) {
-            return '';
+  
+        const formUtils = new FormUtils();
+  
+        const [openLoopTag, closeLoopTag] = previousValueType === VALUE_TYPES.ARRAY
+          ? formUtils.generateLoopWrapper(formContext.previous!)
+          : [[], []];
+  
+        const addButton = this.options.showAddButton
+          ? formUtils.generateAddButton(formContext.previous, formContext.current)
+          : [];
+  
+        const deleteButton = this.options.showDeleteButton
+          ? formUtils.generateDeleteButton(formContext.previous, formContext.current)
+          : [];
+  
+        const buildWrapperTags = (): string[][] => {
+          const customCssClass = this.options.framework === FrameworkType.BOOTSTRAP 
+            ? 'class="p-1 my-1 border border-dark"'
+            : '';
+            
+          const formIndex = isLastIndexFromValueArray && previousValueType === VALUE_TYPES.ARRAY
+            ? formContext.previous?.lastIndexParam
+            : `'${key}'`;
+  
+          if (currentValueType === VALUE_TYPES.ARRAY) {
+            return [[`<fieldset [formArrayName]="${formIndex}" ${customCssClass}>`], [`</fieldset>`]];
           }
+  
+          if (currentValueType === VALUE_TYPES.OBJECT) {
+            const customClass = previousValueType === VALUE_TYPES.ARRAY ? 'class="p-1 mb-2"' : ''
 
-          formArrayBuilder = new FormArrayBuilder(
-            completeKeyNameSplitDot,
-            [],
-            currentValueType,
-            previousValueType
-          )
-            .get();
-        }
-
-        if (currentValueType === 'array') {
+            return [[`<div [formGroupName]="${formIndex}" ${customClass}>`], [`</div>`]];
+          }
+  
+          return [];
+        };
+  
+        const nextStack = [...formStructureStack, currentFormStructure];
+  
+        if (currentValueType === VALUE_TYPES.ARRAY) {
           this.index = value.length;
-
-          return this.reactiveDrivenHtml(value, completeKeyNameSplitDot, 'array');
+          const [open, close] = buildWrapperTags();
+          const innerHtml = this.buildReactiveFormHtml(value, fullKeyPath, VALUE_TYPES.ARRAY, nextStack);
+  
+          return previousValueType === VALUE_TYPES.ARRAY
+            ? wrapLines([...addButton, ...openLoopTag, ...open, ...deleteButton, innerHtml, ...close, ...closeLoopTag])
+            : wrapLines([...open, innerHtml, ...close]);
         }
-
-        //ex: { keyName: {} }
-        if (currentValueType === 'object') {
-          if (previousValueType === 'array') {
-            if (isLastIndexFromValueArray === false) {
-              return '';
-            }
-
-            const [formArrayOpenTag, formArrayCloseTag] = this.generateFormArrayWrapper(
-              formArrayBuilder, currentValueType
-            );
-            const FORM_ARRAY: string[] = [
-              formArrayOpenTag.join("\n"),
-              this.reactiveDrivenHtml(value, completeKeyNameSplitDot, 'object'),
-              formArrayCloseTag.join("\n"),
-            ];
-
-            return FORM_ARRAY.join("\n");
-          }
-
-          return [
-            `<div [formGroupName]="'${key}'">`,
-            `${this.reactiveDrivenHtml(value, completeKeyNameSplitDot, 'object')}`,
-            `</div>`
-          ]
-            .join('\n');
+  
+        if (currentValueType === VALUE_TYPES.OBJECT) {
+          const [open, close] = buildWrapperTags();
+          const innerHtml = this.buildReactiveFormHtml(value, fullKeyPath, VALUE_TYPES.OBJECT, nextStack);
+  
+          return previousValueType === VALUE_TYPES.ARRAY
+            ? wrapLines([...addButton, ...openLoopTag, ...open, ...deleteButton, innerHtml, ...close, ...closeLoopTag])
+            : wrapLines([...open, innerHtml, ...close]);
         }
-
-        //ex: { keyName: [] }
-        if (currentValueType === 'string') {
-          const rules = value.split("|");
-          const index = this.getIndex(previousValueType, formArrayBuilder?.get || []);
-          const INPUTS = this.generateFormInput2(
-            index,
-            completeKeyNameSplitDot
-          );
-          const formInput = this.generateFormInput(INPUTS, rules);
-          const formValidators = this.generateFormValidators(rules, `${FormEnum.ABSCTRACT_CONTROL}`);
-          const lastItem = formArrayBuilder.get?.[formArrayBuilder.get.length - 1];
-
-          let formArrayOpenWrapper: string[] = [];
-          let formArrayCloseWrapper: string[] = [];
-
-          //ex.*: { keyName: [] }
-          if (formArrayBuilder.get.length > 0) {
-            [formArrayOpenWrapper, formArrayCloseWrapper] = this.generateFormArrayWrapper(
-              formArrayBuilder, currentValueType
-            );
-          }
-          
-          return [
-            formArrayOpenWrapper.join(""),
-            this.formWrapper(formInput, formValidators, lastItem),
-            formArrayCloseWrapper.join("")
-          ]
-            .filter(el => el)
-            .join("\n");
+  
+        if (currentValueType === VALUE_TYPES.STRING) {
+          const rules = this.extractRules(value);
+          const stringInput = new FormInputGenerator(this.options.framework, formContext, rules).generate();
+  
+          return previousValueType === VALUE_TYPES.ARRAY
+            ? wrapLines([...addButton, ...openLoopTag, stringInput, ...closeLoopTag])
+            : stringInput;
         }
-
+  
         return '';
       })
-      .filter(el => el)
-      .join("\n");
-
-    return reactiveDrivenHtml;
+      .filter(Boolean);
+  
+    return wrapLines(reactiveFormHtml);
   }
 
-  protected formWrapper(formInput: string, formValidators: string[], item: Map<string, string>): string {
-    return [
-      // this.ifOpenWrapper(`getField(${'getField'}) as field`),
-      `<div class="form-group" *ngIf="getField([${item?.get('full_path')}]) as field">`,
-          `<label [for]="${FormEnum.FIELD_ID}">{{ ${FormEnum.FIELD_ID} }}</label>`,
-          `${formInput}`,
-          `<div *ngIf="${FormEnum.IS_FIELD_VALID}" class="invalid-feedback">`,
-          `${formValidators.join("")}`,
-          `</div>`,
-        `</div>`,
-      // this.ifCloseWrapper()
-    ]
-      .filter(el => el)
-      .join("\n")
-  }
-
-  private generateFormInput(INPUTS: { [key: string]: string }, rules: string[]): string {
-    return rules.reduce((form: string, rule: string) => {
-      const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-
-      if (ruleName === 'html') {
-        form = INPUTS[ruleParameters[0]] || INPUTS.text;
-      }
-
-      return form;
-    }, INPUTS.text);
-  }
-
-  private generateFormValidators(rules: string[], getField: string): string[] {
-    return rules.reduce((validators: string[], rule: string) => {
-      const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-
-      validators.push(
-        this.getErrorsMessages(getField, ruleName, ruleParameters)
-      );
-
-      return validators;
-    }, []);
-  }
-
-  private getIndex(previousValueType: string, nestedFormArray: Array<Map<string, string>>): string {
-    if (nestedFormArray.length > 0) {
-      const lastFormArray = nestedFormArray?.[nestedFormArray.length - 1];
-      if (previousValueType === 'array') {
-        return `${lastFormArray.get('second_to_last_index')}`;
-      }
-
-      return `'${lastFormArray.get('first_key_before_dot')}'`;
-    }
-
-    return '';
-  }
-
-  protected getErrorsMessages(getField: string, ruleName: string, ruleParameters: string[]): string {
-    const fieldId = `${FormEnum.FIELD_ID}.toUpperCase()`;
-    const errorMessages: { [key: string]: string } = {
-      required: `<div *ngIf="${getField}!.hasError('required')">{{ ${fieldId} }} is required</div>`,
-      min: `<div *ngIf="${getField}!.hasError('minlength')">{{ ${fieldId} }} min must be ${ruleParameters[0]}</div>`,
-      max: `<div *ngIf="${getField}!.hasError('maxlength')">{{ ${fieldId} }} max must be ${ruleParameters[0]}</div>`,
-      email: `<div *ngIf="${getField}!.hasError('email')">{{ ${fieldId} }} an valid Email</div>`
-    };
-
-    return errorMessages[ruleName] || '';
-  }
-
-  public ifOpenWrapper(condition: string): string {
-    return `<ng-container *ngIf="${condition}">`;
-    return `@if(${condition}) {`;
-  }
-
-  public ifCloseWrapper(): string {
-    return `</ng-container>`;
-    return '}';
+  private extractRules(value: string): string[] {
+    return value.split('|');
   }
 
   private setRules(rules: Rules): void {
     this.rules = rules;
-  }
-
-  private generateFormInput2(
-    index: string,
-    completeKeyNameSplitDot: string[]
-  ): {
-    [key: string]: string
-  } {
-    const formControlName = this.formControlName;
-    const dotNotation = ValidatorRuleHelper.dotNotation(completeKeyNameSplitDot);
-    const async = `${ValidatorRuleHelper.camelCasedString(dotNotation.join("."), true)}`;
-    const ngClass = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
-    const input = Object.values(InputTypeEnum).reduce(
-      (form: { [key: string]: string }, type: string) => {
-        form[type] = `<input type="${type}" ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`;
-        return form;
-      },
-      {}
-    );
-
-    return {
-      ...input,
-      textarea: `<textarea ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" cols="30" rows="10" ${ngClass}></textarea>`,
-      select: [
-        `<select ${formControlName}="${index}" [id]="${FormEnum.FIELD_ID}" class="form-control" ${ngClass}>`,
-          `<option *ngFor="let data of (${async}$ | async)" [ngValue]="data">`,
-            `{{ data | json }}`,
-          `</option>`,
-        `</select>`
-      ].join('\n'),
-      radio: [
-        `<div *ngIf="(${async}$ | async) as asyncData">`,
-          `<div *ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;">`,
-            `<div class="form-check">`,
-              `<input type="radio" formControlName="{{ ${index} }}" [value]="data" ${ngClass}>{{ data | json }}`,
-            `</div>`,
-          `</div>`,
-        `</div>`
-      ].join('\n'),
-      checkbox: [
-        `<div *ngIf="(${async}$ | async) as asyncData">`,
-          `<div`,
-            `*ngFor="let data of asyncData; let index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))} = index;"`,
-          `>`,
-          `<div class="form-check">`,
-            `<input`,
-              `type="checkbox" `,
-              `class="form-check-input"`,
-              `${ngClass}`,
-              // `[formControl]="data"`,
-              `> {{ asyncData[index${ValidatorRuleHelper.camelCasedString(dotNotation.join("."))}] | json }}`,
-            `</div>`,
-          `</div>`,
-        `</div>`
-      ].join('\n')
-    };
-  }
-
-  protected generateDeleteButton(item: Map<string, string>): string[] {
-    return [
-      `<div class="btn-group">`,
-        `<button`,
-            `type="button"`,
-            `(click)="${item.get('delete')}"`,
-            `class="btn btn-danger btn-sm"`,
-          `>`,
-          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
-          `DELETE ${item.get('function_name')}`,
-        `</button>`,
-      `</div>`
-    ];
-  }
-
-  protected generateAddButton(item: Map<string, string>): string[] {
-    return [
-      `<div class="btn-group">`,
-        `<button`,
-          `type="button" `,
-          `class="btn btn-primary btn-block btn-sm" `,
-          `(click)="${item.get('create')}"`,
-        `>`,
-          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
-          `ADD ${item.get('function_name')}`,
-        `</button>`,
-      `</div>`
-    ];
-  }
-
-  private generateFormArrayWrapper(
-    formArrayBuilder: Definition,
-    currentValueType: ValueType
-  ): [string[], string[]] {
-    const formArrayOpenTag: string[] = []
-    const formArrayCloseTag: string[] = [];
-    const formArrays = [...formArrayBuilder.get.slice(0, -1)];
-
-    formArrays.forEach((item: Map<string, string>, i: number) => {
-        const formArrayName: string = i <= 0
-          ? `[formArrayName]="'${item.get('first_key_before_dot')}'"`
-          : `[formArrayName]="${item.get('second_to_last_index')}"`;
-
-        formArrayOpenTag.push(
-          `<fieldset ${formArrayName} class="form-group">
-            ${this.generateAddButton(item).join("\n")}
-            <div
-              *ngFor="let _${item.get('attribute_name')} of ${item.get('get_function_name')}${item.get('parameters')}?.controls; let ${item.get('last_index')} = index;"
-              ${
-                currentValueType === 'object' && i === formArrays.length - 1
-                  ? `[formGroupName]="${item.get('last_index')}"`
-                  : ''
-              }
-            >
-            `
-        );
-        formArrayOpenTag.push(this.generateDeleteButton(item).join("\n"));
-        formArrayCloseTag.push('</div>');
-        formArrayCloseTag.push('</fieldset>');
-    });
-
-    return [formArrayOpenTag, formArrayCloseTag];
   }
 }

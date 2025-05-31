@@ -101,286 +101,67 @@ describe('ReactiveDrivenHtml', () => {
             }
         );
         const response = reactiveDrivenHtml.generate();
-        expect(
-            html_beautify(response.join("\n"))
-        )
-            .toBe(
-                html_beautify(`<form [formGroup]="form" (ngSubmit)="onSubmit()">
+        const html = `
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <pre>{{ form.value | json }}</pre>
-            <fieldset [formArrayName]="'movies'" class="form-group">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getMoviesFormArray().push(createMovies())">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                        ADD Movies
-                    </button>
-                </div>
-                <div *ngFor="let _movies1 of getMoviesFormArray()?.controls; let index1 = index;" [formGroupName]="index1">
-        
-                    <div class="btn-group">
-                        <button type="button" (click)="deleteMovies(index1)" class="btn btn-danger btn-sm">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            DELETE Movies
-                        </button>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'adult']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'adult'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'backdrop_path']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'backdrop_path'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'belongs_to_collection']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'belongs_to_collection'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'budget']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'budget'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div [formGroupName]="'genres'">
-                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','id']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="number" [formControlName]="'id'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            </div>
-                        </div>
-                        <fieldset [formArrayName]="'production_companies'" class="form-group">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getMoviesGenresProductionCompaniesFormArray(index1).push(createMoviesGenresProductionCompanies())">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    ADD MoviesGenresProductionCompanies
-                                </button>
-                            </div>
-                            <div *ngFor="let _moviesGenresProductionCompanies1 of getMoviesGenresProductionCompaniesFormArray(index1)?.controls; let index2 = index;">
-        
-                                <div class="btn-group">
-                                    <button type="button" (click)="deleteMoviesGenresProductionCompanies(index1,index2)" class="btn btn-danger btn-sm">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        DELETE MoviesGenresProductionCompanies
-                                    </button>
+            <fieldset [formArrayName]="'movies'">
+                <div *ngFor="let moviesCtrl of getMovies()?.controls; let index0 = index;">
+                    <div [formGroupName]="index0">
+                        <input type="text" [formControlName]="'adult'">
+                        <input type="text" [formControlName]="'backdrop_path'">
+                        <input type="text" [formControlName]="'belongs_to_collection'">
+                        <input type="number" [formControlName]="'budget'">
+                        <div [formGroupName]="'genres'">
+                            <input type="number" [formControlName]="'id'">
+                            <fieldset [formArrayName]="'production_companies'">
+                                <div *ngFor="let moviesGenresProductionCompanies1Ctrl of getMoviesAtGenresProduction_companies(index0)?.controls; let index1 = index;">
+                                    <fieldset [formArrayName]="index1">
+                                        <div *ngFor="let moviesGenresProductionCompanies2Ctrl of getMoviesAtGenresProduction_companiesAt(index0, index1)?.controls; let index2 = index;">
+                                            <div [formGroupName]="index2">
+                                                <div [formGroupName]="'production_countries'">
+                                                    <input type="text" [formControlName]="'iso_3166_1'">
+                                                    <input type="text" [formControlName]="'name'">
+                                                </div>
+                                                <input type="number" [formControlName]="'id'">
+                                                <input type="text" [formControlName]="'logo_path'">
+                                                <input type="text" [formControlName]="'name'">
+                                                <input type="text" [formControlName]="'origin_country'">
+                                            </div>
+                                        </div>
+                                    </fieldset>
                                 </div>
-                                <fieldset [formArrayName]="index2" class="form-group">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getMoviesGenresProductionCompanies1FormArray(index1,index2).push(createMoviesGenresProductionCompanies1())">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                            ADD MoviesGenresProductionCompanies1
-                                        </button>
-                                    </div>
-                                    <div *ngFor="let _moviesGenresProductionCompanies2 of getMoviesGenresProductionCompanies1FormArray(index1,index2)?.controls; let index3 = index;" [formGroupName]="index3">
-        
-                                        <div class="btn-group">
-                                            <button type="button" (click)="deleteMoviesGenresProductionCompanies1(index1,index2,index3)" class="btn btn-danger btn-sm">
-                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                DELETE MoviesGenresProductionCompanies1
-                                            </button>
-                                        </div>
-                                        <div [formGroupName]="'production_countries'">
-                                            <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'production_countries','iso_3166_1']) as field">
-                                                <label [for]="field.id">{{ field.id }}</label>
-                                                <input type="text" [formControlName]="'iso_3166_1'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 2</div>
-                                                </div>
-                                            </div>
-                                            <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'production_countries','name']) as field">
-                                                <label [for]="field.id">{{ field.id }}</label>
-                                                <input type="text" [formControlName]="'name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'id']) as field">
-                                            <label [for]="field.id">{{ field.id }}</label>
-                                            <input type="number" [formControlName]="'id'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                            </div>
-                                        </div>
-                                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'logo_path']) as field">
-                                            <label [for]="field.id">{{ field.id }}</label>
-                                            <input type="text" [formControlName]="'logo_path'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                            </div>
-                                        </div>
-                                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'name']) as field">
-                                            <label [for]="field.id">{{ field.id }}</label>
-                                            <input type="text" [formControlName]="'name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                            </div>
-                                        </div>
-                                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','production_companies',index2,index3,'origin_country']) as field">
-                                            <label [for]="field.id">{{ field.id }}</label>
-                                            <input type="text" [formControlName]="'origin_country'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 2</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </fieldset>
-                            </div>
-                        </fieldset>
-                        <div class="form-group" *ngIf="getField(['movies',index1,'genres','name']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                            </div>
+                            </fieldset>
+                            <input type="text" [formControlName]="'name'">
                         </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'homepage']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'homepage'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
+                        <input type="text" [formControlName]="'homepage'">
+                        <input type="number" [formControlName]="'id'">
+                        <input type="text" [formControlName]="'imdb_id'">
+                        <input type="text" [formControlName]="'original_language'">
+                        <input type="text" [formControlName]="'original_title'">
+                        <textarea [formControlName]="'overview'" cols="30" rows="10"></textarea>
+                        <input type="number" [formControlName]="'popularity'">
+                        <input type="text" [formControlName]="'poster_path'">
+                        <input type="date" [formControlName]="'release_date'">
+                        <input type="number" [formControlName]="'revenue'">
+                        <input type="number" [formControlName]="'runtime'">
+                        <div [formGroupName]="'spoken_languages'">
+                            <input type="text" [formControlName]="'iso_639_1'">
+                            <input type="text" [formControlName]="'name'">
                         </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'id']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'id'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 25</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'imdb_id']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'imdb_id'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 9</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 9</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'original_language']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'original_language'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 2</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'original_title']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'original_title'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'overview']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <textarea [formControlName]="'overview'" [id]="field.id" class="form-control" cols="30" rows="10" [class.is-invalid]="field.isFieldValid"></textarea>
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 4000</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'popularity']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'popularity'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'poster_path']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'poster_path'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'release_date']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="date" [formControlName]="'release_date'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'revenue']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'revenue'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'runtime']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'runtime'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div [formGroupName]="'spoken_languages'">
-                        <div class="form-group" *ngIf="getField(['movies',index1,'spoken_languages','iso_639_1']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'iso_639_1'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 2</div>
-                            </div>
-                        </div>
-                        <div class="form-group" *ngIf="getField(['movies',index1,'spoken_languages','name']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'tagline']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'tagline'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'title']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'title'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'video']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'video'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'vote_average']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'vote_average'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['movies',index1,'vote_count']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="number" [formControlName]="'vote_count'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 2</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                        </div>
+                        <input type="text" [formControlName]="'tagline'">
+                        <input type="text" [formControlName]="'title'">
+                        <input type="text" [formControlName]="'video'">
+                        <input type="number" [formControlName]="'vote_average'">
+                        <input type="number" [formControlName]="'vote_count'">
                     </div>
                 </div>
             </fieldset>
             <button type="submit" class="btn btn-primary">
                 Submit
             </button>
-        </form>`)
-            )
+        </form>
+        `
+        expect(html_beautify(response.join("\n"))).toBe(html_beautify(html));
     });
 
     it('2', () => {
@@ -403,96 +184,36 @@ describe('ReactiveDrivenHtml', () => {
             }
         );
         const response = reactiveDrivenHtml.generate();
-        expect(
-            html_beautify(response.join("\n"))
-        )
-            .toBe(
-                html_beautify(`<form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <pre>{{ form.value | json }}</pre>
-            <fieldset [formArrayName]="'accounting'" class="form-group">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getAccountingFormArray().push(createAccounting())">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                        ADD Accounting
-                    </button>
-                </div>
-                <div *ngFor="let _accounting1 of getAccountingFormArray()?.controls; let index1 = index;" [formGroupName]="index1">
-        
-                    <div class="btn-group">
-                        <button type="button" (click)="deleteAccounting(index1)" class="btn btn-danger btn-sm">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            DELETE Accounting
-                        </button>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['accounting',index1,'firstName']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'firstName'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
+        const html = html_beautify(
+            `
+            <form [formGroup]="form" (ngSubmit)="onSubmit()">
+                <pre>{{ form.value | json }}</pre>
+                <fieldset [formArrayName]="'accounting'">
+                    <div *ngFor="let accountingCtrl of getAccounting()?.controls; let index0 = index;">
+                        <div [formGroupName]="index0">
+                            <input type="text" [formControlName]="'firstName'">
+                            <input type="text" [formControlName]="'lastName'">
+                            <input type="text" [formControlName]="'age'">
                         </div>
                     </div>
-                    <div class="form-group" *ngIf="getField(['accounting',index1,'lastName']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'lastName'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
+                </fieldset>
+                <fieldset [formArrayName]="'sales'">
+                    <div *ngFor="let salesCtrl of getSales()?.controls; let index0 = index;">
+                        <div [formGroupName]="index0">
+                            <input type="text" [formControlName]="'firstName'">
+                            <input type="text" [formControlName]="'lastName'">
+                            <input type="text" [formControlName]="'age'">
                         </div>
                     </div>
-                    <div class="form-group" *ngIf="getField(['accounting',index1,'age']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'age'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 30</div>
-                        </div>
-                    </div>
-                </div>
-            </fieldset>
-            <fieldset [formArrayName]="'sales'" class="form-group">
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getSalesFormArray().push(createSales())">
-                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                        ADD Sales
-                    </button>
-                </div>
-                <div *ngFor="let _sales1 of getSalesFormArray()?.controls; let index1 = index;" [formGroupName]="index1">
-        
-                    <div class="btn-group">
-                        <button type="button" (click)="deleteSales(index1)" class="btn btn-danger btn-sm">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            DELETE Sales
-                        </button>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['sales',index1,'firstName']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'firstName'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['sales',index1,'lastName']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'lastName'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                        </div>
-                    </div>
-                    <div class="form-group" *ngIf="getField(['sales',index1,'age']) as field">
-                        <label [for]="field.id">{{ field.id }}</label>
-                        <input type="text" [formControlName]="'age'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                        <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                            <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                            <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 30</div>
-                        </div>
-                    </div>
-                </div>
-            </fieldset>
-            <button type="submit" class="btn btn-primary">
-                Submit
-            </button>
-        </form>`)
-            )
-    })
+                </fieldset>
+                <button type="submit" class="btn btn-primary">
+                    Submit
+                </button>
+            </form>
+        `
+        );
+        expect(html_beautify(response.join("\n"))).toBe(html)
+    });
 
     it('3', () => {
         const reactiveDrivenHtml = new ReactiveDrivenHtml(
@@ -544,344 +265,75 @@ describe('ReactiveDrivenHtml', () => {
             }
         );
         const response = reactiveDrivenHtml.generate();
-        expect(
-            html_beautify(response.join("\n"))
-        )
-            .toBe(
-                html_beautify(`<form [formGroup]="form" (ngSubmit)="onSubmit()">
-                <pre>{{ form.value | json }}</pre>
-                <fieldset [formArrayName]="'users'" class="form-group">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getUsersFormArray().push(createUsers())">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            ADD Users
-                        </button>
-                    </div>
-                    <div *ngFor="let _users1 of getUsersFormArray()?.controls; let index1 = index;" [formGroupName]="index1">
-            
-                        <div class="btn-group">
-                            <button type="button" (click)="deleteUsers(index1)" class="btn btn-danger btn-sm">
-                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                DELETE Users
-                            </button>
-                        </div>
+        const html = `
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <pre>{{ form.value | json }}</pre>
+            <fieldset [formArrayName]="'users'">
+                <div *ngFor="let usersCtrl of getUsers()?.controls; let index0 = index;">
+                    <div [formGroupName]="index0">
                         <div [formGroupName]="'name'">
-                            <div class="form-group" *ngIf="getField(['users',index1,'name','first']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'first'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'name','middle']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'middle'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'name','last']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'last'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
+                            <input type="text" [formControlName]="'first'">
+                            <input type="text" [formControlName]="'middle'">
+                            <input type="text" [formControlName]="'last'">
                         </div>
-                        <div class="form-group" *ngIf="getField(['users',index1,'username']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'username'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 10</div>
+                        <input type="text" [formControlName]="'username'">
+                        <input type="password" [formControlName]="'password'">
+                        <fieldset [formArrayName]="'emails'">
+                            <div *ngFor="let usersEmails1Ctrl of getUsersAtEmails(index0)?.controls; let index1 = index;">
+                                <input type="email" [formControlName]="index1">
                             </div>
-                        </div>
-                        <div class="form-group" *ngIf="getField(['users',index1,'password']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="password" [formControlName]="'password'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 10</div>
-                            </div>
-                        </div>
-                        <fieldset [formArrayName]="'emails'" class="form-group">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getUsersEmailsFormArray(index1).push(createUsersEmails())">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    ADD UsersEmails
-                                </button>
-                            </div>
-                            <div *ngFor="let _usersEmails1 of getUsersEmailsFormArray(index1)?.controls; let index2 = index;">
-                                <div class="btn-group">
-                                    <button type="button" (click)="deleteUsersEmails(index1,index2)" class="btn btn-danger btn-sm">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        DELETE UsersEmails
-                                    </button>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'emails',index2]) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="email" [formControlName]="index2" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 10</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 40</div>
-                                    </div>
+                        </fieldset>
+                        <fieldset [formArrayName]="'contacts'">
+                            <div *ngFor="let usersContacts1Ctrl of getUsersAtContacts(index0)?.controls; let index1 = index;">
+                                <div [formGroupName]="index1">
+                                    <input type="text" [formControlName]="'name'">
+                                    <input type="text" [formControlName]="'email'">
                                 </div>
                             </div>
                         </fieldset>
-                        <fieldset [formArrayName]="'contacts'" class="form-group">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getUsersContactsFormArray(index1).push(createUsersContacts())">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    ADD UsersContacts
-                                </button>
-                            </div>
-                            <div *ngFor="let _usersContacts1 of getUsersContactsFormArray(index1)?.controls; let index2 = index;" [formGroupName]="index2">
-            
-                                <div class="btn-group">
-                                    <button type="button" (click)="deleteUsersContacts(index1,index2)" class="btn btn-danger btn-sm">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        DELETE UsersContacts
-                                    </button>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'contacts',index2,'name']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="text" [formControlName]="'name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                    </div>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'contacts',index2,'email']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="text" [formControlName]="'email'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('email')">{{ field.id.toUpperCase() }} an valid Email</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                    </div>
+                        <fieldset [formArrayName]="'medications'">
+                            <div *ngFor="let usersMedications1Ctrl of getUsersAtMedications(index0)?.controls; let index1 = index;">
+                                <div [formGroupName]="index1">
+                                    <input type="text" [formControlName]="'medication_name'">
+                                    <textarea [formControlName]="'medication_details'" cols="30" rows="10"></textarea>
                                 </div>
                             </div>
                         </fieldset>
-                        <fieldset [formArrayName]="'medications'" class="form-group">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getUsersMedicationsFormArray(index1).push(createUsersMedications())">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    ADD UsersMedications
-                                </button>
-                            </div>
-                            <div *ngFor="let _usersMedications1 of getUsersMedicationsFormArray(index1)?.controls; let index2 = index;" [formGroupName]="index2">
-            
-                                <div class="btn-group">
-                                    <button type="button" (click)="deleteUsersMedications(index1,index2)" class="btn btn-danger btn-sm">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        DELETE UsersMedications
-                                    </button>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'medications',index2,'medication_name']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="text" [formControlName]="'medication_name'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                    </div>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'medications',index2,'medication_details']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <textarea [formControlName]="'medication_details'" [id]="field.id" class="form-control" cols="30" rows="10" [class.is-invalid]="field.isFieldValid"></textarea>
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 4000</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </fieldset>
-                        <div class="form-group" *ngIf="getField(['users',index1,'phoneNumber']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'phoneNumber'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                            </div>
-                        </div>
+                        <input type="text" [formControlName]="'phoneNumber'">
                         <div [formGroupName]="'location'">
-                            <div class="form-group" *ngIf="getField(['users',index1,'location','street']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'street'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'location','city']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'city'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'location','state']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'state'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'location','country']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'country'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'location','zip']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="number" [formControlName]="'zip'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
+                            <input type="text" [formControlName]="'street'">
+                            <input type="text" [formControlName]="'city'">
+                            <input type="text" [formControlName]="'state'">
+                            <input type="text" [formControlName]="'country'">
+                            <input type="number" [formControlName]="'zip'">
                             <div [formGroupName]="'coordinates'">
-                                <div class="form-group" *ngIf="getField(['users',index1,'location','coordinates','latitude']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="number" [formControlName]="'latitude'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 1</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                    </div>
-                                </div>
-                                <div class="form-group" *ngIf="getField(['users',index1,'location','coordinates','longitude']) as field">
-                                    <label [for]="field.id">{{ field.id }}</label>
-                                    <input type="number" [formControlName]="'longitude'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 1</div>
-                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                    </div>
-                                </div>
+                                <input type="number" [formControlName]="'latitude'">
+                                <input type="number" [formControlName]="'longitude'">
                             </div>
                         </div>
-                        <div class="form-group" *ngIf="getField(['users',index1,'website']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'website'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 5</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                            </div>
-                        </div>
-                        <div class="form-group" *ngIf="getField(['users',index1,'domain']) as field">
-                            <label [for]="field.id">{{ field.id }}</label>
-                            <input type="text" [formControlName]="'domain'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 5</div>
-                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                            </div>
-                        </div>
+                        <input type="text" [formControlName]="'website'">
+                        <input type="text" [formControlName]="'domain'">
                         <div [formGroupName]="'job'">
-                            <div class="form-group" *ngIf="getField(['users',index1,'job','title']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'title'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 1</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'job','descriptor']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'descriptor'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 1</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'job','area']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'area'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'job','type']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'type'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'job','company']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'company'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                </div>
-                            </div>
+                            <input type="text" [formControlName]="'title'">
+                            <input type="text" [formControlName]="'descriptor'">
+                            <input type="text" [formControlName]="'area'">
+                            <input type="text" [formControlName]="'type'">
+                            <input type="text" [formControlName]="'company'">
                         </div>
                         <div [formGroupName]="'creditCard'">
-                            <div class="form-group" *ngIf="getField(['users',index1,'creditCard','number']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'number'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 40</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'creditCard','cvv']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="number" [formControlName]="'cvv'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 4</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 15</div>
-                                </div>
-                            </div>
-                            <div class="form-group" *ngIf="getField(['users',index1,'creditCard','issuer']) as field">
-                                <label [for]="field.id">{{ field.id }}</label>
-                                <input type="text" [formControlName]="'issuer'" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                    <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                    <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                    <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 3</div>
-                                </div>
-                            </div>
+                            <input type="text" [formControlName]="'number'">
+                            <input type="number" [formControlName]="'cvv'">
+                            <input type="text" [formControlName]="'issuer'">
                         </div>
                     </div>
-                </fieldset>
-                <button type="submit" class="btn btn-primary">
-                    Submit
-                </button>
-            </form>`)
-            )
+                </div>
+            </fieldset>
+            <button type="submit" class="btn btn-primary">
+                Submit
+            </button>
+        </form>
+        `
+        expect(html_beautify(response.join("\n"))).toBe(html_beautify(html));
     });
 
     it('4', () => {
@@ -908,151 +360,47 @@ describe('ReactiveDrivenHtml', () => {
             }
         );
         const response = reactiveDrivenHtml.generate();
-        expect(
-            html_beautify(response.join("\n"))
-        )
-            .toBe(
-                html_beautify(`<form [formGroup]="form" (ngSubmit)="onSubmit()">
-                <pre>{{ form.value | json }}</pre>
-                <fieldset [formArrayName]="'big_ass_array_of_objects'" class="form-group">
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjectsFormArray().push(createBigAssArrayOfObjects())">
-                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                            ADD BigAssArrayOfObjects
-                        </button>
-                    </div>
-                    <div *ngFor="let _bigAssArrayOfObjects1 of getBigAssArrayOfObjectsFormArray()?.controls; let index1 = index;">
-            
-                        <div class="btn-group">
-                            <button type="button" (click)="deleteBigAssArrayOfObjects(index1)" class="btn btn-danger btn-sm">
-                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                DELETE BigAssArrayOfObjects
-                            </button>
-                        </div>
-                        <fieldset [formArrayName]="index1" class="form-group">
-                            <div class="btn-group">
-                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjects1FormArray(index1).push(createBigAssArrayOfObjects1())">
-                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                    ADD BigAssArrayOfObjects1
-                                </button>
-                            </div>
-                            <div *ngFor="let _bigAssArrayOfObjects2 of getBigAssArrayOfObjects1FormArray(index1)?.controls; let index2 = index;">
-            
-                                <div class="btn-group">
-                                    <button type="button" (click)="deleteBigAssArrayOfObjects1(index1,index2)" class="btn btn-danger btn-sm">
-                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                        DELETE BigAssArrayOfObjects1
-                                    </button>
-                                </div>
-                                <fieldset [formArrayName]="index2" class="form-group">
-                                    <div class="btn-group">
-                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjects2FormArray(index1,index2).push(createBigAssArrayOfObjects2())">
-                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                            ADD BigAssArrayOfObjects2
-                                        </button>
-                                    </div>
-                                    <div *ngFor="let _bigAssArrayOfObjects3 of getBigAssArrayOfObjects2FormArray(index1,index2)?.controls; let index3 = index;">
-            
-                                        <div class="btn-group">
-                                            <button type="button" (click)="deleteBigAssArrayOfObjects2(index1,index2,index3)" class="btn btn-danger btn-sm">
-                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                DELETE BigAssArrayOfObjects2
-                                            </button>
-                                        </div>
-                                        <fieldset [formArrayName]="index3" class="form-group">
-                                            <div class="btn-group">
-                                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjects3FormArray(index1,index2,index3).push(createBigAssArrayOfObjects3())">
-                                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                    ADD BigAssArrayOfObjects3
-                                                </button>
-                                            </div>
-                                            <div *ngFor="let _bigAssArrayOfObjects4 of getBigAssArrayOfObjects3FormArray(index1,index2,index3)?.controls; let index4 = index;" [formGroupName]="index4">
-            
-                                                <div class="btn-group">
-                                                    <button type="button" (click)="deleteBigAssArrayOfObjects3(index1,index2,index3,index4)" class="btn btn-danger btn-sm">
-                                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                        DELETE BigAssArrayOfObjects3
-                                                    </button>
-                                                </div>
-                                                <fieldset [formArrayName]="'first_name'" class="form-group">
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjectsFirstNameFormArray(index1,index2,index3,index4).push(createBigAssArrayOfObjectsFirstName())">
-                                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                            ADD BigAssArrayOfObjectsFirstName
-                                                        </button>
-                                                    </div>
-                                                    <div *ngFor="let _bigAssArrayOfObjectsFirstName1 of getBigAssArrayOfObjectsFirstNameFormArray(index1,index2,index3,index4)?.controls; let index5 = index;">
-                                                        <div class="btn-group">
-                                                            <button type="button" (click)="deleteBigAssArrayOfObjectsFirstName(index1,index2,index3,index4,index5)" class="btn btn-danger btn-sm">
-                                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                                DELETE BigAssArrayOfObjectsFirstName
-                                                            </button>
-                                                        </div>
-                                                        <div class="form-group" *ngIf="getField(['big_ass_array_of_objects',index1,index2,index3,index4,'first_name',index5]) as field">
-                                                            <label [for]="field.id">{{ field.id }}</label>
-                                                            <input type="text" [formControlName]="index5" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                                            <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                                <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                                                <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                                                <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                                            </div>
-                                                        </div>
+        const html = `
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <pre>{{ form.value | json }}</pre>
+            <fieldset [formArrayName]="'big_ass_array_of_objects'">
+                <div *ngFor="let bigAssArrayOfObjectsCtrl of getBig_ass_array_of_objects()?.controls; let index0 = index;">
+                    <fieldset [formArrayName]="index0">
+                        <div *ngFor="let bigAssArrayOfObjects1Ctrl of getBig_ass_array_of_objectsAt(index0)?.controls; let index1 = index;">
+                            <fieldset [formArrayName]="index1">
+                                <div *ngFor="let bigAssArrayOfObjects2Ctrl of getBig_ass_array_of_objectsAtAt(index0, index1)?.controls; let index2 = index;">
+                                    <fieldset [formArrayName]="index2">
+                                        <div *ngFor="let bigAssArrayOfObjects3Ctrl of getBig_ass_array_of_objectsAtAtAt(index0, index1, index2)?.controls; let index3 = index;">
+                                            <div [formGroupName]="index3">
+                                                <fieldset [formArrayName]="'first_name'">
+                                                    <div *ngFor="let bigAssArrayOfObjectsFirstName4Ctrl of getBig_ass_array_of_objectsAtAtAtAtFirst_name(index0, index1, index2, index3)?.controls; let index4 = index;">
+                                                        <input type="text" [formControlName]="index4">
                                                     </div>
                                                 </fieldset>
-                                                <fieldset [formArrayName]="'last_name'" class="form-group">
-                                                    <div class="btn-group">
-                                                        <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjectsLastNameFormArray(index1,index2,index3,index4).push(createBigAssArrayOfObjectsLastName())">
-                                                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                            ADD BigAssArrayOfObjectsLastName
-                                                        </button>
-                                                    </div>
-                                                    <div *ngFor="let _bigAssArrayOfObjectsLastName1 of getBigAssArrayOfObjectsLastNameFormArray(index1,index2,index3,index4)?.controls; let index5 = index;">
-                                                        <div class="btn-group">
-                                                            <button type="button" (click)="deleteBigAssArrayOfObjectsLastName(index1,index2,index3,index4,index5)" class="btn btn-danger btn-sm">
-                                                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                                DELETE BigAssArrayOfObjectsLastName
-                                                            </button>
-                                                        </div>
-                                                        <fieldset [formArrayName]="index5" class="form-group">
-                                                            <div class="btn-group">
-                                                                <button type="button" class="btn btn-primary btn-block btn-sm" (click)="getBigAssArrayOfObjectsLastName1FormArray(index1,index2,index3,index4,index5).push(createBigAssArrayOfObjectsLastName1())">
-                                                                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                                    ADD BigAssArrayOfObjectsLastName1
-                                                                </button>
-                                                            </div>
-                                                            <div *ngFor="let _bigAssArrayOfObjectsLastName2 of getBigAssArrayOfObjectsLastName1FormArray(index1,index2,index3,index4,index5)?.controls; let index6 = index;">
-                                                                <div class="btn-group">
-                                                                    <button type="button" (click)="deleteBigAssArrayOfObjectsLastName1(index1,index2,index3,index4,index5,index6)" class="btn btn-danger btn-sm">
-                                                                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                                                        DELETE BigAssArrayOfObjectsLastName1
-                                                                    </button>
-                                                                </div>
-                                                                <div class="form-group" *ngIf="getField(['big_ass_array_of_objects',index1,index2,index3,index4,'last_name',index5,index6]) as field">
-                                                                    <label [for]="field.id">{{ field.id }}</label>
-                                                                    <input type="text" [formControlName]="index6" [id]="field.id" class="form-control" [class.is-invalid]="field.isFieldValid">
-                                                                    <div *ngIf="field.isFieldValid" class="invalid-feedback">
-                                                                        <div *ngIf="field.abstractControl!.hasError('required')">{{ field.id.toUpperCase() }} is required</div>
-                                                                        <div *ngIf="field.abstractControl!.hasError('minlength')">{{ field.id.toUpperCase() }} min must be 3</div>
-                                                                        <div *ngIf="field.abstractControl!.hasError('maxlength')">{{ field.id.toUpperCase() }} max must be 255</div>
-                                                                    </div>
-                                                                </div>
+                                                <fieldset [formArrayName]="'last_name'">
+                                                    <div *ngFor="let bigAssArrayOfObjectsLastName4Ctrl of getBig_ass_array_of_objectsAtAtAtAtLast_name(index0, index1, index2, index3)?.controls; let index4 = index;">
+                                                        <fieldset [formArrayName]="index4">
+                                                            <div *ngFor="let bigAssArrayOfObjectsLastName5Ctrl of getBig_ass_array_of_objectsAtAtAtAtLast_nameAt(index0, index1, index2, index3, index4)?.controls; let index5 = index;">
+                                                                <input type="text" [formControlName]="index5">
                                                             </div>
                                                         </fieldset>
                                                     </div>
                                                 </fieldset>
                                             </div>
-                                        </fieldset>
-                                    </div>
-                                </fieldset>
-                            </div>
-                        </fieldset>
-                    </div>
-                </fieldset>
-                <button type="submit" class="btn btn-primary">
-                    Submit
-                </button>
-            </form>`)
-            )
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </fieldset>
+                </div>
+            </fieldset>
+            <button type="submit" class="btn btn-primary">
+                Submit
+            </button>
+        </form>
+        `
+        expect(html_beautify(response.join("\n"))).toBe(html_beautify(html))
     })
 
     // it('4', () => {

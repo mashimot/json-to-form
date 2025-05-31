@@ -1,9 +1,7 @@
-import { FormBuilder } from '@angular/forms';
-import { FormArrayBuilder } from './function-definition';
-import { Definition } from './models/Definition';
+import { wrapLines } from 'src/app/shared/utils/string.utils';
+import { FormBuilder, FormStructure } from './function-definition';
+import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
-import { ReservedWordEnum } from '../../enums/reserved-name.enum';
-import { ValueType } from './models/value.type';
 
 interface Rules {
     [name: string]: any;
@@ -14,6 +12,7 @@ interface Options {
     triggerValidationOnSubmit?: boolean;
     container?: 'container' | 'container-fluid';
     componentName: string;
+    formBuildMode: FormOutputFormat
 }
 
 export class Validator {
@@ -77,318 +76,311 @@ export class Validator {
     }
 }
 
-export const FORM_BUILDER_WRAPPER = {
-    array: {
-        OPEN_WRAPPER: 'this.formBuilder.array([',
-        CLOSE_WRAPPER: '])'
-    },
-    object: {
-        OPEN_WRAPPER: 'this.formBuilder.group({',
-        CLOSE_WRAPPER: '})'
-    },
-    default: {
-        OPEN_WRAPPER: 'this.formBuilder.control(',
-        CLOSE_WRAPPER: ')'
-    }
+export enum FormOutputFormat {
+    Json = 'JSON',
+    AngularFormBuilder = 'ANGULAR_FORM_BUILDER',
+    AngularRawInstance = 'ANGULAR_RAW_INSTANCE',
 }
 
+export const FORM_OUTPUT_WRAPPERS: any = {
+    [FormOutputFormat.Json]: {
+      [VALUE_TYPES.ARRAY]: { OPEN: '[', CLOSE: ']' },
+      [VALUE_TYPES.OBJECT]: { OPEN: '{', CLOSE: '}' },
+      [VALUE_TYPES.STRING]: { OPEN: '"', CLOSE: '"' }
+    },
+    [FormOutputFormat.AngularFormBuilder]: {
+      [VALUE_TYPES.ARRAY]: { OPEN: 'this.formBuilder.array([', CLOSE: '])' },
+      [VALUE_TYPES.OBJECT]: { OPEN: 'this.formBuilder.group({', CLOSE: '})' },
+      [VALUE_TYPES.STRING]: { OPEN: 'this.formBuilder.control(', CLOSE: ')' }
+    },
+    [FormOutputFormat.AngularRawInstance]: {
+      [VALUE_TYPES.ARRAY]: { OPEN: 'new FormArray([', CLOSE: '])' },
+      [VALUE_TYPES.OBJECT]: { OPEN: 'new FormGroup({', CLOSE: '})' },
+      [VALUE_TYPES.STRING]: { OPEN: 'new FormControl(', CLOSE: ')' }
+    }
+} as const;
+
 export class ReactiveDrivenValidator {
-    rules!: any;
-    functions: Definition[] = [];
-    getters: string[] = [];
-    _options: Options = {
+    private rules!: any;
+    private _options: Options = {
         formName: 'form',
         triggerValidationOnSubmit: true,
         componentName: '',
-        container: 'container'
+        container: 'container',
+        formBuildMode: FormOutputFormat.AngularFormBuilder
     };
-    componentName!: string;
+    private componentName!: string;
     private arrayIndex: number = 0;
+    private formFields: FormStructure[] = [];
+    private optionChoices: string[] = [];
 
-    constructor(rules: any, componentName: string) {
+    constructor(rules: any, componentName: string, private options: any) {
         this.componentName = componentName;
         this.setRules(rules);
     }
 
     public generateFormBuilder(): string[] {
+        const { OPEN, CLOSE } = this.getFormWrapper(VALUE_TYPES.OBJECT);
+
         return [
-            `this.${this._options.formName} = ${FORM_BUILDER_WRAPPER.object.OPEN_WRAPPER}`,
+            `this.${this._options.formName} = ${OPEN}`,
             this.reactiveDrivenValidators(this.rules),
-            `${FORM_BUILDER_WRAPPER.object.CLOSE_WRAPPER};`
+            `${CLOSE};`
         ];
     }
 
-    public generateComponent(): string[] {
-        const attributes: string[] = [];
-        const observables: string[] = [];
-        const definitions: string[] = [];
-        const formGroup: string[] = this.generateFormBuilder();
-        const getters: string[] = [];
-
-        this.functions.forEach((item: Definition) => {
-            if (item.get) {
-                item.get.forEach((currentGet: any, index: number) => {
-                    if (currentGet.get('has_reserved_word') === 'S') {
-                        const isLastIndex = (index === item.get.length - 1) ? true : false;
-                        if (!isLastIndex) {
-                            definitions.push(currentGet.get('get_function'));
-                            definitions.push(currentGet.get('delete_function'));
-                            definitions.push(currentGet.get('create_function'));
-                        }
-                    } else {
-                        getters.push(currentGet.get('get_function'))
-                    }
-                })
-            }
-            if (item.mockData) {
-                definitions.push([
-                    `${item.mockData.get_name}$(){`,
-                    `return of(${JSON.stringify(item.mockData.values)})`,
-                    `.pipe(
-                        shareReplay(1),
-                        delay(2000)
-                    )`,
-                    `}`
-                ].join("\n"));
-                attributes.push(`${item.mockData.parameter_name}$!: Observable<any>`);
-                observables.push(`${item.mockData.parameter_name}$ = this.${item.mockData.get_name}$();`);
-            }
-        });
-
-        let component = [
+    private imports(): string[] {
+        return [
             `import { Component, OnInit } from '@angular/core'`,
-            `import { Validators, FormControl, AbstractControl, FormGroup, FormBuilder, FormArray, ValidatorFn } from '@angular/forms'`,
-            `import { Observable, of } from 'rxjs';`,
-            `import { delay, shareReplay } from 'rxjs/operators';`,
-            `
-            @Component({
-                selector: 'app-${this.componentName}',
-                templateUrl: './${this.componentName}.component.html',
-                styleUrls: ['./${this.componentName}.component.css']
-            })
-            export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {
-                ${this._options.formName}!: FormGroup;
-                formSubmitAttempt: boolean = false;
-                ${attributes.map(v => `${v};`).join("\n")}
-                constructor(
-                    private formBuilder: FormBuilder
-                ) { }
-
-                ngOnInit(): void {
-                    ${`${observables.map((o) => `this.${o}`).join("\n")}`}
-                    ${formGroup.join("\n")}
-                }
-                
-                onSubmit(): void {
-                    this.formSubmitAttempt = true;
-                    if (this.f.valid) {
-                        console.log('form submitted');
-                    } else {
-                        this.validateAllFormFields(this.f);
-                    }
-                }
-
-                validateAllFormFields(control: AbstractControl): void {
-                    if (control instanceof FormControl) {
-                        control.markAsTouched({ onlySelf: true });
-                    } else if (control instanceof FormGroup) {
-                        Object.keys(control.controls).forEach((field: string) => {
-                            const groupControl = control.get(field)!;
-                            this.validateAllFormFields(groupControl);
-                        });
-                    } else if (control instanceof FormArray) {
-                        const controlAsFormArray = control as FormArray;
-                        controlAsFormArray.controls.forEach((arrayControl: AbstractControl) => this.validateAllFormFields(arrayControl));
-                    }
-                }
-
-                getField(path: (string | number)[] | string): {
-                    name: string,
-                    id: string,
-                    abstractControl: AbstractControl | null | any,
-                    isFieldValid: boolean | undefined
-                } {
-                    return {
-                        name: typeof path === 'string' ? path : path.join('.'),
-                        id: typeof path === 'string' ? path : path.join('-'),
-                        abstractControl: this.f.get(path),
-                        isFieldValid: this.f.get(path)?.invalid && this.f.get(path)?.touched
-                    }
-                }
-
-                get f(): FormGroup {
-                    return this.form as FormGroup;
-                }
-
-                ${getters.filter(el => el).join("\n")}
-                ${definitions.filter(el => el).join("\n")}                
-            }
-            `
+            `import { Validators, FormControl, FormGroup, FormBuilder, FormArray, ReactiveFormsModule } from '@angular/forms'`,
+            `import { of } from 'rxjs';`,
+            `import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';`,
         ];
+    }
 
-        return component;
+    private componentDecorator(): string[] {
+        const asynPipe = this.observableAttributes().length > 0 ? 'AsyncPipe' : '';
+        return [
+            `@Component({`,
+                `selector: 'app-${this.componentName}',`,
+                `templateUrl: './${this.componentName}.component.html',`,
+                `styleUrls: ['./${this.componentName}.component.css'],`,
+                `standalone: true,`,
+                `imports: [`,
+                    `ReactiveFormsModule,`,
+                    `NgIf,`,
+                    `NgFor,`,
+                    `JsonPipe,`,
+                    asynPipe,
+                `]`,
+            `})`
+        ];
+    }
+
+    private classAttributes(): string[] {
+        return [
+            `${this._options.formName}!: FormGroup;`,
+            `formSubmitAttempt: boolean = false;`,
+        ];
+    }
+
+    private getConstructor(): string[] {
+        return [
+            `constructor(`,
+                `private formBuilder: FormBuilder`,
+            `) {}`,
+        ];
+    }
+
+    private getNgOnInit(formGroup: string[]): string[] {
+        return [
+            `ngOnInit(): void {`,
+                `${wrapLines(formGroup)}`,
+            `}`
+        ];
+    }
+
+    private observableAttributes(): string[] {
+        return this.optionChoices;
+    }
+
+    private get getters(): string {
+        return wrapLines([
+            `get f(): FormGroup {
+                return this.form as FormGroup;
+            }`,
+            ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? "")
+        ]);
+    }
+
+    private get creaters(): string {
+        return wrapLines(
+            this
+            .formFields
+            .filter((field: FormStructure) => field.previousValueType === VALUE_TYPES.ARRAY || field.currentValueType === VALUE_TYPES.ARRAY)
+            .map((field: FormStructure) => field?.creator.withReturn ?? "")
+        );
+    }
+
+    private emptyLine(): string {
+        return '';
+    }
+
+    private submitMethod(): string[] {
+        return [
+            `onSubmit(): void {`,
+                `this.formSubmitAttempt = true;`,
+                `if (this.f.valid) {`,
+                    `console.log('form submitted');`,
+                `}`,
+            `}`,
+        ]
+    }
+
+    public generateComponent(): string[] {
+        const formGroup: string[] = this.generateFormBuilder();
+        return [
+            ...this.imports(),
+            this.emptyLine(),
+            ...this.componentDecorator(),
+            `export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {`,
+                ...this.classAttributes(),
+                ...this.observableAttributes(),
+                this.emptyLine(),
+                ...this.getConstructor(),
+                this.emptyLine(),
+                ...this.getNgOnInit(formGroup),
+                this.emptyLine(),
+                ...this.submitMethod(),
+                this.emptyLine(),
+                this.getters,
+                this.creaters,
+            `}`
+        ];
+    }
+
+    private getFormWrapper(type: ValueType): { OPEN: string; CLOSE: string } {
+        return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode][type];
     }
 
     public reactiveDrivenValidators(
         object: { [key: string]: any },
         namesArr: string[] = [],
-        previousValueType: ValueType = 'object'
+        previousValueType: ValueType = VALUE_TYPES.OBJECT
     ): string {
-        return Object
+        const validators = Object
             .keys(object)
             .map((key: string, index: number) => {
-                const value = ValidatorRuleHelper.changeValue(object[key]);
-                const currentValueType = ValidatorRuleHelper.getType(value);
+                const value = ValidatorRuleHelper.normalizeValue(object[key]);
+                const currentValueType = ValidatorRuleHelper.resolveValueType(value);
                 const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
-                const completeKeyNameSplitDot = [...namesArr, ...remainingKeys];
-                const formBuilder = (): string[] => {
-                    if (currentValueType === 'array') {
-                        return [];
-                    }
-
-                    if (currentValueType === 'string') {
-                        const rules = value.split("|");
-                        const ruleParameters = new Validator(rules).get();
-
-                        const hasCheckboxRule = rules.some((rule: string) => {
-                            const [ruleName, ruleParams] = ValidatorRuleHelper.parseStringRule(rule);
-                            return ruleName === 'html' && ruleParams?.[0] === 'checkbox';
-                        });
-
-                        if (hasCheckboxRule) {
-                            return [
-                                FORM_BUILDER_WRAPPER.array.OPEN_WRAPPER,
-                                FORM_BUILDER_WRAPPER.array.CLOSE_WRAPPER
-                            ];
-                        }
-
-                        return [
-                            FORM_BUILDER_WRAPPER.default.OPEN_WRAPPER,
-                            `'', [${ruleParameters.join(",")}]`,
-                            `${FORM_BUILDER_WRAPPER.default.CLOSE_WRAPPER};`
-                        ]
-                    }
-
-                    if (previousValueType === 'array' && currentValueType === 'object') {
-                        return [
-                            FORM_BUILDER_WRAPPER[currentValueType].OPEN_WRAPPER,
-                            `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, currentValueType)}`,
-                            FORM_BUILDER_WRAPPER[currentValueType].CLOSE_WRAPPER
-                        ];
-                    }
-
-                    return [];
+                const fullKeyPath = [...namesArr, ...remainingKeys];
+                if (currentValueType === VALUE_TYPES.ARRAY) {
+                    this.arrayIndex = value.length;
                 }
-                let formArrayBuilder: Definition = {
-                    get: [],
-                    formBuilder: []
-                };
+                const isNotLastArrayItem = currentValueType !== VALUE_TYPES.ARRAY
+                    && previousValueType === VALUE_TYPES.ARRAY
+                    && this.arrayIndex - 1 !== index;
 
-                if (currentValueType !== 'array') {
-                    if (previousValueType === 'array' && this.arrayIndex - 1 !== index) {
-                        return '';
-                    }
-                    
-                    formArrayBuilder = new FormArrayBuilder(
-                        completeKeyNameSplitDot,
-                        formBuilder(),
-                        currentValueType,
-                        previousValueType
-                    )
-                        .get();
+                if (isNotLastArrayItem) return '';
 
-                    this.functions.push(formArrayBuilder);
-                }
+                const formStructureTemplate = this.buildFormWrapper(
+                    key, value, currentValueType, previousValueType, fullKeyPath
+                );
+                const formStructure = new FormBuilder(
+                    fullKeyPath,
+                    previousValueType,
+                    currentValueType,
+                    formStructureTemplate,
+                ).formStructure();
+
+                this.formFields.push({ ...formStructure });
 
                 //value: can be an array ['required', 'min:40'] or either an object {}
-                //rule when key ends with an asterisk, so must turn into an array
-                if (currentValueType === 'array') {
-                    this.arrayIndex = value.length;
-
-                    return this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'array');
+                if (currentValueType === VALUE_TYPES.ARRAY) {
+                    return wrapLines([
+                        previousValueType === VALUE_TYPES.ARRAY ? '' : `"${key}":`,
+                        `this.${formStructure.creator.call},`,
+                    ]);
                 }
 
-                if (currentValueType === 'object') {
-                    if (previousValueType === 'array') {
-                        const lastItem = formArrayBuilder.get?.[0];
-
-                        return [
-                            // `"${firstKeyNameBeforeDot}":`,
-                            `"${lastItem.get('first_key_before_dot')}":`,
-                            formArrayBuilder.formBuilder.join("\n"),
-                        ]
-                            .join('\n');
-                    }
-
-                    return [
-                        `"${key}":`,
-                        `${FORM_BUILDER_WRAPPER.object.OPEN_WRAPPER}`,
-                        `${this.reactiveDrivenValidators(value, completeKeyNameSplitDot, 'object')}`,
-                        `${FORM_BUILDER_WRAPPER.object.CLOSE_WRAPPER},`
-                    ]
-                        .join('\n');
+                if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
+                    return `this.${formStructure.creator.call}`
                 }
 
-                if (currentValueType === 'string') {
-                    const rules = value.split('|');
-                    const ruleParameters = new Validator(rules).get();
-                    const values = this.generateValues(rules);
+                if (currentValueType === VALUE_TYPES.OBJECT) {
+                    return wrapLines([
+                        ...formStructureTemplate,
+                        ','
+                    ]);
+                }
 
-                    if (values.length > 0) {
-                        // formArrayBuilder.mockData = {
-                        //     // parameter_name: ValidatorRuleHelper.camelCasedString(formArrayBuilder.dotNotationSplit.join("."), true),
-                        //     // get_name: `get${ValidatorRuleHelper.camelCasedString(dotNotationSplit.join("."))}`,
-                        //     // values: values
-                        // }
+                if (currentValueType === VALUE_TYPES.STRING) {
+                    const rules = value.split("|");
+                    const optionChoices = this.generateValues(rules);
+                    if (optionChoices.length > 0) {
+                        this.optionChoices.push(
+                            `public ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`
+                        );
                     }
 
-                    if (previousValueType === 'array') {
-                        const lastItem = formArrayBuilder.get?.[0];
-                        return [
-                            // `"${firstKeyNameBeforeDot}":`,
-                            `"${lastItem.get('first_key_before_dot')}":`,
-                            formArrayBuilder.formBuilder.join("\n"),
-                        ]
-                            .join('\n');
-                    }
-
-                    return [`"${key}": ['', [${ruleParameters.join(",")}]],`];
+                    return previousValueType === VALUE_TYPES.ARRAY
+                        ? `this.${formStructure.creator.call}`
+                        : formStructureTemplate.toString()
                 }
 
                 return '';
             })
             .filter(el => el)
-            .join("\n");
+
+        return wrapLines(validators);
     }
 
-    private generateValues(rules: any): any[] {
-        return rules.reduce((acc: any, rule: any) => {
-            let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
-            if (ruleName === 'in') {
-                return ruleParameters;
-            }
+    private buildFormWrapper(
+        key: string,
+        value: any,
+        currentType: ValueType,
+        previousType: ValueType,
+        fullKeyPath: string[]
+    ): string[] {
+        const { OPEN, CLOSE } = this.getFormWrapper(currentType);
 
-            if (
-                ruleName === 'html' &&
-                ['select', 'radio', 'checkbox'].includes(ruleParameters[0])
-            ) {
-                acc = [{
-                    id: 1,
-                    mock: 1
-                }, {
-                    id: 2,
-                    mock: 2
-                }, {
-                    id: 3,
-                    mock: 3
-                }];
-            }
+        if (currentType === VALUE_TYPES.ARRAY) {
+            const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.ARRAY);
 
-            return acc;
-        }, []);
+            return [OPEN, content, CLOSE];
+        }
+
+        if (currentType === VALUE_TYPES.STRING) {
+            const rules = value.split("|");
+            const ruleParams = new Validator(rules).get();
+            const isCheckbox = rules.some((rule: string) => {
+                const [ruleName, ruleArgs] = ValidatorRuleHelper.parseStringRule(rule);
+                return ruleName === 'html' && ruleArgs?.[0] === 'checkbox';
+            });
+            const validators = `[${ruleParams.join(",")}]`;
+            const formControl = `${OPEN}'' , ${validators}${CLOSE}`;
+
+            return previousType === VALUE_TYPES.ARRAY
+                ? [formControl + ';']
+                : [`"${key}": ${formControl}` + ','];
+        }
+
+        if (currentType === VALUE_TYPES.OBJECT) {
+            const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.OBJECT);
+
+            return previousType === VALUE_TYPES.ARRAY
+                ? [OPEN, content, CLOSE]
+                : [`"${key}":${OPEN}`, content, CLOSE];
+        }
+
+        return [];
     }
 
     private setRules(rules: Rules): void {
         this.rules = rules;
+    }
+
+    private generateValues(rules: any): any[] {
+        for (const rule of rules) {
+            let [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
+
+            if (ruleName === 'in') {
+                return ruleParameters;
+            }
+
+            const requiresOptionChoices =
+                ruleName === 'html' && ['select', 'radio', 'checkbox'].includes(ruleParameters?.[0]);
+
+            if (requiresOptionChoices) {
+                return [
+                    { id: 1, mock: 1 },
+                    { id: 2, mock: 2 },
+                    { id: 3, mock: 3 }
+                ];
+            }
+        }
+
+        return [];
     }
 }

@@ -1,10 +1,14 @@
-export type ValueType =
-    "boolean" |
-    "number" |
-    "string" |
-    "function" |
-    "array" |
-    "date" |
-    "regExp" |
-    "object" |
-    "error"
+export const VALUE_TYPES = {
+    BOOLEAN: 'boolean',
+    NUMBER: 'number',
+    STRING: 'string',
+    FUNCTION: 'function',
+    ARRAY: 'array',
+    DATE: 'date',
+    REGEXP: 'regExp',
+    OBJECT: 'object',
+    ERROR: 'error',
+    NULL: 'null',
+  } as const;
+  
+  export type ValueType = (typeof VALUE_TYPES)[keyof typeof VALUE_TYPES];

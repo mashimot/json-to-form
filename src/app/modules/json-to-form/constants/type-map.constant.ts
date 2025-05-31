@@ -9,5 +9,6 @@ export const typeMap: Record<string, ValueType> = {
     "[object Date]": "date",
     "[object RegExp]": "regExp",
     "[object Object]": "object",
-    "[object Error]": "error"
+    "[object Error]": "error",
+    "[object Null]": "null",
 };

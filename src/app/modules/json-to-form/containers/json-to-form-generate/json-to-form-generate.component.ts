@@ -3,11 +3,19 @@ import { ActivatedRoute } from '@angular/router';
 import { Observable } from 'rxjs';
 import { filter, map, switchMap, tap } from 'rxjs/operators';
 import { JsonToFormService } from '../../services/json-to-form.service';
+import { JsonToFormFormComponent } from '../../components/json-to-form-form/json-to-form-form.component';
+import { AsyncPipe, NgFor } from '@angular/common';
 
 @Component({
   selector: 'app-json-to-form-generate',
   templateUrl: './json-to-form-generate.component.html',
-  styleUrls: ['./json-to-form-generate.component.scss']
+  styleUrls: ['./json-to-form-generate.component.scss'],
+  standalone: true,
+  imports: [
+    JsonToFormFormComponent,
+    NgFor,
+    AsyncPipe
+  ]
 })
 export class JsonToFormGenerateComponent implements OnInit {
   private jsonToFormService = inject(JsonToFormService);
@@ -25,5 +33,4 @@ export class JsonToFormGenerateComponent implements OnInit {
         switchMap(id => this.jsonToFormService.getExampleByNumber(Number(id)))
       );
   }
-
 }

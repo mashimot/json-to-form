@@ -19,4 +19,6 @@ export enum InputTypeEnum {
     TIME = 'time',
     URL = 'url',
     WEEK = 'week',
+    TEXTAREA = 'textarea',
+    SELECT = 'select',
 }

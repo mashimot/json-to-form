@@ -14,8 +14,9 @@ export class JsonToFormService {
       this.user(),
       this.userMedications(),
       this.getMoviesDetails(),
+      this.ecommerce(),
       this.usersJson(),
-      this.bigAssArrayOfObjects()
+      this.nestedArrayOfObjects()
     ]);
   }
 
@@ -27,11 +28,103 @@ export class JsonToFormService {
       );
   }
 
-  public bigAssArrayOfObjects() {
+  public ecommerce() {
     return {
-      "name": "Big Ass Array of Objects",
+      "name": "Ecommerce",
       "data": {
-        "big_ass_array_of_objects": [
+        "ecommerce": {
+          "users": [
+            {
+              "userId": "U001",
+              "name": "João Silva",
+              "email": "joao.silva@email.com",
+              "addresses": [
+                {
+                  "addressId": "A001",
+                  "street": "Rua das Flores, 123",
+                  "city": "São Paulo",
+                  "state": "SP",
+                  "zip": "01234-567",
+                  "country": "Brasil"
+                }
+              ],
+              "orders": [
+                {
+                  "orderId": "O1001",
+                  "date": "2025-05-01T10:15:30Z",
+                  "status": "delivered",
+                  "payment": {
+                    "method": "credit_card",
+                    "transactionId": "TX1234567890",
+                    "amount": 350.75,
+                    "currency": "BRL",
+                    "paidAt": "2025-05-01T10:20:00Z"
+                  },
+                  "items": [
+                    {
+                      "productId": "P100",
+                      "name": "Camiseta Básica",
+                      "category": "Roupas",
+                      "quantity": 2,
+                      "priceUnit": 50.00,
+                      "totalPrice": 100.00,
+                      "attributes": {
+                        "size": "M",
+                        "color": "azul"
+                      }
+                    }
+                  ],
+                  "shippingAddressId": "A002",
+                  "tracking": [
+                    {
+                      "date": "2025-05-01T12:00:00Z",
+                      "location": "Centro de Distribuição SP",
+                      "status": "Despachado"
+                    }
+                  ]
+                }
+              ],
+              "reviews": [
+                {
+                  "reviewId": "R001",
+                  "productId": "P100",
+                  "rating": 4,
+                  "comment": "Produto de boa qualidade, gostei do tecido.",
+                  "date": "2025-04-15"
+                }
+              ],
+              "activityLog": [
+                {
+                  "date": "2025-05-01T09:00:00Z",
+                  "action": "login",
+                  "ip": "200.145.12.34"
+                }
+              ]
+            }
+          ],
+          "products": [
+            {
+              "productId": "P200",
+              "name": "Tênis Esportivo",
+              "description": "Tênis para corrida com amortecimento avançado.",
+              "categories": ["Calçados", "Esportes"],
+              "price": 250.75,
+              "stock": 80,
+              "variations": [
+                { "size": 40, "color": "preto", "stock": 20 }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  }
+
+  public nestedArrayOfObjects() {
+    return {
+      "name": "Nested Array of Objects",
+      "data": {
+        "nested_of_objects": [
           [
             [
               [

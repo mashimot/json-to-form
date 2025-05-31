@@ -5,81 +5,114 @@
         </strong>
     </div>
 </div>
-
-<section class="pb-3">
-    <form [formGroup]="form" (ngSubmit)="onSubmit()">
-        <div class="row">
-            <div class="col-12 col-md-7 mt-3">
-                <json-editor
-                    [options]="editorOptions"
-                    formControlName="json"
-                ></json-editor>
-
-                <ng-container *ngIf="form.get('json')?.errors">
-                    <div *ngIf="getField('json')!.errors?.invalidJson">
-                        <div class="alert alert-danger" role="alert">
-                            <ng-container
-                                *ngFor="let error of getField('json')!.errors?.messages; let indexError = index;"
-                            >
-                                <p class="my-0" style="white-space:pre;">{{ error }}</p>
+<section class="card shadow-sm p-3 mb-4">
+    <div class="card-body">
+      <h5 class="card-title">Form Configuration</h5>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div class="row">
+                <div class="col-12 col-md-7 mt-3">
+                    <div 
+                        class="shadow p-3 bg-body border"
+                        [class]="(isFieldInvalid('json') ? 'border-danger' : 'border-light')"
+                    >
+                        <json-editor
+                            [options]="editorOptions"
+                            formControlName="json"
+                        ></json-editor>
+                        <div *ngIf="isFieldInvalid('json')" class="invalid-feedback d-block">
+                            <ng-container *ngFor="let error of getField('json')?.errors?.messages">
+                                <div class="my-0" style="white-space: pre;">{{ error }}</div>
                             </ng-container>
                         </div>
                     </div>
-                </ng-container>
-            </div>
-            <div  class="col-12 col-md-5 mt-3">
-                <div class="shadow p-3 bg-body border border-light">
-                    <div class="form-group">
-                        <label for="input-main-folder-name">Main folder name</label>
-                        <input 
-                            type="text" 
-                            class="form-control form-control-sm"  
-                            [ngClass]="{ 'is-invalid': path?.errors }"
-                            id="input-main-folder-name" 
-                            formControlName="path"
-                        >
-                        @if (path?.errors) {
-                            <div class="invalid-feedback">
-                                Must start with a letter, and must contain only alphanumeric characters or dashes.
-                                When adding a dash the segment after the dash must also start with a letter.
-                            </div>
-                        }
-                    </div>
-                    <div class="form-group mt-3">
-                        <label for="input-feature-name">Feature name</label>
-                        <input 
-                            type="text"
-                            class="form-control form-control-sm"
-                            [ngClass]="{ 'is-invalid': featureName?.errors }"
-                            id="input-feature-name"
-                            formControlName="feature_name"
-                        >
-                        @if (featureName?.errors) {
-                            <div class="invalid-feedback">
-                                Must start with a letter, and must contain only alphanumeric characters or dashes.
-                                When adding a dash the segment after the dash must also start with a letter.
-                            </div>
-                        }
-                    </div>
                 </div>
+                <div  class="col-12 col-md-5 mt-3">
+                    <div class="shadow p-3 bg-body border border-light">
+                        <div class="form-group">
+                            <label class="form-label fw-bold">Control Flow Syntax</label>
+                            <div *ngFor="let option of formControlType; let indexBudget = index;">
+                                <label>
+                                    <input 
+                                        type="radio" 
+                                        [id]="'form-control-' + option.id"
+                                        formControlName="structure"
+                                        [value]="option.id"
+                                        [disabled]="true"
+                                    >
+                                    {{ option.description }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- <div class="form-group">
+                            <label for="input-main-folder-name">Main folder name</label>
+                            <input 
+                                type="text" 
+                                class="form-control form-control-sm"  
+                                [ngClass]="{ 'is-invalid': path?.errors }"
+                                id="input-main-folder-name" 
+                                formControlName="path"
+                            >
+                            @if (path?.errors) {
+                                <div class="invalid-feedback">
+                                    Must start with a letter, and must contain only alphanumeric characters or dashes.
+                                    When adding a dash the segment after the dash must also start with a letter.
+                                </div>
+                            }
+                        </div> -->
+                        <div class="form-group mt-3">
+                            <label for="input-feature-name" class="form-label fw-bold">Feature name</label>
+                            <input 
+                                type="text"
+                                class="form-control form-control-sm"
+                                [ngClass]="{ 'is-invalid': featureName?.errors }"
+                                id="input-feature-name"
+                                formControlName="featureName"
+                            />
+                            @if (featureName?.errors) {
+                                <div class="invalid-feedback">
+                                    Must start with a letter, and must contain only alphanumeric characters or dashes.
+                                    When adding a dash the segment after the dash must also start with a letter.
+                                </div>
+                            }
+                        </div>
+                        <ng-container formGroupName="options">
+                            <div class="form-group mt-3">
+                                <label class="form-label fw-bold">Select form build mode</label>
+                            
+                                <div *ngFor="let mode of formBuildModes" class="mb-4">
+                                    <label>
+                                        <input type="radio" formControlName="formBuildMode" [value]="mode.id" />
+                                        {{ mode.label }}
+                                    </label>
+                                    <p>
+                                        <small class="text-muted">{{ mode.description }}</small>
+                                    </p>
 
-                <ng-container *ngIf="f.valid">
-                    <div class="shadow p-3 mt-3 bg-body border border-light">
-                        <h3>Smart and Dumb Components</h3>
-                        <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
-                            <p class="my-0">
-                                {{ 
-                                    sB | 
-                                    replace : ':path:' : path.value | 
-                                    replace : ':feature_name:' : featureName.value  
-                                }}
-                            </p>                    
+                                    <!-- <div class="text-sm text-gray-600 ml-4">{{ mode.description }}</div> -->
+                                    <!-- <div class="text-xs text-gray-400 ml-4"><code>{{ mode.example }}</code></div> -->
+                                </div>
+                            </div>
                         </ng-container>
                     </div>
-                </ng-container>
+    <!-- 
+                    <ng-container *ngIf="f.valid">
+                        <div class="shadow p-3 mt-3 bg-body border border-light">
+                            <h3>Smart and Dumb Components</h3>
+                            <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
+                                <p class="my-0">
+                                    {{ 
+                                        sB | 
+                                        replace : ':path:' : path.value | 
+                                        replace : ':featureName:' : featureName.value  
+                                    }}
+                                </p>                    
+                            </ng-container>
+                        </div>
+                    </ng-container> -->
+                </div>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
 </section>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
@@ -94,7 +127,6 @@
     <ng-container *ngIf="!(isLoadingAction$ | async )">
         <ng-container *ngIf="form.valid">
             <div class="mt-3">
-
                 <div class="row">
                     <div class="col-12 col-md-6">
                         <ng-container 

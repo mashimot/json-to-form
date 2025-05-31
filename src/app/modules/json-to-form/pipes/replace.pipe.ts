@@ -1,6 +1,9 @@
 import { Pipe, PipeTransform } from '@angular/core';
 
-@Pipe({ name: 'replace' })
+@Pipe({
+    name: 'replace',
+    standalone: true
+})
 export class ReplacePipe implements PipeTransform {
     transform(value: string, strToReplace: string, replacementStr: string): string {
 
