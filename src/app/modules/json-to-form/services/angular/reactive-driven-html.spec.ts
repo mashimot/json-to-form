@@ -1,5 +1,5 @@
-import { ReactiveDrivenHtml } from './reactive-driven-html';
-import { html_beautify, js_beautify } from 'js-beautify';
+import { html_beautify } from 'js-beautify';
+import { FrameworkType, ReactiveDrivenHtml } from './reactive-driven-html';
 
 describe('ReactiveDrivenHtml', () => {
     beforeEach(() => {
@@ -98,6 +98,11 @@ describe('ReactiveDrivenHtml', () => {
                         "vote_count": "nullable|html:number|integer|min:2|max:255"
                     }
                 ]
+            },
+            {
+                showAddButton: false,
+                showDeleteButton: false,
+                framework: FrameworkType.DEFAULT
             }
         );
         const response = reactiveDrivenHtml.generate();
@@ -181,6 +186,11 @@ describe('ReactiveDrivenHtml', () => {
                         "age": "required|max:30"
                     }
                 ]
+            },
+            {
+                showAddButton: false,
+                showDeleteButton: false,
+                framework: FrameworkType.DEFAULT
             }
         );
         const response = reactiveDrivenHtml.generate();
@@ -262,6 +272,11 @@ describe('ReactiveDrivenHtml', () => {
                         "issuer": "html:text|required|min:3|max:3"
                     }
                 }]
+            },
+            {
+                showAddButton: false,
+                showDeleteButton: false,
+                framework: FrameworkType.DEFAULT
             }
         );
         const response = reactiveDrivenHtml.generate();
@@ -357,6 +372,11 @@ describe('ReactiveDrivenHtml', () => {
                         ]
                     ]
                 ]
+            },
+            {
+                showAddButton: false,
+                showDeleteButton: false,
+                framework: FrameworkType.DEFAULT
             }
         );
         const response = reactiveDrivenHtml.generate();

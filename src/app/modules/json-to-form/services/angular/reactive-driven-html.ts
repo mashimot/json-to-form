@@ -498,7 +498,10 @@ export class ReactiveDrivenHtml {
           }
   
           if (currentValueType === VALUE_TYPES.OBJECT) {
-            const customClass = previousValueType === VALUE_TYPES.ARRAY ? 'class="p-1 mb-2"' : ''
+            const customClass = (
+              previousValueType === VALUE_TYPES.ARRAY &&
+              this.options.framework === FrameworkType.BOOTSTRAP
+            ) ? 'class="p-1 mb-2"' : ''
 
             return [[`<div [formGroupName]="${formIndex}" ${customClass}>`], [`</div>`]];
           }

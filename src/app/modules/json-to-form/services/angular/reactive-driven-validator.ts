@@ -114,8 +114,14 @@ export class ReactiveDrivenValidator {
     private formFields: FormStructure[] = [];
     private optionChoices: string[] = [];
 
-    constructor(rules: any, componentName: string, private options: any) {
+    constructor(rules: any, componentName: string, private options?: any) {
         this.componentName = componentName;
+        this.options = {
+            ...this.options,
+            formBuildMode: options?.formBuildMode
+                ? options?.formBuildMode
+                : FormOutputFormat.AngularFormBuilder
+        }
         this.setRules(rules);
     }
 
@@ -289,10 +295,7 @@ export class ReactiveDrivenValidator {
                 }
 
                 if (currentValueType === VALUE_TYPES.OBJECT) {
-                    return wrapLines([
-                        ...formStructureTemplate,
-                        ','
-                    ]);
+                    return wrapLines([ ...formStructureTemplate, ',']);
                 }
 
                 if (currentValueType === VALUE_TYPES.STRING) {
