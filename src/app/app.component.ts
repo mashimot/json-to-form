@@ -7,5 +7,9 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'json-to-form';
+  navbarOpen = false;
 
+  toggleNavbar() {
+    this.navbarOpen = !this.navbarOpen;
+  }
 }

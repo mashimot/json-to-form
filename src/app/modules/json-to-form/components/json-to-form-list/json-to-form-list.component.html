@@ -7,14 +7,14 @@
     >
         <div
             class="col-sm-6 col-lg-4 col-12 pb-4"
-            [style]="{ 'cursor': 'pointer' }"
         >
             <div
                 class="card card-dark"
                 (click)="editJsonToForm(formExampleIndex)"
                 [ngClass]="hoverEffect[formExampleIndex]"
-                (mouseover)="hoverEffect[formExampleIndex] = 'animate__animated animate__headShake border border-primary'" 
+                (mouseover)="hoverEffect[formExampleIndex] = 'animate__animated animate__headShake'" 
                 (mouseout)="hoverEffect[formExampleIndex] = ''"
+                [style]="{ 'cursor': 'pointer' }"
             >
                 <div class="card-header">
                     <h4>{{ formExample.name }}</h4>

@@ -5,14 +5,14 @@
         </strong>
     </div>
 </div>
-<section class="card shadow-sm p-3 mb-4">
+<section class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="card-title">Form Configuration</h5>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="row">
                 <div class="col-12 col-md-7 mt-3">
                     <div 
-                        class="shadow p-3 bg-body border"
+                        class="shadow p-2 bg-body border"
                         [class]="(isFieldInvalid('json') ? 'border-danger' : 'border-light')"
                     >
                         <json-editor
@@ -27,7 +27,7 @@
                     </div>
                 </div>
                 <div  class="col-12 col-md-5 mt-3">
-                    <div class="shadow p-3 bg-body border border-light">
+                    <div class="shadow p-2 bg-body border border-light">
                         <div class="form-group">
                             <label class="form-label fw-bold">Control Flow Syntax</label>
                             <div *ngFor="let option of formControlType; let indexBudget = index;">
