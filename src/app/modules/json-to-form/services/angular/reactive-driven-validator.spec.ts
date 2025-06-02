@@ -472,7 +472,6 @@ describe('reactiveDrivenValidator', () => {
             "task-form"
         );
         const response = reactiveDrivenValidator.generateComponent();
-        // console.log(js_beautify(response.join("\n)));
         expect(
             js_beautify(response.join("\n"))
         )

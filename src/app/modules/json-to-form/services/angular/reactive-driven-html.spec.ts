@@ -427,11 +427,6 @@ describe('ReactiveDrivenHtml', () => {
     //     const reactiveDrivenHtml = new ReactiveDrivenHtml(
     //     );
     //     const response = reactiveDrivenHtml.generate();
-    //     expect(
-    //         html_beautify(response.join("\n"))
-    //     )
-    //         .toBe(
-    //             html_beautify(``)
-    //         )
+    //     expect(html_beautify(response.join("\n"))).toBe(html_beautify(html))
     // })    
 });

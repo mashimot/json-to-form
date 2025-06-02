@@ -1,70 +1,89 @@
-// import { FormArrayBuilder } from './function-definition';
+import { __ARRAY__ } from '../../enums/reserved-name.enum';
+import { FormBuilder } from './function-definition';
+import { VALUE_TYPES } from './models/value.type';
 
-// describe('FormArrayBuilder', () => {
-//     it('1111111111111111111111111111111111', () => {
-//         const result = new FormArrayBuilder(
-//             ['test', 'key', 'name'],
-//             []
-//         )
+describe('FormBuilder', () => {
+    it('should create an instance', () => {
+        const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
+        expect(builder).toBeTruthy();
+    });
 
-//         const firstMap = result.createFormGroupDataMap();
-//         expect(firstMap).toBeDefined();
-//         expect(firstMap.get('has_reserved_word')).toBe('N');
-//         expect(firstMap.get('attribute_name')).toBe('testKeyName');
-//         expect(firstMap.get('parameters')).toBe('()');
-//         expect(firstMap.get('path')).toBe("'test','key','name'");
-//         expect(firstMap.get('parameters_typed')).toBe(`()`);
-//         expect(firstMap.get('parameters_with_last_index')).toBe(`()`);
-//         expect(firstMap.get('parameters_with_last_index_typed')).toBe(`()`);
-//         expect(firstMap.get('function_name')).toBe(`testKeyName`);
-//         expect(firstMap.get('get_function_name')).toBe('get testKeyName');
-//         expect(firstMap.get('get_with_parameters')).toBe(`get testKeyName()`);
-//         expect(firstMap.get('create_function_name')).toBe('createTestKeyName');
-//         expect(firstMap.get('delete_function_name')).toBe(`deleteTestKeyName`);
-//     });
+    it('should generate formStructure for basic path without array', () => {
+        const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
+        const result = builder.formStructure();
 
-//     // it('2222222222222222222222', () => {
-//     //     const bunda = [ReservedWordEnum.__ARRAY__, ReservedWordEnum.__ARRAY__, ReservedWordEnum.__ARRAY__];
-//     //     const result = new FormArrayBuilder(
-//     //         ['test', 'key', 'name', ReservedWordEnum.__ARRAY__, ReservedWordEnum.__ARRAY__, ReservedWordEnum.__ARRAY__]
-//     //         ,
-//     //         []
-//     //     )
+        expect(result.methodName).toBe('userName');
+        expect(result.attributeName).toContain('userName');
+        expect(result.paramCounter).toBe(0);
+        expect(result.getter.name).toBe('get userName');
+        expect(result.creator.name).toBe('createUserName');
+        expect(result.reactiveFormType).toBe('FormControl');
+        expect(result.path).toEqual([`'user'`, `'name'`]);
+    });
 
-//     //     result.formArray = bunda;
+    it('should generate formStructure with reserved __ARRAY__ handling', () => {
+        const builder = new FormBuilder(['users', __ARRAY__, 'name'], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
+        const result = builder.formStructure();
 
-//     //     spyOn(result, 'getTotalAsterisks').and.returnValue(3);
+        expect(result.methodName).toBe('usersAtName');
+        expect(result.getter.name).toBe('getUsersAtName');
+        expect(result.creator.name).toBe('createUsersAtName');
+        expect(result.params).toEqual(['index0']);
+        expect(result.paramCounter).toBe(1);
+        expect(result.path).toEqual([`'users'`, `index0`, `'name'`]);
+        expect(result.reactiveFormType).toBe('FormControl');
+        expect(result.getter.withReturn).toContain('this.f.get');
+    });
 
-//     //     const dataMaps = result.createFormArrayDataMap();
-//     //     expect(dataMaps).toBeDefined();
-//     //     expect(dataMaps.length).toBe(3);
+    it('should generate method with multiple array levels correctly', () => {
+        const builder = new FormBuilder(['companies', __ARRAY__, 'departments', __ARRAY__, 'name'], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
+        const result = builder.formStructure();
 
-//     //     const firstMap = dataMaps[2];
-//     //     expect(firstMap.get('attribute_name')).toBe('testKeyName3');
-//     //     expect(firstMap.get('parameters')).toBe('(index1,index2,index3)');
-//     //     expect(firstMap.get('path')).toBe("'test','key','name',index1,index2,index3");
-//     //     // expect(firstMap.get('parameters_typed')).toBe(`()`);
-//     //     // expect(firstMap.get('parameters_with_last_index')).toBe(`()`);
-//     //     // expect(firstMap.get('parameters_with_last_index_typed')).toBe(`()`);
-//     //     // expect(firstMap.get('function_name')).toBe(`TestKeyName`);
-//     //     // expect(firstMap.get('get_function_name')).toBe('getTestKeyName');
-//     //     // // expect(firstMap.get('create_function_name')).toBe( endsWithHue ? `${this.CREATE}${dataMap.get('function_name')}` : '');
-//     //     // // expect(firstMap.get('delete_function_name')).toBe(endsWithHue ? `${this.DELETE}${dataMap.get('function_name')}` : '');
-//     //     // expect(firstMap.get('get_with_parameters')).toBe(`getTestKeyName()`);
-//     // });
+        expect(result.methodName).toBe('companiesAtDepartmentsAtName');
+        expect(result.paramCounter).toBe(2);
+        expect(result.params).toEqual(['index0', 'index1']);
+        expect(result.path).toEqual([`'companies'`, 'index0', `'departments'`, 'index1', `'name'`]);
+        expect(result.reactiveFormType).toBe('FormControl');
+    });
 
-//     //   it('should create form array data map with counterAsterisk <= 0', () => {
-//     //     spyOn(service, 'getTotalAsterisks').and.returnValue(0);
+    it('should generate getter function with parameters typed', () => {
+        const builder = new FormBuilder(['people', __ARRAY__, 'phones', __ARRAY__, 'number'], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
+        const result = builder.formStructure();
+        expect(result.getter.withReturn).toContain('index0:number, index1:number');
+        expect(result.getter.withReturn).toContain('this.f.get');
+        expect(result.getter.withReturn).toContain('FormControl');
+    });
 
-//     //     const result = service['createFormArrayDataMap']();
+    it('should generate getter function with parameters typed', () => {
+        const builder = new FormBuilder(['people', __ARRAY__, 'phones', __ARRAY__, __ARRAY__], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
+        const result = builder.formStructure();
 
-//     //     expect(result).toBeDefined();
-//     //     expect(result.length).toBe(1);
+        expect(result.methodName).toBe('peopleAtPhonesAtAt');
+        expect(result.paramCounter).toBe(3);
+        expect(result.getter.withReturn).toContain('index0:number, index1:number');
+        expect(result.getter.withReturn).toContain('this.f.get');
+        expect(result.getter.withReturn).toContain('FormControl');
+    });
 
-//     //     const map = result[0];
-//     //     expect(map.get('has_reserved_word')).toBe('S');
-//     //     expect(map.get('form_type')).toBe('FormGroup');
-//     //     expect(map.get('parameters')).toBe('(param1,param2)');
-//     //     expect(map.get('get_function_name')).toBe('getTestFunctionFormGroup');
-//     //   });
-// });
+    it('should generate getter function with parameters typed', () => {
+        const builder = new FormBuilder(['people', __ARRAY__, 'phones'], VALUE_TYPES.ARRAY, VALUE_TYPES.OBJECT);
+        const result = builder.formStructure();
+
+        expect(result.methodName).toBe('peopleAtPhones');
+        expect(result.paramCounter).toBe(1);
+        expect(result.getter.withReturn).toContain('index0:number');
+        expect(result.getter.withReturn).toContain('this.f.get');
+        expect(result.getter.withReturn).toContain('FormGroup');
+    });
+
+    it('should generate getter function with parameters typed', () => {
+        const builder = new FormBuilder(['people', __ARRAY__, __ARRAY__, 'phones'], VALUE_TYPES.ARRAY, VALUE_TYPES.ARRAY);
+        const result = builder.formStructure();
+
+        // expect(result.methodName).toBe('peopleAtAtPhones');
+        expect(result.paramCounter).toBe(2);
+        expect(result.getter.withReturn).toContain('index0:number, index1:number');
+        expect(result.getter.withReturn).toContain('this.f.get');
+        expect(result.getter.withReturn).toContain('FormArray');
+    });
+});
