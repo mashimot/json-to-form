@@ -249,7 +249,7 @@ export class JsonToFormFormComponent implements OnInit {
             id: 1,
             type: 'Structural Directives',
             description: 'Structural Directives (ex: *ngIf, *ngFor, *ngSwitch)',
-            disabled: false
+            disabled: null
         },
         // {
         //     id: 2,

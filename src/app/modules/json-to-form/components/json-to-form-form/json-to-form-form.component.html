@@ -37,7 +37,7 @@
                                         [id]="'form-control-' + option.id"
                                         formControlName="structure"
                                         [value]="option.id"
-                                        [disabled]="true"
+                                        [attr.disabled]="option.disabled"
                                     >
                                     {{ option.description }}
                                 </label>

@@ -224,16 +224,14 @@ export class FormUtils {
     const create = currentFormStructure.creator.call;
 
     return [
-      `<div class="btn-group">`,
-        `<button`,
-          `type="button" `,
-          `class="btn btn-primary btn-block btn-sm" `,
-          `(click)="${get}.push(${create})"`,
-        `>`,
-          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
-          `ADD`,
-        `</button>`,
-      `</div>`
+      `<button`,
+        `type="button" `,
+        `class="btn btn-primary btn-block btn-sm" `,
+        `(click)="${get}.push(${create})"`,
+      `>`,
+        `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+        `ADD`,
+      `</button>`,
     ];
   }
 }
@@ -517,7 +515,17 @@ export class ReactiveDrivenHtml {
           const innerHtml = this.buildReactiveFormHtml(value, fullKeyPath, VALUE_TYPES.ARRAY, nextStack);
   
           return previousValueType === VALUE_TYPES.ARRAY
-            ? wrapLines([...addButton, ...openLoopTag, ...open, ...deleteButton, innerHtml, ...close, ...closeLoopTag])
+            ? wrapLines([
+              ...openLoopTag,
+              // '<div class="d-flex mb-2">',
+              ...addButton,
+              ...deleteButton,
+              // '</div>',
+              ...open,
+              innerHtml,
+              ...close,
+              ...closeLoopTag
+            ])
             : wrapLines([...open, innerHtml, ...close]);
         }
   

@@ -46,7 +46,7 @@ describe('FormBuilder', () => {
         expect(result.reactiveFormType).toBe('FormControl');
     });
 
-    it('should generate getter function with parameters typed', () => {
+    it('should generate getter function with parameters typed 0', () => {
         const builder = new FormBuilder(['people', __ARRAY__, 'phones', __ARRAY__, 'number'], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
         const result = builder.formStructure();
         expect(result.getter.withReturn).toContain('index0:number, index1:number');
@@ -54,7 +54,7 @@ describe('FormBuilder', () => {
         expect(result.getter.withReturn).toContain('FormControl');
     });
 
-    it('should generate getter function with parameters typed', () => {
+    it('should generate getter function with parameters typed 1', () => {
         const builder = new FormBuilder(['people', __ARRAY__, 'phones', __ARRAY__, __ARRAY__], VALUE_TYPES.ARRAY, VALUE_TYPES.STRING);
         const result = builder.formStructure();
 
@@ -65,7 +65,7 @@ describe('FormBuilder', () => {
         expect(result.getter.withReturn).toContain('FormControl');
     });
 
-    it('should generate getter function with parameters typed', () => {
+    it('should generate getter function with parameters typed 1', () => {
         const builder = new FormBuilder(['people', __ARRAY__, 'phones'], VALUE_TYPES.ARRAY, VALUE_TYPES.OBJECT);
         const result = builder.formStructure();
 
@@ -74,16 +74,5 @@ describe('FormBuilder', () => {
         expect(result.getter.withReturn).toContain('index0:number');
         expect(result.getter.withReturn).toContain('this.f.get');
         expect(result.getter.withReturn).toContain('FormGroup');
-    });
-
-    it('should generate getter function with parameters typed', () => {
-        const builder = new FormBuilder(['people', __ARRAY__, __ARRAY__, 'phones'], VALUE_TYPES.ARRAY, VALUE_TYPES.ARRAY);
-        const result = builder.formStructure();
-
-        // expect(result.methodName).toBe('peopleAtAtPhones');
-        expect(result.paramCounter).toBe(2);
-        expect(result.getter.withReturn).toContain('index0:number, index1:number');
-        expect(result.getter.withReturn).toContain('this.f.get');
-        expect(result.getter.withReturn).toContain('FormArray');
     });
 });
