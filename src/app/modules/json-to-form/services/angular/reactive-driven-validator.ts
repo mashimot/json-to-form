@@ -171,6 +171,7 @@ export class ReactiveDrivenValidator {
             `${this._options.formName}!: FormGroup;`,
             `formSubmitAttempt: boolean = false;`,
             `@Input() data: any;`
+            // `@Input() data: any = ${JSON.stringify(this.rules)}`
         ];
     }
 
@@ -186,7 +187,7 @@ export class ReactiveDrivenValidator {
         return [
             `ngOnInit(): void {`,
                 `${wrapLines(formGroup)}`,
-                // `this.populate()`,
+                `this.populate()`,
             `}`
         ];
     }
@@ -230,7 +231,7 @@ export class ReactiveDrivenValidator {
 
     private populate(): string[] {
         return [
-            `private populate() {`,
+            `private populate(): void {`,
             this.buildPopulate(this.rules),
             `this.f.patchValue(this.data);`,
             `}`,
@@ -256,8 +257,8 @@ export class ReactiveDrivenValidator {
                 this.getters,
                 this.emptyLine(),
                 this.creaters,
-                // this.emptyLine(),
-                // ...this.populate(),
+                this.emptyLine(),
+                ...this.populate(),
             `}`
         ];
     }
@@ -267,30 +268,34 @@ export class ReactiveDrivenValidator {
     }
 
     private forEachWrapper(previous: FormStructure, current: FormStructure): [string[], string[]] {
-        if(current.previousValueType === VALUE_TYPES.ARRAY) {
-            const sliceArray = (arr: string[], n: number) => {
-                return arr.slice(n + 1);
-            }
-            const path = previous.path.map(p => p.replace(/^'|'$/g, '')) || [];
-            const lastNull = previous.stack.lastIndexOf(__ARRAY__);
-            const key = [
-                lastNull === -1 ? 'this.data' : `item${previous.paramCounter - 1}`,
-                ...(sliceArray([...path], lastNull) || [])
-            ];
-
-            return [
-                [
-                    `// @ts-ignore`,
-                    `${key.join('.')}.forEach((item${previous.paramCounter}, ${previous.lastIndexParam}) => {`,
-                    `this.${previous?.getter?.call}.push(this.${current.creator.call})`,
-                ], 
-                [
-                    `});`
-                ]
-            ]
+        if (current.previousValueType !== VALUE_TYPES.ARRAY) {
+          return [[], []];
         }
 
-        return [[], []];
+        const buildKeyPath = (previous: FormStructure): string => {
+          const cleanedPath = (previous.path || []).map(p => p.replace(/^'|'$/g, ''));
+          const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
+          const rootKey = lastArrayIndex === -1
+            ? 'this.data'
+            : `item${previous.paramCounter - 1}`;
+          const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
+          
+          return [rootKey, ...suffixPath].join('.');
+        }
+        const keyPath = buildKeyPath(previous);
+        const paramName = `item${previous.paramCounter}`;
+        const indexParam = previous.lastIndexParam;
+        const getterCall = `this.${previous.getter?.call}`;
+        const creatorCall = `this.${current.creator.call}`;
+        const openBlock = [
+            `// @ts-ignore`,
+            `${keyPath}.forEach((${paramName}, ${indexParam}) => {`,
+            `${getterCall}.push(${creatorCall})`,
+        ];
+    
+        const closeBlock = [`});`];
+    
+        return [openBlock, closeBlock];
     }
 
     private buildPopulate(    
