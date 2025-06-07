@@ -1,5 +1,5 @@
 import { FormBuilder } from "../function-definition";
-import { ValueType } from "../models/value.type";
+import { VALUE_TYPES, ValueType } from "../models/value.type";
 import { ValidatorRuleHelper } from "../validator-rule-helper";
 
 interface FormContext {
@@ -32,7 +32,7 @@ export class ValidatorFormContextHelper {
         } = params;
 
         const value = ValidatorRuleHelper.normalizeValue(object[key]);
-        const currentValueType = ValidatorRuleHelper.resolveValueType(value);
+        const currentValueType = ValidatorRuleHelper.getValueType(value);
         const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
             namesArr,
             previousValueType,
@@ -42,8 +42,8 @@ export class ValidatorFormContextHelper {
         const fullKeyPath = [...namesArr, ...remainingKeys];
 
         const isNotLastArrayItem =
-            currentValueType !== 'array' &&
-            previousValueType === 'array' &&
+            currentValueType !==  VALUE_TYPES.ARRAY &&
+            previousValueType === VALUE_TYPES.ARRAY &&
             currentIndex - 1 !== index;
 
         if (isNotLastArrayItem) {

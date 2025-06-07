@@ -365,7 +365,7 @@ export class ReactiveDrivenValidator {
             .keys(object)
             .map((key: string, index: number) => {
                 const value = ValidatorRuleHelper.normalizeValue(object[key]);
-                const currentValueType = ValidatorRuleHelper.resolveValueType(value);
+                const currentValueType = ValidatorRuleHelper.getValueType(value);
                 const remainingKeys = ValidatorRuleHelper.createRemainingKeys(namesArr, previousValueType, key, currentValueType);
                 const fullKeyPath = [...namesArr, ...remainingKeys];
                 if (currentValueType === VALUE_TYPES.ARRAY) {

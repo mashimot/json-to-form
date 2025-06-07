@@ -121,7 +121,7 @@ export class ValidatorRuleHelper {
             : ValidatorRuleHelper.capitalizeFirstLetter(camelCase);
     }
 
-    public static resolveValueType(value: unknown): ValueType {
+    public static getValueType(value: unknown): ValueType {
         const rawType = Object.prototype.toString.call(value);
         const typeofValue = typeof value;
 
@@ -133,7 +133,7 @@ export class ValidatorRuleHelper {
     }
 
     public static normalizeValue(value: any): any {
-        if (['array', 'object', 'string'].includes(this.resolveValueType(value))) {
+        if (['array', 'object', 'string'].includes(this.getValueType(value))) {
             return value;
         }
 
