@@ -1,5 +1,7 @@
 import { wrapLines } from 'src/app/shared/utils/string.utils';
+import { __ARRAY__ } from '../../enums/reserved-name.enum';
 import { FormBuilder, FormStructure } from './function-definition';
+import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
@@ -113,6 +115,7 @@ export class ReactiveDrivenValidator {
     private arrayIndex: number = 0;
     private formFields: FormStructure[] = [];
     private optionChoices: string[] = [];
+    private index: number = 0;
 
     constructor(rules: any, componentName: string, private options?: any) {
         this.componentName = componentName;
@@ -182,6 +185,7 @@ export class ReactiveDrivenValidator {
         return [
             `ngOnInit(): void {`,
                 `${wrapLines(formGroup)}`,
+                // `this.populate()`,
             `}`
         ];
     }
@@ -223,6 +227,15 @@ export class ReactiveDrivenValidator {
         ]
     }
 
+    private populate(): string[] {
+        return [
+            `private populate() {`,
+            this.buildPopulate(this.rules),
+            `this.f.patchValue(this.data);`,
+            `}`,
+        ]
+    }
+
     public generateComponent(): string[] {
         const formGroup: string[] = this.generateFormBuilder();
         return [
@@ -240,13 +253,101 @@ export class ReactiveDrivenValidator {
                 ...this.submitMethod(),
                 this.emptyLine(),
                 this.getters,
+                this.emptyLine(),
                 this.creaters,
+                // this.emptyLine(),
+                // ...this.populate(),
             `}`
         ];
     }
 
     private getFormWrapper(type: ValueType): { OPEN: string; CLOSE: string } {
         return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode][type];
+    }
+
+    private forEachWrapper(previous: FormStructure, current: FormStructure): [string[], string[]] {
+        if(current.previousValueType === VALUE_TYPES.ARRAY) {
+            const sliceArray = (arr: string[], n: number) => {
+                return arr.slice(n + 1);
+            }
+            const path = previous.path.map(p => p.replace(/^'|'$/g, '')) || [];
+            const lastNull = previous.stack.lastIndexOf(__ARRAY__);
+            const key = [
+                lastNull === -1 ? 'this.data' : `item${previous.paramCounter - 1}`,
+                ...(sliceArray([...path], lastNull) || [])
+            ];
+
+            return [
+                [
+                    `// @ts-ignore`,
+                    `${key.join('.')}.forEach((item${previous.paramCounter}, ${previous.lastIndexParam}) => {`,
+                    `this.${previous?.getter?.call}.push(this.${current.creator.call})`,
+                ], 
+                [
+                    `});`
+                ]
+            ]
+        }
+
+        return [[], []];
+    }
+
+    private buildPopulate(    
+        object: { [key: string]: any },
+        namesArr: string[] = [],
+        previousValueType: ValueType = VALUE_TYPES.OBJECT,
+        formStructureStack: FormStructure[] = []
+      ): string {
+        const populate = Object.keys(object)
+          .map((key: string, index: number) => {
+            const context = ValidatorFormContextHelper.buildContext({
+              object,
+              key,
+              namesArr,
+              previousValueType,
+              index,
+              currentIndex: this.index,
+            });
+      
+            if (!context) return '';
+      
+            const {
+              value,
+              currentValueType,
+              fullKeyPath,
+              isLastIndexFromValueArray,
+              currentFormStructure,
+            } = context;
+      
+            const previousFormStructure = formStructureStack[formStructureStack.length - 1];
+            const formContext = {
+              current: currentFormStructure,
+              previous: previousFormStructure,
+            };
+
+            if(
+                currentValueType === VALUE_TYPES.ARRAY ||
+                currentValueType === VALUE_TYPES.OBJECT ||
+                currentValueType === VALUE_TYPES.STRING
+            ) {
+                this.index = value.length;
+
+                const [openForEach, closeForEach] = this.forEachWrapper(
+                    formContext.previous!, formContext.current
+                );
+                const nextStack = [...formStructureStack, currentFormStructure];
+                const innerForEachBlock = currentValueType === VALUE_TYPES.STRING
+                    ? ''
+                    : this.buildPopulate(value, fullKeyPath, currentValueType, nextStack);
+                
+                return wrapLines([ ...openForEach, innerForEachBlock, ...closeForEach ].filter(Boolean));
+            }
+        
+            return '';
+        })
+            .filter(Boolean);
+        
+        return wrapLines(populate);
     }
 
     public reactiveDrivenValidators(
