@@ -1,4 +1,4 @@
-import { wrapLines } from 'src/app/shared/utils/string.utils';
+import { wrapLines } from '@shared/utils/string.utils';
 import { __ARRAY__ } from '../../enums/reserved-name.enum';
 import { FormBuilder, FormStructure } from './function-definition';
 import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
@@ -86,19 +86,19 @@ export enum FormOutputFormat {
 
 export const FORM_OUTPUT_WRAPPERS: any = {
     [FormOutputFormat.Json]: {
-      [VALUE_TYPES.ARRAY]: { OPEN: '[', CLOSE: ']' },
-      [VALUE_TYPES.OBJECT]: { OPEN: '{', CLOSE: '}' },
-      [VALUE_TYPES.STRING]: { OPEN: '"', CLOSE: '"' }
+        [VALUE_TYPES.ARRAY]: { OPEN: '[', CLOSE: ']' },
+        [VALUE_TYPES.OBJECT]: { OPEN: '{', CLOSE: '}' },
+        [VALUE_TYPES.STRING]: { OPEN: '"', CLOSE: '"' }
     },
     [FormOutputFormat.AngularFormBuilder]: {
-      [VALUE_TYPES.ARRAY]: { OPEN: 'this.formBuilder.array([', CLOSE: '])' },
-      [VALUE_TYPES.OBJECT]: { OPEN: 'this.formBuilder.group({', CLOSE: '})' },
-      [VALUE_TYPES.STRING]: { OPEN: 'this.formBuilder.control(', CLOSE: ')' }
+        [VALUE_TYPES.ARRAY]: { OPEN: 'this.formBuilder.array([', CLOSE: '])' },
+        [VALUE_TYPES.OBJECT]: { OPEN: 'this.formBuilder.group({', CLOSE: '})' },
+        [VALUE_TYPES.STRING]: { OPEN: 'this.formBuilder.control(', CLOSE: ')' }
     },
     [FormOutputFormat.AngularRawInstance]: {
-      [VALUE_TYPES.ARRAY]: { OPEN: 'new FormArray([', CLOSE: '])' },
-      [VALUE_TYPES.OBJECT]: { OPEN: 'new FormGroup({', CLOSE: '})' },
-      [VALUE_TYPES.STRING]: { OPEN: 'new FormControl(', CLOSE: ')' }
+        [VALUE_TYPES.ARRAY]: { OPEN: 'new FormArray([', CLOSE: '])' },
+        [VALUE_TYPES.OBJECT]: { OPEN: 'new FormGroup({', CLOSE: '})' },
+        [VALUE_TYPES.STRING]: { OPEN: 'new FormControl(', CLOSE: ')' }
     }
 } as const;
 
@@ -140,7 +140,7 @@ export class ReactiveDrivenValidator {
 
     private imports(): string[] {
         return [
-            `import { Component, OnInit } from '@angular/core'`,
+            `import { Component, Input, OnInit } from '@angular/core'`,
             `import { Validators, FormControl, FormGroup, FormBuilder, FormArray, ReactiveFormsModule } from '@angular/forms'`,
             `import { of } from 'rxjs';`,
             `import { AsyncPipe, JsonPipe, NgFor, NgIf } from '@angular/common';`,
@@ -170,6 +170,7 @@ export class ReactiveDrivenValidator {
         return [
             `${this._options.formName}!: FormGroup;`,
             `formSubmitAttempt: boolean = false;`,
+            `@Input() data: any;`
         ];
     }
 
