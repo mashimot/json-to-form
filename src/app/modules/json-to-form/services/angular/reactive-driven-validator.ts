@@ -115,7 +115,6 @@ export class ReactiveDrivenValidator {
     private arrayIndex: number = 0;
     private formFields: FormStructure[] = [];
     private optionChoices: string[] = [];
-    private index: number = 0;
 
     constructor(rules: any, componentName: string, private options?: any) {
         this.componentName = componentName;
@@ -305,23 +304,18 @@ export class ReactiveDrivenValidator {
         formStructureStack: FormStructure[] = []
       ): string {
         const populate = Object.keys(object)
-          .map((key: string, index: number) => {
+          .map((key: string) => {
             const context = ValidatorFormContextHelper.buildContext({
               object,
               key,
               namesArr,
               previousValueType,
-              index,
-              currentIndex: this.index,
             });
-      
-            if (!context) return '';
       
             const {
               value,
               currentValueType,
               fullKeyPath,
-              isLastIndexFromValueArray,
               currentFormStructure,
             } = context;
       
@@ -336,8 +330,6 @@ export class ReactiveDrivenValidator {
                 currentValueType === VALUE_TYPES.OBJECT ||
                 currentValueType === VALUE_TYPES.STRING
             ) {
-                this.index = value.length;
-
                 const [openForEach, closeForEach] = this.forEachWrapper(
                     formContext.previous!, formContext.current
                 );

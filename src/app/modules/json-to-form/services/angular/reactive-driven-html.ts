@@ -442,14 +442,12 @@ export class ReactiveDrivenHtml {
     formStructureStack: FormStructure[] = []
   ): string {
     const reactiveFormHtml = Object.keys(object)
-      .map((key: string, index: number) => {
+      .map((key: string) => {
         const context = ValidatorFormContextHelper.buildContext({
           object,
           key,
           namesArr,
           previousValueType,
-          index,
-          currentIndex: this.index,
         });
   
         if (!context) return '';
@@ -458,10 +456,9 @@ export class ReactiveDrivenHtml {
           value,
           currentValueType,
           fullKeyPath,
-          isLastIndexFromValueArray,
           currentFormStructure,
         } = context;
-  
+
         const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
@@ -487,7 +484,7 @@ export class ReactiveDrivenHtml {
             ? 'class="p-1 my-1 border border-dark"'
             : '';
             
-          const formIndex = isLastIndexFromValueArray && previousValueType === VALUE_TYPES.ARRAY
+          const formIndex = previousValueType === VALUE_TYPES.ARRAY
             ? formContext.previous?.lastIndexParam
             : `'${key}'`;
   
@@ -510,7 +507,6 @@ export class ReactiveDrivenHtml {
         const nextStack = [...formStructureStack, currentFormStructure];
   
         if (currentValueType === VALUE_TYPES.ARRAY) {
-          this.index = value.length;
           const [open, close] = buildWrapperTags();
           const innerHtml = this.buildReactiveFormHtml(value, fullKeyPath, VALUE_TYPES.ARRAY, nextStack);
   

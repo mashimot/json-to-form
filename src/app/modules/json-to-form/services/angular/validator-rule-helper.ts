@@ -145,20 +145,20 @@ export class ValidatorRuleHelper {
         previousValueType: ValueType,
         currentKey: string,
         currentValueType: ValueType
-      ): any[] {
+    ): any[] {
         const modifiers: (string | typeof __ARRAY__)[] = [];
-      
+
         const isRootOrNonArrayValueTypeParent = path.length === 0 || previousValueType !== VALUE_TYPES.ARRAY;
         const isArrayValue = currentValueType === VALUE_TYPES.ARRAY;
-      
+
         if (isRootOrNonArrayValueTypeParent) {
-          modifiers.push(currentKey);
+            modifiers.push(currentKey);
         }
-      
+
         if (isArrayValue) {
-          modifiers.push(__ARRAY__);
+            modifiers.push(__ARRAY__);
         }
-      
+
         return modifiers;
-      }
+    }
 }

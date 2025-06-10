@@ -1,5 +1,5 @@
-import { FormBuilder } from "../function-definition";
-import { VALUE_TYPES, ValueType } from "../models/value.type";
+import { FormBuilder, FormStructure } from "../function-definition";
+import { ValueType } from "../models/value.type";
 import { ValidatorRuleHelper } from "../validator-rule-helper";
 
 interface FormContext {
@@ -7,9 +7,7 @@ interface FormContext {
     value: any;
     currentValueType: ValueType;
     fullKeyPath: string[];
-    currentFormStructure: any;
-    isNotLastArrayItem: boolean;
-    isLastIndexFromValueArray: boolean;
+    currentFormStructure: FormStructure;
 }
 
 export class ValidatorFormContextHelper {
@@ -18,21 +16,16 @@ export class ValidatorFormContextHelper {
         key: string;
         namesArr: string[];
         previousValueType: ValueType;
-        index: number;
-        currentIndex: number;
-    // }): FormContext | null {
-    }): any {
+    }): FormContext {
         const {
             object,
             key,
             namesArr,
             previousValueType,
-            index,
-            currentIndex,
         } = params;
 
-        const value = ValidatorRuleHelper.normalizeValue(object[key]);
-        const currentValueType = ValidatorRuleHelper.getValueType(value);
+        const rawValue = ValidatorRuleHelper.normalizeValue(object[key]);
+        const currentValueType = ValidatorRuleHelper.getValueType(rawValue);
         const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
             namesArr,
             previousValueType,
@@ -40,16 +33,7 @@ export class ValidatorFormContextHelper {
             currentValueType
         );
         const fullKeyPath = [...namesArr, ...remainingKeys];
-
-        const isNotLastArrayItem =
-            currentValueType !==  VALUE_TYPES.ARRAY &&
-            previousValueType === VALUE_TYPES.ARRAY &&
-            currentIndex - 1 !== index;
-
-        if (isNotLastArrayItem) {
-            return null;
-        }
-
+        const value = currentValueType === 'array' ? [rawValue[rawValue.length - 1]] : rawValue;
         const currentFormStructure = new FormBuilder(
             fullKeyPath,
             previousValueType,
@@ -57,16 +41,12 @@ export class ValidatorFormContextHelper {
             []
         ).formStructure();
 
-        const isLastIndexFromValueArray = currentIndex - 1 === index;
-
         return {
             key,
             value,
             currentValueType,
             fullKeyPath,
             currentFormStructure,
-            isNotLastArrayItem,
-            isLastIndexFromValueArray,
         };
     }
 }

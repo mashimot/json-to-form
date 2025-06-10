@@ -88,6 +88,20 @@ export class PathUtils {
 	}
 }
 
+export class CodeTemplateGenerator {
+	public static createTemplate(
+		name: string,
+		reactiveFormType: string,
+		content: string[] = []
+	): string[] {
+		return [
+			`${name}(): ${reactiveFormType} {`,
+			`  return ${content.join("\n")};`,
+			`}`
+		];
+	}
+}
+
 export class FormBuilder {
 	constructor(
 		private fullKeyPath: (string | null)[] = [],
@@ -138,7 +152,11 @@ export class FormBuilder {
 		let paramListTyped = params.map(p => `${p}:number`).join(", ");
 
 		if (operation === 'create') {
-			return this.create(name, reactiveFormType, this.formStructureTemplate).join("\n")
+			return CodeTemplateGenerator.createTemplate(
+				name,
+				reactiveFormType,
+				this.formStructureTemplate || []
+			).join("\n");
 		}
 
 		if (operation === 'get') {
