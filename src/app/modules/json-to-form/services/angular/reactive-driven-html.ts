@@ -449,9 +449,6 @@ export class ReactiveDrivenHtml {
           namesArr,
           previousValueType,
         });
-  
-        if (!context) return '';
-  
         const {
           value,
           currentValueType,
@@ -460,10 +457,7 @@ export class ReactiveDrivenHtml {
         } = context;
 
         const previousFormStructure = formStructureStack[formStructureStack.length - 1];
-        const formContext = {
-          current: currentFormStructure,
-          previous: previousFormStructure,
-        };
+        const formContext = { current: currentFormStructure, previous: previousFormStructure, };
   
         const formUtils = new FormUtils();
   

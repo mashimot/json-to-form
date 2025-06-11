@@ -1,13 +1,15 @@
 <div class="mt-3">
-    <div class="alert alert-dismissible alert-info">
+    <!-- <div class="alert alert-dismissible alert-info">
         <strong>
             You need to import ReactiveFormsModule in order to create reactive forms
         </strong>
-    </div>
+    </div> -->
 </div>
 <section class="card shadow-sm mb-4">
     <div class="card-body">
-      <h5 class="card-title">Form Configuration</h5>
+        <h5 class="card-title">
+            <i class="fas fa-edit mr-2"></i> Form Configuration
+        </h5>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
             <div class="row">
                 <div class="col-12 col-md-7 mt-3">
@@ -113,6 +115,7 @@
             </div>
         </form>
     </div>
+    
 </section>
 
 <ng-container *ngIf="(isLoadingAction$ | async)">
@@ -133,6 +136,7 @@
                             [ngTemplateOutlet]="formBuilderTemplate"
                             [ngTemplateOutletContext]="{ 
                                 $implicit: formBuilder.component, 
+                                iconClass: 'fas fa-file-code',
                                 title: featureNamePlusForm + '.component.ts',
                                 index: 0
                             }"
@@ -143,6 +147,7 @@
                             [ngTemplateOutlet]="formBuilderTemplate"
                             [ngTemplateOutletContext]="{ 
                                 $implicit: formBuilder.html, 
+                                iconClass: 'fas fa-file-alt',
                                 title: featureNamePlusForm + '.component.html',
                                 index: 1
                             }"
@@ -154,11 +159,11 @@
     </ng-container>
 </ng-container>
 
-<ng-template #formBuilderTemplate let-code let-title="title" let-index="index">
+<ng-template #formBuilderTemplate let-code let-title="title" let-iconClass="iconClass" let-index="index">
     <div class="shadow p-3 mb-5 bg-body">
         <div class="d-flex align-items-center highlight-toolbar bg-body py-2 border-0 border-top border-bottom sticky-top">
             <small class="font-monospace text-uppercase">
-                <b>{{ title }}</b>
+                <i [class]="iconClass" class="me-2"></i> <b>{{ title }}</b>
             </small>
             <div class="d-flex ms-auto">
                 <button 
@@ -170,7 +175,7 @@
                     data-bs-title="Copy to clipboard"
                     (click)="copyToClipboard(code, index)"
                 >
-                    <i class="bi" [ngClass]="iconToggle[index]" style="font-size: 1.3rem"></i>
+                    <i class="fas" [ngClass]="iconToggle[index]" style="font-size: 1.3rem"></i>
                 </button>
             </div>
         </div>

@@ -49,7 +49,7 @@ export class JsonToFormFormComponent implements OnInit {
     private formBuilder = inject(UntypedFormBuilder);
     private loadingService = inject(LoadingService);
 
-    public iconToggle: string[] = ['bi-clipboard', 'bi-clipboard'];
+    public iconToggle: string[] = ['fa-copy', 'fa-copy'];
     public form!: UntypedFormGroup;
     public childComponents: UntypedFormControl = new UntypedFormControl('', []);
     public inputTypesEnum = Object.values(InputTypeEnum);
@@ -161,9 +161,9 @@ export class JsonToFormFormComponent implements OnInit {
     }
 
     copyToClipboard(val: string, index: number): void {
-        this.iconToggle[index] = 'bi-check-lg';
+        this.iconToggle[index] = 'fa-check';
 
-        setTimeout(() => { this.iconToggle[index] = "bi-clipboard" }, 800);
+        setTimeout(() => { this.iconToggle[index] = "fa-copy" }, 800);
 
         const selBox = document.createElement('textarea');
         selBox.style.position = 'fixed';
