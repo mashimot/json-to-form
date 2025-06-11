@@ -11,10 +11,10 @@ export class JsonToFormService {
 
   public getExamples(): Observable<any[]> {
     return of([
+      this.ecommerce(),
       this.user(),
       this.userMedications(),
       this.getMoviesDetails(),
-      this.ecommerce(),
       this.usersJson(),
       this.nestedArrayOfObjects()
     ]);
@@ -38,6 +38,22 @@ export class JsonToFormService {
               "userId": "U001",
               "name": "João Silva",
               "email": "joao.silva@email.com",
+              "phone": "+55 11 91234-5678",
+              "birthDate": "1988-03-25",
+              "createdAt": "2024-12-01T08:00:00Z",
+              "lastLogin": "2025-06-08T21:33:00Z",
+              "isActive": true,
+              "emailVerified": true,
+              "role": "customer",
+              "preferences": {
+                "newsletterSubscribed": true,
+                "preferredLanguage": "pt-BR",
+                "currency": "BRL"
+              },
+              "security": {
+                "twoFactorEnabled": true,
+                "lastPasswordChange": "2025-01-20T14:00:00Z"
+              },
               "addresses": [
                 {
                   "addressId": "A001",
@@ -45,7 +61,13 @@ export class JsonToFormService {
                   "city": "São Paulo",
                   "state": "SP",
                   "zip": "01234-567",
-                  "country": "Brasil"
+                  "country": "Brasil",
+                  "type": "residential",
+                  "isDefault": true,
+                  "geoLocation": {
+                    "lat": -23.55052,
+                    "lng": -46.63331
+                  }
                 }
               ],
               "orders": [
@@ -53,12 +75,23 @@ export class JsonToFormService {
                   "orderId": "O1001",
                   "date": "2025-05-01T10:15:30Z",
                   "status": "delivered",
+                  "shippingMethod": "PAC",
+                  "deliveryEstimate": "2025-05-05",
+                  "deliveredAt": "2025-05-04T16:22:00Z",
+                  "returnEligibleUntil": "2025-05-14",
+                  "couponUsed": {
+                    "code": "MAIO10",
+                    "discountAmount": 35.08
+                  },
                   "payment": {
                     "method": "credit_card",
                     "transactionId": "TX1234567890",
                     "amount": 350.75,
                     "currency": "BRL",
-                    "paidAt": "2025-05-01T10:20:00Z"
+                    "paidAt": "2025-05-01T10:20:00Z",
+                    "installments": 3,
+                    "cardBrand": "Visa",
+                    "cardLast4": "1234"
                   },
                   "items": [
                     {
@@ -66,12 +99,17 @@ export class JsonToFormService {
                       "name": "Camiseta Básica",
                       "category": "Roupas",
                       "quantity": 2,
-                      "priceUnit": 50.00,
-                      "totalPrice": 100.00,
+                      "priceUnit": 50,
+                      "totalPrice": 100,
                       "attributes": {
                         "size": "M",
-                        "color": "azul"
-                      }
+                        "color": "azul",
+                        "material": "algodão"
+                      },
+                      "discount": 10,
+                      "subtotal": 90,
+                      "warehouseId": "WH01",
+                      "returnable": true
                     }
                   ],
                   "shippingAddressId": "A002",
@@ -80,6 +118,16 @@ export class JsonToFormService {
                       "date": "2025-05-01T12:00:00Z",
                       "location": "Centro de Distribuição SP",
                       "status": "Despachado"
+                    },
+                    {
+                      "date": "2025-05-03T09:45:00Z",
+                      "location": "Unidade de Entrega SP Zona Oeste",
+                      "status": "Saiu para entrega"
+                    },
+                    {
+                      "date": "2025-05-04T16:22:00Z",
+                      "location": "Residência do cliente",
+                      "status": "Entregue"
                     }
                   ]
                 }
@@ -90,14 +138,25 @@ export class JsonToFormService {
                   "productId": "P100",
                   "rating": 4,
                   "comment": "Produto de boa qualidade, gostei do tecido.",
-                  "date": "2025-04-15"
+                  "date": "2025-04-15",
+                  "helpfulVotes": 5,
+                  "reviewedBy": "João Silva"
+                }
+              ],
+              "wishlist": [
+                {
+                  "productId": "P300",
+                  "addedAt": "2025-06-01T12:30:00Z"
                 }
               ],
               "activityLog": [
                 {
                   "date": "2025-05-01T09:00:00Z",
                   "action": "login",
-                  "ip": "200.145.12.34"
+                  "ip": "200.145.12.34",
+                  "device": "mobile",
+                  "browser": "Chrome",
+                  "location": "São Paulo - SP"
                 }
               ]
             }
@@ -107,11 +166,53 @@ export class JsonToFormService {
               "productId": "P200",
               "name": "Tênis Esportivo",
               "description": "Tênis para corrida com amortecimento avançado.",
+              "brand": "FastRun",
               "categories": ["Calçados", "Esportes"],
+              "tags": ["leve", "corrida", "masculino"],
               "price": 250.75,
+              "priceHistory": [
+                {
+                  "date": "2025-04-01",
+                  "oldPrice": 299.90,
+                  "newPrice": 250.75
+                }
+              ],
               "stock": 80,
+              "sku": "FR-TS-001",
+              "createdAt": "2025-01-10T15:30:00Z",
+              "updatedAt": "2025-05-01T14:00:00Z",
+              "rating": 4.7,
+              "reviewsCount": 134,
+              "dimensions": {
+                "weightKg": 0.85,
+                "widthCm": 30,
+                "heightCm": 12,
+                "depthCm": 18
+              },
+              "shippingInfo": {
+                "shipsFrom": "São Paulo",
+                "freeShipping": true,
+                "deliveryTimeDays": 5
+              },
+              "returnPolicy": {
+                "returnable": true,
+                "daysToReturn": 10
+              },
               "variations": [
-                { "size": 40, "color": "preto", "stock": 20 }
+                {
+                  "size": 40,
+                  "color": "preto",
+                  "stock": 20,
+                  "sku": "FR-TS-001-BLK-40",
+                  "ean": "7891234567890"
+                },
+                {
+                  "size": 41,
+                  "color": "azul",
+                  "stock": 15,
+                  "sku": "FR-TS-001-BLU-41",
+                  "ean": "7891234567891"
+                }
               ]
             }
           ]
