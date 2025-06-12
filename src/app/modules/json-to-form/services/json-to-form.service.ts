@@ -365,12 +365,11 @@ export class JsonToFormService {
           "first_name": "required|min:30",
           "last_name": "required|min:2",
           "birthday_date": "required|html:date",
-          "favorite_fruits": "required|min:30"
+          "favorite_fruits": "required|min:30",
+          "emails": [
+            "html:email|required|min:10|max:40"
+          ],
         },
-        "has_diabetes": [
-          "html:radio",
-          "required"
-        ],
         "contacts": {
           "name": "required|min:3|max:255",
           "email": "required|email|max:255"
