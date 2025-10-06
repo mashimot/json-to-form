@@ -2,117 +2,118 @@ import { ReactiveDrivenValidator } from './reactive-driven-validator';
 import { html_beautify, js_beautify } from 'js-beautify';
 
 describe('reactiveDrivenValidator', () => {
-    beforeEach(() => {
-    });
+  beforeEach(() => {});
 
-    it('1', () => {
-        const reactiveDrivenValidator = new ReactiveDrivenValidator(
-            {
-                "movies": [
-                    {
-                        "adult-hadouken": "nullable|boolean",
-                        "backdrop_path": "nullable|string",
-                        "belongs_to_collection": "nullable",
-                        "budget": "nullable|html:number|integer",
-                        "genres-EMESME": {
-                            "id": "nullable|html:number|integer",
-                            "production_companies": [
-                                [
-                                    {
-                                        "production_countries": {
-                                            "iso_3166_1": "nullable|min:2|max:2",
-                                            "name": "nullable|min:2|max:255"
-                                        },
-                                        "id": "html:number|nullable",
-                                        "logo_path": "nullable|string",
-                                        "name": "nullable|min:2|max:255",
-                                        "origin_country": "nullable|min:2|max:2"
-                                    }
-                                ]
-                            ],
-                            "name": "nullable|html:text|min:2|max:255"
-                        },
-                        "homepage": "nullable|html:text|string",
-                        "id": "nullable|html:number|integer|min:2|max:25",
-                        "imdb_id": "nullable|string|min:9|max:9",
-                        "original_language": "nullable|string|min:2|max:2",
-                        "original_title": "nullable|string|min:2|max:255",
-                        "overview": "nullable|html:textarea|string|min:2|max:4000",
-                        "popularity": "nullable|html:number|numeric",
-                        "poster_path": "nullable|html:text|string",
-                        "release_date": "html:date|nullable|date_format:Y-m-d",
-                        "revenue": "html:number|nullable",
-                        "runtime": "html:number|nullable",
-                        "spoken_languages": {
-                            "iso_639_1": "nullable|min:2|max:2",
-                            "name": "nullable|min:2|max:255"
-                        },
-                        "tagline": "nullable|min:2|max:255",
-                        "title": "nullable|min:2|max:255",
-                        "video": "nullable|boolean",
-                        "vote_average": "nullable|html:number|number|min:2|max:255",
-                        "vote_count": "nullable|html:number|integer|min:2|max:255"
+  it('1', () => {
+    const reactiveDrivenValidator = new ReactiveDrivenValidator(
+      {
+        movies: [
+          {
+            'adult-hadouken': 'nullable|boolean',
+            backdrop_path: 'nullable|string',
+            belongs_to_collection: 'nullable',
+            budget: 'nullable|html:number|integer',
+            'genres-EMESME': {
+              id: 'nullable|html:number|integer',
+              production_companies: [
+                [
+                  {
+                    production_countries: {
+                      iso_3166_1: 'nullable|min:2|max:2',
+                      name: 'nullable|min:2|max:255',
                     },
-                    {
-                        "adult": "nullable|boolean",
-                        "backdrop_path": "nullable|string",
-                        "belongs_to_collection": "nullable",
-                        "budget": "nullable|html:number|integer",
-                        "genres": {
-                            "id": "nullable|html:number|integer",
-                            "production_companies": [
-                                [{
-                                    "production_countriesasdasdasdasdasdasdasd": {
-                                        "iso_3166_1": "nullable|min:2|max:2",
-                                        "name": "nullable|min:2|max:255"
-                                    },
-                                    "id": "html:number|nullable",
-                                    "logo_path": "nullable|string",
-                                    "name": "nullable|min:2|max:255",
-                                    "origin_country": "nullable|min:2|max:2"
-                                },
-                                    {
-                                        "production_countries": {
-                                            "iso_3166_1": "nullable|min:2|max:2",
-                                            "name": "nullable|min:2|max:255"
-                                        },
-                                        "id": "html:number|nullable",
-                                        "logo_path": "nullable|string",
-                                        "name": "nullable|min:2|max:255",
-                                        "origin_country": "nullable|min:2|max:2"
-                                    }
-                                ]
-                            ],
-                            "name": "nullable|html:text|min:2|max:255"
-                        },
-                        "homepage": "nullable|html:text|string",
-                        "id": "nullable|html:number|integer|min:2|max:25",
-                        "imdb_id": "nullable|string|min:9|max:9",
-                        "original_language": "nullable|string|min:2|max:2",
-                        "original_title": "nullable|string|min:2|max:255",
-                        "overview": "nullable|html:textarea|string|min:2|max:4000",
-                        "popularity": "nullable|html:number|numeric",
-                        "poster_path": "nullable|html:text|string",
-                        "release_date": "html:date|nullable|date_format:Y-m-d",
-                        "revenue": "html:number|nullable",
-                        "runtime": "html:number|nullable",
-                        "spoken_languages": {
-                            "iso_639_1": "nullable|min:2|max:2",
-                            "name": "nullable|min:2|max:255"
-                        },
-                        "tagline": "nullable|min:2|max:255",
-                        "title": "nullable|min:2|max:255",
-                        "video": "nullable|boolean",
-                        "vote_average": "nullable|html:number|number|min:2|max:255",
-                        "vote_count": "nullable|html:number|integer|min:2|max:255"
-                    }
-                ]
+                    id: 'html:number|nullable',
+                    logo_path: 'nullable|string',
+                    name: 'nullable|min:2|max:255',
+                    origin_country: 'nullable|min:2|max:2',
+                  },
+                ],
+              ],
+              name: 'nullable|html:text|min:2|max:255',
             },
-            "task-form"
-        );
-        const response = reactiveDrivenValidator.generateComponent();
-        // console.log(js_beautify(response.join("\n")));
-        expect(js_beautify(response.join("\n"))).toBe(js_beautify(`import {
+            homepage: 'nullable|html:text|string',
+            id: 'nullable|html:number|integer|min:2|max:25',
+            imdb_id: 'nullable|string|min:9|max:9',
+            original_language: 'nullable|string|min:2|max:2',
+            original_title: 'nullable|string|min:2|max:255',
+            overview: 'nullable|html:textarea|string|min:2|max:4000',
+            popularity: 'nullable|html:number|numeric',
+            poster_path: 'nullable|html:text|string',
+            release_date: 'html:date|nullable|date_format:Y-m-d',
+            revenue: 'html:number|nullable',
+            runtime: 'html:number|nullable',
+            spoken_languages: {
+              iso_639_1: 'nullable|min:2|max:2',
+              name: 'nullable|min:2|max:255',
+            },
+            tagline: 'nullable|min:2|max:255',
+            title: 'nullable|min:2|max:255',
+            video: 'nullable|boolean',
+            vote_average: 'nullable|html:number|number|min:2|max:255',
+            vote_count: 'nullable|html:number|integer|min:2|max:255',
+          },
+          {
+            adult: 'nullable|boolean',
+            backdrop_path: 'nullable|string',
+            belongs_to_collection: 'nullable',
+            budget: 'nullable|html:number|integer',
+            genres: {
+              id: 'nullable|html:number|integer',
+              production_companies: [
+                [
+                  {
+                    production_countriesasdasdasdasdasdasdasd: {
+                      iso_3166_1: 'nullable|min:2|max:2',
+                      name: 'nullable|min:2|max:255',
+                    },
+                    id: 'html:number|nullable',
+                    logo_path: 'nullable|string',
+                    name: 'nullable|min:2|max:255',
+                    origin_country: 'nullable|min:2|max:2',
+                  },
+                  {
+                    production_countries: {
+                      iso_3166_1: 'nullable|min:2|max:2',
+                      name: 'nullable|min:2|max:255',
+                    },
+                    id: 'html:number|nullable',
+                    logo_path: 'nullable|string',
+                    name: 'nullable|min:2|max:255',
+                    origin_country: 'nullable|min:2|max:2',
+                  },
+                ],
+              ],
+              name: 'nullable|html:text|min:2|max:255',
+            },
+            homepage: 'nullable|html:text|string',
+            id: 'nullable|html:number|integer|min:2|max:25',
+            imdb_id: 'nullable|string|min:9|max:9',
+            original_language: 'nullable|string|min:2|max:2',
+            original_title: 'nullable|string|min:2|max:255',
+            overview: 'nullable|html:textarea|string|min:2|max:4000',
+            popularity: 'nullable|html:number|numeric',
+            poster_path: 'nullable|html:text|string',
+            release_date: 'html:date|nullable|date_format:Y-m-d',
+            revenue: 'html:number|nullable',
+            runtime: 'html:number|nullable',
+            spoken_languages: {
+              iso_639_1: 'nullable|min:2|max:2',
+              name: 'nullable|min:2|max:255',
+            },
+            tagline: 'nullable|min:2|max:255',
+            title: 'nullable|min:2|max:255',
+            video: 'nullable|boolean',
+            vote_average: 'nullable|html:number|number|min:2|max:255',
+            vote_count: 'nullable|html:number|integer|min:2|max:255',
+          },
+        ],
+      },
+      'task-form',
+    );
+    const response = reactiveDrivenValidator.generateComponent();
+    // console.log(js_beautify(response.join("\n")));
+    expect(js_beautify(response.join('\n'))).toBe(
+      js_beautify(`import {
             Component,
             OnInit
         } from '@angular/core'
@@ -271,36 +272,34 @@ describe('reactiveDrivenValidator', () => {
                 })
             }
         }
-        `))
-    });
+        `),
+    );
+  });
 
-    it('2', () => {
-        const reactiveDrivenValidator = new ReactiveDrivenValidator(
-            {
-                "accounting": [
-                    {
-                        "firstName": "required",
-                        "lastName": "required",
-                        "age": "required|max:30"
-                    }
-                ],
-                "sales": [
-                    {
-                        "firstName": "required",
-                        "lastName": "required",
-                        "age": "required|max:30"
-                    }
-                ]
-            },
-            "task-form"
-        );
-        const response = reactiveDrivenValidator.generateComponent();
-        // console.log(js_beautify(response.join("\n")));
-        expect(
-            js_beautify(response.join("\n"))
-        )
-            .toBe(
-                js_beautify(`import {
+  it('2', () => {
+    const reactiveDrivenValidator = new ReactiveDrivenValidator(
+      {
+        accounting: [
+          {
+            firstName: 'required',
+            lastName: 'required',
+            age: 'required|max:30',
+          },
+        ],
+        sales: [
+          {
+            firstName: 'required',
+            lastName: 'required',
+            age: 'required|max:30',
+          },
+        ],
+      },
+      'task-form',
+    );
+    const response = reactiveDrivenValidator.generateComponent();
+    // console.log(js_beautify(response.join("\n")));
+    expect(js_beautify(response.join('\n'))).toBe(
+      js_beautify(`import {
                 Component,
                 OnInit
             } from '@angular/core'
@@ -418,65 +417,69 @@ describe('reactiveDrivenValidator', () => {
                     })
                 }
             }
-        `))
-    });
+        `),
+    );
+  });
 
-    it('3', () => {
-        const reactiveDrivenValidator = new ReactiveDrivenValidator(
-            {
-                "users": [{
-                    "name": {
-                        "first": "html:text|required|min:3|max:255",
-                        "middle": "html:text|nullable|min:3|max:255",
-                        "last": "html:text|required|min:3|max:255"
-                    },
-                    "username": "html:text|required|min:3|max:10",
-                    "password": "html:password|required|min:3|max:10",
-                    "emails": ["html:email|required|min:10|max:40"],
-                    "contacts": [{
-                        "name": "required|min:3|max:255",
-                        "email": "required|email|max:255"
-                    }],
-                    "medications": [{
-                        "medication_name": "required|min:3|max:255",
-                        "medication_details": "html:textarea|nullable|min:3|max:4000"
-                    }],
-                    "phoneNumber": "html:text|required|min:4|max:15",
-                    "location": {
-                        "street": "html:text|required|min:4|max:15",
-                        "city": "html:text|required|min:4|max:15",
-                        "state": "html:text|required|min:4|max:15",
-                        "country": "html:text|required|min:4|max:15",
-                        "zip": "html:number|required|min:4|max:15",
-                        "coordinates": {
-                            "latitude": "html:number|required|min:1|max:255",
-                            "longitude": "html:number|required|min:1|max:255"
-                        }
-                    },
-                    "website": "html:text|required|min:5|max:255",
-                    "domain": "html:text|required|min:5|max:255",
-                    "job": {
-                        "title": "html:text|required|min:1|max:255",
-                        "descriptor": "html:text|required|min:1|max:255",
-                        "area": "html:text|required|min:4|max:255",
-                        "type": "html:text|required|min:4|max:255",
-                        "company": "html:text|required|min:4|max:255"
-                    },
-                    "creditCard": {
-                        "number": "html:text|required|min:4|max:40",
-                        "cvv": "html:number|required|min:4|max:15",
-                        "issuer": "html:text|required|min:3|max:3"
-                    }
-                }]
+  it('3', () => {
+    const reactiveDrivenValidator = new ReactiveDrivenValidator(
+      {
+        users: [
+          {
+            name: {
+              first: 'html:text|required|min:3|max:255',
+              middle: 'html:text|nullable|min:3|max:255',
+              last: 'html:text|required|min:3|max:255',
             },
-            "task-form"
-        );
-        const response = reactiveDrivenValidator.generateComponent();
-        expect(
-            js_beautify(response.join("\n"))
-        )
-            .toBe(
-                js_beautify(`import {
+            username: 'html:text|required|min:3|max:10',
+            password: 'html:password|required|min:3|max:10',
+            emails: ['html:email|required|min:10|max:40'],
+            contacts: [
+              {
+                name: 'required|min:3|max:255',
+                email: 'required|email|max:255',
+              },
+            ],
+            medications: [
+              {
+                medication_name: 'required|min:3|max:255',
+                medication_details: 'html:textarea|nullable|min:3|max:4000',
+              },
+            ],
+            phoneNumber: 'html:text|required|min:4|max:15',
+            location: {
+              street: 'html:text|required|min:4|max:15',
+              city: 'html:text|required|min:4|max:15',
+              state: 'html:text|required|min:4|max:15',
+              country: 'html:text|required|min:4|max:15',
+              zip: 'html:number|required|min:4|max:15',
+              coordinates: {
+                latitude: 'html:number|required|min:1|max:255',
+                longitude: 'html:number|required|min:1|max:255',
+              },
+            },
+            website: 'html:text|required|min:5|max:255',
+            domain: 'html:text|required|min:5|max:255',
+            job: {
+              title: 'html:text|required|min:1|max:255',
+              descriptor: 'html:text|required|min:1|max:255',
+              area: 'html:text|required|min:4|max:255',
+              type: 'html:text|required|min:4|max:255',
+              company: 'html:text|required|min:4|max:255',
+            },
+            creditCard: {
+              number: 'html:text|required|min:4|max:40',
+              cvv: 'html:number|required|min:4|max:15',
+              issuer: 'html:text|required|min:3|max:3',
+            },
+          },
+        ],
+      },
+      'task-form',
+    );
+    const response = reactiveDrivenValidator.generateComponent();
+    expect(js_beautify(response.join('\n'))).toBe(
+      js_beautify(`import {
                     Component,
                     OnInit
                 } from '@angular/core'
@@ -649,40 +652,31 @@ describe('reactiveDrivenValidator', () => {
                             }),
                         })
                     }
-                }`)
-            )
-    });
-    
-    it('4', () => {
-        const reactiveDrivenValidator = new ReactiveDrivenValidator(
-            {
-                "big_ass_array_of_objects": [
-                    [
-                        [
-                            [
-                                {
-                                    "first_name": [
-                                        "required|min:3|max:255"
-                                    ],
-                                    "last_name": [
-                                        [
-                                            "required|min:3|max:255"
-                                        ]
-                                    ]
-                                }
-                            ]
-                        ]
-                    ]
-                ]
-            },
-            "task-form"
-        );
-        const response = reactiveDrivenValidator.generateComponent();
-        expect(
-            js_beautify(response.join("\n"))
-        )
-            .toBe(
-                js_beautify(`import {
+                }`),
+    );
+  });
+
+  it('4', () => {
+    const reactiveDrivenValidator = new ReactiveDrivenValidator(
+      {
+        big_ass_array_of_objects: [
+          [
+            [
+              [
+                {
+                  first_name: ['required|min:3|max:255'],
+                  last_name: [['required|min:3|max:255']],
+                },
+              ],
+            ],
+          ],
+        ],
+      },
+      'task-form',
+    );
+    const response = reactiveDrivenValidator.generateComponent();
+    expect(js_beautify(response.join('\n'))).toBe(
+      js_beautify(`import {
                     Component,
                     OnInit
                 } from '@angular/core'
@@ -848,22 +842,21 @@ describe('reactiveDrivenValidator', () => {
                             ]),
                         })
                     }
-                }`)
-            )
-    });
+                }`),
+    );
+  });
 
-
-    // it('4', () => {
-    //     const reactiveDrivenValidator = new ReactiveDrivenValidator(
-    //         {},
-    //         "task-form"
-    //     );
-    //     const response = reactiveDrivenValidator.generateComponent();
-    //     expect(
-    //         js_beautify(response.join("\n"))
-    //     )
-    //         .toBe(
-    //             js_beautify(``)
-    //         )
-    // });
+  // it('4', () => {
+  //     const reactiveDrivenValidator = new ReactiveDrivenValidator(
+  //         {},
+  //         "task-form"
+  //     );
+  //     const response = reactiveDrivenValidator.generateComponent();
+  //     expect(
+  //         js_beautify(response.join("\n"))
+  //     )
+  //         .toBe(
+  //             js_beautify(``)
+  //         )
+  // });
 });

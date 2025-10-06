@@ -6,11 +6,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
   templateUrl: './json-to-form-list.component.html',
   styleUrls: ['./json-to-form-list.component.css'],
   standalone: true,
-  imports: [
-    JsonPipe,
-    NgFor,
-    NgClass
-  ]
+  imports: [JsonPipe, NgFor, NgClass],
 })
 export class JsonToFormListComponent implements OnInit {
   @Input() formExamples!: any;
@@ -20,10 +16,9 @@ export class JsonToFormListComponent implements OnInit {
 
   hoverEffect: string[] = [];
 
-  constructor() { }
+  constructor() {}
 
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   public createJsonToForm(): void {
     this.create.emit();

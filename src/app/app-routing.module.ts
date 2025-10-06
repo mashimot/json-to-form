@@ -5,16 +5,19 @@ const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: '/json-to-form'
+    redirectTo: '/json-to-form',
   },
   {
     path: 'json-to-form',
-    loadChildren: () => import ("./modules/json-to-form/json-to-form.module").then(m => m.JsonToFormModule)
-  }
+    loadChildren: () =>
+      import('./modules/json-to-form/json-to-form.module').then(
+        (m) => m.JsonToFormModule,
+      ),
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class AppRoutingModule { }
+export class AppRoutingModule {}

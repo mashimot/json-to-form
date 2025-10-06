@@ -10,22 +10,16 @@ import { AsyncPipe } from '@angular/common';
   templateUrl: './json-to-form.component.html',
   styleUrls: ['./json-to-form.component.css'],
   standalone: true,
-  imports: [
-    JsonToFormListComponent,
-    AsyncPipe
-  ]
+  imports: [JsonToFormListComponent, AsyncPipe],
 })
 export class JsonToFormComponent implements OnInit {
   private router = inject(Router);
   private jsonToFormService = inject(JsonToFormService);
   public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
 
-  constructor(
+  constructor() {}
 
-  ) { }
-
-  ngOnInit(): void {
-  }
+  ngOnInit(): void {}
 
   onCreate(): void {
     this.router.navigate(['json-to-form', 'create']);

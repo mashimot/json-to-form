@@ -6,20 +6,20 @@ import { JsonToFormComponent } from './containers/json-to-form/json-to-form.comp
 const routes: Routes = [
   {
     path: '',
-    component: JsonToFormComponent
+    component: JsonToFormComponent,
   },
   {
     path: 'create',
-    component: JsonToFormGenerateComponent
+    component: JsonToFormGenerateComponent,
   },
   {
     path: ':id/edit',
-    component: JsonToFormGenerateComponent
-  }
+    component: JsonToFormGenerateComponent,
+  },
 ];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  exports: [RouterModule],
 })
-export class JsonToFormRoutingModule { }
+export class JsonToFormRoutingModule {}
