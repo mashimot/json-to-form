@@ -6,11 +6,10 @@ import { JsonToFormListComponent } from '../../components/json-to-form-list/json
 import { AsyncPipe } from '@angular/common';
 
 @Component({
-  selector: 'app-json-to-form',
-  templateUrl: './json-to-form.component.html',
-  styleUrls: ['./json-to-form.component.css'],
-  standalone: true,
-  imports: [JsonToFormListComponent, AsyncPipe],
+    selector: 'app-json-to-form',
+    templateUrl: './json-to-form.component.html',
+    styleUrls: ['./json-to-form.component.css'],
+    imports: [JsonToFormListComponent, AsyncPipe]
 })
 export class JsonToFormComponent implements OnInit {
   private router = inject(Router);

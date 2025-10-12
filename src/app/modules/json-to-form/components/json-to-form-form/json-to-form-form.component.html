@@ -22,9 +22,9 @@
                             formControlName="json"
                         ></json-editor>
                         <div *ngIf="isFieldInvalid('json')" class="invalid-feedback d-block">
-                            <ng-container *ngFor="let error of getField('json')?.errors?.messages">
+                            @for(error of getField('json')?.errors?.messages; track $index) {
                                 <div class="my-0" style="white-space: pre;">{{ error }}</div>
-                            </ng-container>
+                            }
                         </div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                     <div class="shadow p-2 bg-body border border-light">
                         <div class="form-group">
                             <label class="form-label fw-bold">Control Flow Syntax</label>
-                            <div *ngFor="let option of formControlType; let indexBudget = index;">
+                            @for(option of formControlType; track $index) {
                                 <label>
                                     <input 
                                         type="radio" 
@@ -43,7 +43,7 @@
                                     >
                                     {{ option.description }}
                                 </label>
-                            </div>
+                            }
                         </div>
                         <!-- <div class="form-group">
                             <label for="input-main-folder-name">Main folder name</label>
@@ -80,37 +80,23 @@
                         <ng-container formGroupName="options">
                             <div class="form-group mt-3">
                                 <label class="form-label fw-bold">Select form build mode</label>
-                            
-                                <div *ngFor="let mode of formBuildModes" class="mb-4">
-                                    <label>
-                                        <input type="radio" formControlName="formBuildMode" [value]="mode.id" />
-                                        {{ mode.label }}
-                                    </label>
-                                    <p>
-                                        <small class="text-muted">{{ mode.description }}</small>
-                                    </p>
+                                @for(mode of formBuildModes; track $index) {
+                                    <div class="mb-4">
+                                        <label>
+                                            <input type="radio" formControlName="formBuildMode" [value]="mode.id" />
+                                            {{ mode.label }}
+                                        </label>
+                                        <p>
+                                            <small class="text-muted">{{ mode.description }}</small>
+                                        </p>
 
-                                    <!-- <div class="text-sm text-gray-600 ml-4">{{ mode.description }}</div> -->
-                                    <!-- <div class="text-xs text-gray-400 ml-4"><code>{{ mode.example }}</code></div> -->
-                                </div>
+                                        <!-- <div class="text-sm text-gray-600 ml-4">{{ mode.description }}</div> -->
+                                        <!-- <div class="text-xs text-gray-400 ml-4"><code>{{ mode.example }}</code></div> -->
+                                    </div>
+                                }
                             </div>
                         </ng-container>
                     </div>
-    <!-- 
-                    <ng-container *ngIf="f.valid">
-                        <div class="shadow p-3 mt-3 bg-body border border-light">
-                            <h3>Smart and Dumb Components</h3>
-                            <ng-container *ngFor="let sB of smartAndDumb; let indexSmartDumb = index;">
-                                <p class="my-0">
-                                    {{ 
-                                        sB | 
-                                        replace : ':path:' : path.value | 
-                                        replace : ':featureName:' : featureName.value  
-                                    }}
-                                </p>                    
-                            </ng-container>
-                        </div>
-                    </ng-container> -->
                 </div>
             </div>
         </form>

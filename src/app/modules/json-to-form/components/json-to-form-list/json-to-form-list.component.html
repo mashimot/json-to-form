@@ -2,18 +2,16 @@
     Create
 </a>
 <div class="row">
-    <ng-container
-        *ngFor="let formExample of formExamples; let formExampleIndex = index;"
-    >
+    @for(formExample of formExamples; track $index) {
         <div
             class="col-sm-6 col-lg-4 col-12 pb-4"
         >
             <div
                 class="card card-dark"
-                (click)="editJsonToForm(formExampleIndex)"
-                [ngClass]="hoverEffect[formExampleIndex]"
-                (mouseover)="hoverEffect[formExampleIndex] = 'animate__animated animate__headShake'" 
-                (mouseout)="hoverEffect[formExampleIndex] = ''"
+                (click)="editJsonToForm($index)"
+                [ngClass]="hoverEffect[$index]"
+                (mouseover)="hoverEffect[$index] = 'animate__animated animate__headShake'" 
+                (mouseout)="hoverEffect[$index] = ''"
                 [style]="{ 'cursor': 'pointer' }"
             >
                 <div class="card-header">
@@ -24,5 +22,5 @@
                 </div>
             </div>
         </div>
-    </ng-container>
+    }
 </div>

@@ -5,7 +5,7 @@ import {
   transition,
   trigger,
 } from '@angular/animations';
-import { CommonModule, JsonPipe, NgClass } from '@angular/common';
+import { CommonModule, NgClass } from '@angular/common';
 import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
 import {
   AbstractControl,
@@ -32,37 +32,29 @@ import {
   tap,
 } from 'rxjs/operators';
 import { InputTypeEnum } from '../../enums/input-type.enum';
-import { ReplacePipe } from '../../pipes/replace.pipe';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
 import { JsonValidators } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
 
-interface GlobalSchemas {
-  [key: string]: Set<string>;
-}
-
 @Component({
-  selector: 'app-json-to-form-form',
-  templateUrl: './json-to-form-form.component.html',
-  styleUrls: ['./json-to-form-form.component.scss'],
-  standalone: true,
-  imports: [
-    CommonModule,
-    NgJsonEditorModule,
-    ReactiveFormsModule,
-    NgClass,
-    ReplacePipe,
-    JsonPipe,
-  ],
-  animations: [
-    trigger('fade', [
-      state('false', style({ opacity: 1 })),
-      state('true', style({ opacity: 0 })),
-      transition('* <=> *', [animate(500)]),
-    ]),
-  ],
+    selector: 'app-json-to-form-form',
+    templateUrl: './json-to-form-form.component.html',
+    styleUrls: ['./json-to-form-form.component.scss'],
+    imports: [
+        CommonModule,
+        NgJsonEditorModule,
+        ReactiveFormsModule,
+        NgClass,
+    ],
+    animations: [
+        trigger('fade', [
+            state('false', style({ opacity: 1 })),
+            state('true', style({ opacity: 0 })),
+            transition('* <=> *', [animate(500)]),
+        ]),
+    ]
 })
 export class JsonToFormFormComponent implements OnInit {
   @Input() json: any;
