@@ -4,10 +4,11 @@
       <span class="navbar-toggler-icon"></span>
     </button>
 
-    <div class="collapse navbar-collapse" [ngClass]="{ 'show': navbarOpen }">
+    <div class="collapse navbar-collapse" [ngClass]="{ show: navbarOpen }">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link active" [routerLink]="['/json-to-form']">Home
+          <a class="nav-link active" [routerLink]="['/json-to-form']"
+            >Home
             <span class="visually-hidden">(current)</span>
           </a>
         </li>
@@ -29,16 +30,12 @@
 <main class="container-fluid pt-3">
   <div class="mb-4 d-flex justify-content-between align-items-center">
     <div>
-        <h1 class="h3 fw-bold text-dark">
-            <i class="fas fa-code-branch me-2"></i>
-            JSON to Angular Forms
-        </h1>
+      <h1 class="h3 fw-bold text-dark">
+        <i class="fas fa-code-branch me-2"></i>
+        JSON to Angular Forms
+      </h1>
     </div>
   </div>
 
   <router-outlet></router-outlet>
 </main>
-
-
-
-

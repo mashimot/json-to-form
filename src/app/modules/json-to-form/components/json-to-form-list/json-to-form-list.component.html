@@ -1,26 +1,22 @@
-<a class="btn btn-primary mb-3" (click)="createJsonToForm()">
-    Create
-</a>
+<a class="btn btn-primary mb-3" (click)="createJsonToForm()"> Create </a>
 <div class="row">
-    @for(formExample of formExamples; track $index) {
-        <div
-            class="col-sm-6 col-lg-4 col-12 pb-4"
-        >
-            <div
-                class="card card-dark"
-                (click)="editJsonToForm($index)"
-                [ngClass]="hoverEffect[$index]"
-                (mouseover)="hoverEffect[$index] = 'animate__animated animate__headShake'" 
-                (mouseout)="hoverEffect[$index] = ''"
-                [style]="{ 'cursor': 'pointer' }"
-            >
-                <div class="card-header">
-                    <h4>{{ formExample.name }}</h4>
-                </div>
-                <div class="card-body">
-                    <pre><small>{{ formExample.data | json }}</small></pre>
-                </div>
-            </div>
+  @for (formExample of formExamples; track $index) {
+    <div class="col-sm-6 col-lg-4 col-12 pb-4">
+      <div
+        class="card card-dark"
+        (click)="editJsonToForm($index)"
+        [ngClass]="hoverEffect[$index]"
+        (mouseover)="hoverEffect[$index] = 'animate__animated animate__headShake'"
+        (mouseout)="hoverEffect[$index] = ''"
+        [style]="{ cursor: 'pointer' }"
+      >
+        <div class="card-header">
+          <h4>{{ formExample.name }}</h4>
         </div>
-    }
+        <div class="card-body">
+          <pre><small>{{ formExample.data | json }}</small></pre>
+        </div>
+      </div>
+    </div>
+  }
 </div>

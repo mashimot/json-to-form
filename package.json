@@ -9,6 +9,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "lint:fix": "ng lint --fix",
+    "prettier:fix": "npx prettier --write \"src/**/*.html\"",
     "heroku-prebuild": "npm i -f",
     "heroku-postbuild": "npm run build --production"
   },
