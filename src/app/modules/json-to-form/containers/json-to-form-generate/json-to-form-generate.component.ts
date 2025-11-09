@@ -7,10 +7,10 @@ import { JsonToFormFormComponent } from '../../components/json-to-form-form/json
 import { JsonToFormService } from '../../services/json-to-form.service';
 
 @Component({
-    selector: 'app-json-to-form-generate',
-    templateUrl: './json-to-form-generate.component.html',
-    styleUrls: ['./json-to-form-generate.component.scss'],
-    imports: [JsonToFormFormComponent, AsyncPipe]
+  selector: 'app-json-to-form-generate',
+  templateUrl: './json-to-form-generate.component.html',
+  styleUrls: ['./json-to-form-generate.component.scss'],
+  imports: [JsonToFormFormComponent, AsyncPipe],
 })
 export class JsonToFormGenerateComponent implements OnInit {
   private jsonToFormService = inject(JsonToFormService);

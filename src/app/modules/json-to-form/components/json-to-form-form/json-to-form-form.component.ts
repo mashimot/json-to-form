@@ -39,22 +39,17 @@ import { JsonValidators } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
 
 @Component({
-    selector: 'app-json-to-form-form',
-    templateUrl: './json-to-form-form.component.html',
-    styleUrls: ['./json-to-form-form.component.scss'],
-    imports: [
-        CommonModule,
-        NgJsonEditorModule,
-        ReactiveFormsModule,
-        NgClass,
-    ],
-    animations: [
-        trigger('fade', [
-            state('false', style({ opacity: 1 })),
-            state('true', style({ opacity: 0 })),
-            transition('* <=> *', [animate(500)]),
-        ]),
-    ]
+  selector: 'app-json-to-form-form',
+  templateUrl: './json-to-form-form.component.html',
+  styleUrls: ['./json-to-form-form.component.scss'],
+  imports: [CommonModule, NgJsonEditorModule, ReactiveFormsModule, NgClass],
+  animations: [
+    trigger('fade', [
+      state('false', style({ opacity: 1 })),
+      state('true', style({ opacity: 0 })),
+      transition('* <=> *', [animate(500)]),
+    ]),
+  ],
 })
 export class JsonToFormFormComponent implements OnInit {
   @Input() json: any;

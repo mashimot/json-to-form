@@ -2,10 +2,10 @@ import { JsonPipe, NgClass } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 
 @Component({
-    selector: 'app-json-to-form-list',
-    templateUrl: './json-to-form-list.component.html',
-    styleUrls: ['./json-to-form-list.component.css'],
-    imports: [JsonPipe, NgClass]
+  selector: 'app-json-to-form-list',
+  templateUrl: './json-to-form-list.component.html',
+  styleUrls: ['./json-to-form-list.component.css'],
+  imports: [JsonPipe, NgClass],
 })
 export class JsonToFormListComponent implements OnInit {
   @Input() formExamples!: any;
