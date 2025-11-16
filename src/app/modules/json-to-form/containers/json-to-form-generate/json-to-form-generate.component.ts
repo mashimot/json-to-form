@@ -18,9 +18,13 @@ export class JsonToFormGenerateComponent implements OnInit {
 
   public formExample$!: Observable<any>;
 
-  constructor() {}
+  constructor() { }
 
   ngOnInit(): void {
+    this.getFormExamples();
+  }
+
+  public getFormExamples() {
     this.formExample$ = this.route.paramMap.pipe(
       map((paramMap) => paramMap.get('id')),
       filter((id) => id != null),

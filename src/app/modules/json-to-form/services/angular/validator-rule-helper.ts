@@ -138,11 +138,22 @@ export class ValidatorRuleHelper {
   }
 
   public static normalizeValue(value: any): any {
-    if (['array', 'object', 'string'].includes(this.getValueType(value))) {
+    if (['array'].includes(this.getValueType(value))) {
+      return this.convertArray(value);
+    }
+    
+    if (['object', 'string'].includes(this.getValueType(value))) {
       return value;
     }
 
     return '';
+  }
+
+  public static convertArray(value: any[]): any[] {
+    if (value.length === 0) return value;
+  
+    const merged = Object.assign({}, ...value);
+    return [merged];
   }
 
   public static createRemainingKeys(
