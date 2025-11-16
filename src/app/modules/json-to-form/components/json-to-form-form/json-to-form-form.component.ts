@@ -1,10 +1,4 @@
-import {
-  animate,
-  state,
-  style,
-  transition,
-  trigger,
-} from '@angular/animations';
+import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule, NgClass } from '@angular/common';
 import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
 import {
@@ -16,11 +10,7 @@ import {
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
-import {
-  JsonEditorComponent,
-  JsonEditorOptions,
-  NgJsonEditorModule,
-} from 'ang-jsoneditor';
+import { JsonEditorComponent, JsonEditorOptions, NgJsonEditorModule } from 'ang-jsoneditor';
 import { html_beautify, js_beautify } from 'js-beautify';
 import { Observable, of } from 'rxjs';
 import {
@@ -142,10 +132,7 @@ export class JsonToFormFormComponent implements OnInit {
         if (this.form.valid) {
           json = typeof json === 'string' ? JSON.parse(json) : json;
 
-          const reactiveDrivenHtml = new ReactiveDrivenHtml(
-            json,
-            this.options?.value,
-          );
+          const reactiveDrivenHtml = new ReactiveDrivenHtml(json, this.options?.value);
           const reactiveDrivenValidator = new ReactiveDrivenValidator(
             json,
             this.featureNamePlusForm,
@@ -155,8 +142,6 @@ export class JsonToFormFormComponent implements OnInit {
           const html = reactiveDrivenHtml.generate();
 
           return of({
-            // component: '',
-            // html: '',
             component: js_beautify(component.join('\n')),
             html: html_beautify(html.join('\n')),
           });
@@ -245,16 +230,13 @@ export class JsonToFormFormComponent implements OnInit {
     {
       id: 'ANGULAR_FORM_BUILDER',
       label: 'FormBuilder API',
-      description:
-        'Uses Angular’s formBuilder service to create reactive controls.',
-      example:
-        'this.formBuilder.group({}), this.formBuilder.array([]), this.formBuilder.control()',
+      description: 'Uses Angular’s formBuilder service to create reactive controls.',
+      example: 'this.formBuilder.group({}), this.formBuilder.array([]), this.formBuilder.control()',
     },
     {
       id: 'ANGULAR_RAW_INSTANCE',
       label: 'Instance-based API',
-      description:
-        'Creates controls directly using new FormGroup, FormArray, and FormControl.',
+      description: 'Creates controls directly using new FormGroup, FormArray, and FormControl.',
       example: 'new FormGroup({}), new FormArray([]), new FormControl()',
     },
   ];

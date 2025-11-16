@@ -8,7 +8,6 @@ export const routes: Routes = [
   },
   {
     path: 'json-to-form',
-    loadChildren: () =>
-      import('./modules/json-to-form/routes').then((r) => r.routes),
+    loadChildren: () => import('./modules/json-to-form/routes').then((r) => r.routes),
   },
 ];

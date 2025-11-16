@@ -148,22 +148,15 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
 class FormValidatorGenerator {
   generate(rules: string[], getField: string): string[] {
     return rules.reduce((validators: string[], rule: string) => {
-      const [ruleName, ruleParameters] =
-        ValidatorRuleHelper.parseStringRule(rule);
+      const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
-      validators.push(
-        this.getErrorsMessages(getField, ruleName, ruleParameters),
-      );
+      validators.push(this.getErrorsMessages(getField, ruleName, ruleParameters));
 
       return validators;
     }, []);
   }
 
-  private getErrorsMessages(
-    getField: string,
-    ruleName: string,
-    ruleParameters: string[],
-  ): string {
+  private getErrorsMessages(getField: string, ruleName: string, ruleParameters: string[]): string {
     const fieldId = `${FormEnum.FIELD_ID}`;
     const errorMessages: { [key: string]: string } = {
       required: `<div *ngIf="${getField}?.hasError('required')">{{ ${fieldId} }} is required</div>`,
@@ -212,9 +205,7 @@ export class FormUtils {
       `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
       `&times; Delete`,
       `</button>`,
-      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT
-        ? `</div>`
-        : ``,
+      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT ? `</div>` : ``,
     ];
   }
 
@@ -371,9 +362,7 @@ export class FormInputGenerator {
   }
 
   private typeExists(type: InputTypeEnum): InputTypeEnum {
-    return (
-      Object.values(InputTypeEnum).find((r) => r === type) || InputTypeEnum.TEXT
-    );
+    return Object.values(InputTypeEnum).find((r) => r === type) || InputTypeEnum.TEXT;
   }
 
   private getDependenciesForFramework(): {
@@ -391,10 +380,7 @@ export class FormInputGenerator {
               validationHtml,
               this.currentFormStructure.previousValueType === 'array'
                 ? new FormUtils()
-                    .generateDeleteButton(
-                      this.previousFormStructure,
-                      this.currentFormStructure,
-                    )
+                    .generateDeleteButton(this.previousFormStructure, this.currentFormStructure)
                     .join('\n')
                 : '',
             ),
@@ -403,11 +389,7 @@ export class FormInputGenerator {
         return {
           builder: new PlainInputTemplateBuilder(this.currentFormStructure),
           wrapper: (inputHtml, validationHtml) =>
-            new PlainFormWrapperBuilder(
-              this.currentFormStructure,
-              inputHtml,
-              validationHtml,
-            ),
+            new PlainFormWrapperBuilder(this.currentFormStructure, inputHtml, validationHtml),
         };
     }
   }
@@ -436,9 +418,7 @@ export class ReactiveDrivenHtml {
     this.formName = formName;
   }
 
-  public setTriggerValidationOnSubmit(
-    triggerValidationOnSubmit: boolean,
-  ): void {
+  public setTriggerValidationOnSubmit(triggerValidationOnSubmit: boolean): void {
     this.triggerValidationOnSubmit = triggerValidationOnSubmit;
   }
 
@@ -468,11 +448,9 @@ export class ReactiveDrivenHtml {
           namesArr,
           previousValueType,
         });
-        const { value, currentValueType, fullKeyPath, currentFormStructure } =
-          context;
+        const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
 
-        const previousFormStructure =
-          formStructureStack[formStructureStack.length - 1];
+        const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
           previous: previousFormStructure,
@@ -486,17 +464,11 @@ export class ReactiveDrivenHtml {
             : [[], []];
 
         const addButton = this.options.showAddButton
-          ? formUtils.generateAddButton(
-              formContext.previous,
-              formContext.current,
-            )
+          ? formUtils.generateAddButton(formContext.previous, formContext.current)
           : [];
 
         const deleteButton = this.options.showDeleteButton
-          ? formUtils.generateDeleteButton(
-              formContext.previous,
-              formContext.current,
-            )
+          ? formUtils.generateDeleteButton(formContext.previous, formContext.current)
           : [];
 
         const buildWrapperTags = (): string[][] => {
@@ -524,10 +496,7 @@ export class ReactiveDrivenHtml {
                 ? 'class="p-1 mb-2"'
                 : '';
 
-            return [
-              [`<div [formGroupName]="${formIndex}" ${customClass}>`],
-              [`</div>`],
-            ];
+            return [[`<div [formGroupName]="${formIndex}" ${customClass}>`], [`</div>`]];
           }
 
           return [];
@@ -590,12 +559,7 @@ export class ReactiveDrivenHtml {
           ).generate();
 
           return previousValueType === VALUE_TYPES.ARRAY
-            ? wrapLines([
-                ...addButton,
-                ...openLoopTag,
-                stringInput,
-                ...closeLoopTag,
-              ])
+            ? wrapLines([...addButton, ...openLoopTag, stringInput, ...closeLoopTag])
             : stringInput;
         }
 

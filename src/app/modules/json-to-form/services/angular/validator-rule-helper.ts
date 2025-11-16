@@ -37,11 +37,7 @@ export class ValidatorRuleHelper {
     return true;
   }
 
-  public static validateObject(
-    obj: any,
-    names: string = '',
-    errors: string[] = [],
-  ): string[] {
+  public static validateObject(obj: any, names: string = '', errors: string[] = []): string[] {
     return Object.keys(obj).map((k: any) => {
       const v = obj[k];
       const rest = names.length > 0 ? '.' + k : k;
@@ -97,10 +93,7 @@ export class ValidatorRuleHelper {
     return str.charAt(0).toLowerCase() + str.slice(1);
   }
 
-  public static camelCasedString(
-    string: string,
-    isFirstLetterLowerCase: boolean = false,
-  ): string {
+  public static camelCasedString(string: string, isFirstLetterLowerCase: boolean = false): string {
     if (!string) {
       return '';
     }
@@ -127,10 +120,7 @@ export class ValidatorRuleHelper {
     const rawType = Object.prototype.toString.call(value);
     const typeofValue = typeof value;
 
-    if (
-      typeofValue === VALUE_TYPES.OBJECT ||
-      typeofValue === VALUE_TYPES.FUNCTION
-    ) {
+    if (typeofValue === VALUE_TYPES.OBJECT || typeofValue === VALUE_TYPES.FUNCTION) {
       return typeMap[rawType] ?? (typeofValue as ValueType);
     }
 
@@ -141,7 +131,7 @@ export class ValidatorRuleHelper {
     if (['array'].includes(this.getValueType(value))) {
       return this.convertArray(value);
     }
-    
+
     if (['object', 'string'].includes(this.getValueType(value))) {
       return value;
     }
@@ -151,7 +141,7 @@ export class ValidatorRuleHelper {
 
   public static convertArray(value: any[]): any[] {
     if (value.length === 0) return value;
-  
+
     const merged = Object.assign({}, ...value);
     return [merged];
   }

@@ -18,7 +18,7 @@ export class JsonToFormGenerateComponent implements OnInit {
 
   public formExample$!: Observable<any>;
 
-  constructor() { }
+  constructor() {}
 
   ngOnInit(): void {
     this.getFormExamples();

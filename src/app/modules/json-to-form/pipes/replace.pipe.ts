@@ -5,11 +5,7 @@ import { Pipe, PipeTransform } from '@angular/core';
   standalone: true,
 })
 export class ReplacePipe implements PipeTransform {
-  transform(
-    value: string,
-    strToReplace: string,
-    replacementStr: string,
-  ): string {
+  transform(value: string, strToReplace: string, replacementStr: string): string {
     if (!value || !strToReplace || !replacementStr) {
       return '';
     }

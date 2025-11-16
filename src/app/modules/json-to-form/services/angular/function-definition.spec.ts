@@ -4,20 +4,12 @@ import { VALUE_TYPES } from './models/value.type';
 
 describe('FormBuilder', () => {
   it('should create an instance', () => {
-    const builder = new FormBuilder(
-      ['user', 'name'],
-      VALUE_TYPES.OBJECT,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
     expect(builder).toBeTruthy();
   });
 
   it('should generate formStructure for basic path without array', () => {
-    const builder = new FormBuilder(
-      ['user', 'name'],
-      VALUE_TYPES.OBJECT,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
     const result = builder.formStructure();
 
     expect(result.methodName).toBe('userName');
@@ -58,13 +50,7 @@ describe('FormBuilder', () => {
     expect(result.methodName).toBe('companiesAtDepartmentsAtName');
     expect(result.paramCounter).toBe(2);
     expect(result.params).toEqual(['index0', 'index1']);
-    expect(result.path).toEqual([
-      `'companies'`,
-      'index0',
-      `'departments'`,
-      'index1',
-      `'name'`,
-    ]);
+    expect(result.path).toEqual([`'companies'`, 'index0', `'departments'`, 'index1', `'name'`]);
     expect(result.reactiveFormType).toBe('FormControl');
   });
 

@@ -94,11 +94,7 @@ export class CodeTemplateGenerator {
     reactiveFormType: string,
     content: string[] = [],
   ): string[] {
-    return [
-      `${name}(): ${reactiveFormType} {`,
-      `  return ${content.join('\n')};`,
-      `}`,
-    ];
+    return [`${name}(): ${reactiveFormType} {`, `  return ${content.join('\n')};`, `}`];
   }
 }
 
@@ -114,20 +110,15 @@ export class FormBuilder {
     return this.fullKeyPath.includes(__ARRAY__);
   }
 
-  private generateMethodFromKeypath(
-    stack: (string | null)[],
-  ): MethodFromKeypath {
-    const { methodName, params, path, reactiveFormType } =
-      this.getAccessors(stack);
+  private generateMethodFromKeypath(stack: (string | null)[]): MethodFromKeypath {
+    const { methodName, params, path, reactiveFormType } = this.getAccessors(stack);
     const result: MethodFromKeypath = {} as MethodFromKeypath;
 
     // GETTER
     const capitalized = this.capitalize(methodName);
     const uncapitalized = this.uncapitalize(methodName);
 
-    const getterName = this.hasReservedWord
-      ? `get${capitalized}`
-      : `get ${uncapitalized}`;
+    const getterName = this.hasReservedWord ? `get${capitalized}` : `get ${uncapitalized}`;
 
     const callName = this.hasReservedWord ? getterName : uncapitalized;
 
@@ -225,10 +216,7 @@ export class FormBuilder {
   }
 
   private getAttributeName(suffix: number = 1): string {
-    const baseName = ValidatorRuleHelper.camelCasedString(
-      this.fullKeyPath.join('.'),
-      true,
-    );
+    const baseName = ValidatorRuleHelper.camelCasedString(this.fullKeyPath.join('.'), true);
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
@@ -262,16 +250,8 @@ export class FormBuilder {
     return map[this.currentValueType!] ?? '';
   }
 
-  private create(
-    name: string,
-    reactiveFormType: string,
-    content: string[] | undefined,
-  ): string[] {
-    return [
-      `${name}(): ${reactiveFormType} {`,
-      `return ${(content || []).join('\n')};`,
-      `}`,
-    ];
+  private create(name: string, reactiveFormType: string, content: string[] | undefined): string[] {
+    return [`${name}(): ${reactiveFormType} {`, `return ${(content || []).join('\n')};`, `}`];
   }
 
   private functionCall(name: string, params: string[]): string {

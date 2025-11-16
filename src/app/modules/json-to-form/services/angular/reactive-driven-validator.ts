@@ -184,12 +184,7 @@ export class ReactiveDrivenValidator {
   }
 
   private getNgOnInit(formGroup: string[]): string[] {
-    return [
-      `ngOnInit(): void {`,
-      `${wrapLines(formGroup)}`,
-      `this.populate()`,
-      `}`,
-    ];
+    return [`ngOnInit(): void {`, `${wrapLines(formGroup)}`, `this.populate()`, `}`];
   }
 
   private observableAttributes(): string[] {
@@ -201,9 +196,7 @@ export class ReactiveDrivenValidator {
       `get f(): FormGroup {
                 return this.form as FormGroup;
             }`,
-      ...this.formFields.map(
-        (field: FormStructure) => field?.getter.withReturn ?? '',
-      ),
+      ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? ''),
     ]);
   }
 
@@ -272,23 +265,15 @@ export class ReactiveDrivenValidator {
     return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode][type];
   }
 
-  private forEachWrapper(
-    previous: FormStructure,
-    current: FormStructure,
-  ): [string[], string[]] {
+  private forEachWrapper(previous: FormStructure, current: FormStructure): [string[], string[]] {
     if (current.previousValueType !== VALUE_TYPES.ARRAY) {
       return [[], []];
     }
 
     const buildKeyPath = (previous: FormStructure): string => {
-      const cleanedPath = (previous.path || []).map((p) =>
-        p.replace(/^'|'$/g, ''),
-      );
+      const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
       const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
-      const rootKey =
-        lastArrayIndex === -1
-          ? 'this.data'
-          : `item${previous.paramCounter - 1}`;
+      const rootKey = lastArrayIndex === -1 ? 'this.data' : `item${previous.paramCounter - 1}`;
       const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
 
       return [rootKey, ...suffixPath].join('.');
@@ -324,11 +309,9 @@ export class ReactiveDrivenValidator {
           previousValueType,
         });
 
-        const { value, currentValueType, fullKeyPath, currentFormStructure } =
-          context;
+        const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
 
-        const previousFormStructure =
-          formStructureStack[formStructureStack.length - 1];
+        const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
           previous: previousFormStructure,
@@ -347,18 +330,9 @@ export class ReactiveDrivenValidator {
           const innerForEachBlock =
             currentValueType === VALUE_TYPES.STRING
               ? ''
-              : this.buildPopulate(
-                  value,
-                  fullKeyPath,
-                  currentValueType,
-                  nextStack,
-                );
+              : this.buildPopulate(value, fullKeyPath, currentValueType, nextStack);
 
-          return wrapLines(
-            [...openForEach, innerForEachBlock, ...closeForEach].filter(
-              Boolean,
-            ),
-          );
+          return wrapLines([...openForEach, innerForEachBlock, ...closeForEach].filter(Boolean));
         }
 
         return '';
@@ -418,10 +392,7 @@ export class ReactiveDrivenValidator {
           ]);
         }
 
-        if (
-          previousValueType === VALUE_TYPES.ARRAY &&
-          currentValueType === VALUE_TYPES.OBJECT
-        ) {
+        if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
           return `this.${formStructure.creator.call}`;
         }
 
@@ -460,11 +431,7 @@ export class ReactiveDrivenValidator {
     const { OPEN, CLOSE } = this.getFormWrapper(currentType);
 
     if (currentType === VALUE_TYPES.ARRAY) {
-      const content = this.reactiveDrivenValidators(
-        value,
-        fullKeyPath,
-        VALUE_TYPES.ARRAY,
-      );
+      const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.ARRAY);
 
       return [OPEN, content, CLOSE];
     }
@@ -485,11 +452,7 @@ export class ReactiveDrivenValidator {
     }
 
     if (currentType === VALUE_TYPES.OBJECT) {
-      const content = this.reactiveDrivenValidators(
-        value,
-        fullKeyPath,
-        VALUE_TYPES.OBJECT,
-      );
+      const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.OBJECT);
 
       return previousType === VALUE_TYPES.ARRAY
         ? [OPEN, content, CLOSE]
@@ -505,16 +468,14 @@ export class ReactiveDrivenValidator {
 
   private generateValues(rules: any): any[] {
     for (const rule of rules) {
-      const [ruleName, ruleParameters] =
-        ValidatorRuleHelper.parseStringRule(rule);
+      const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
       if (ruleName === 'in') {
         return ruleParameters;
       }
 
       const requiresOptionChoices =
-        ruleName === 'html' &&
-        ['select', 'radio', 'checkbox'].includes(ruleParameters?.[0]);
+        ruleName === 'html' && ['select', 'radio', 'checkbox'].includes(ruleParameters?.[0]);
 
       if (requiresOptionChoices) {
         return [

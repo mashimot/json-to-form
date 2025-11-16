@@ -28,8 +28,7 @@ export class ValidatorFormContextHelper {
       currentValueType,
     );
     const fullKeyPath = [...namesArr, ...remainingKeys];
-    const value =
-      currentValueType === 'array' ? [rawValue[rawValue.length - 1]] : rawValue;
+    const value = currentValueType === 'array' ? [rawValue[rawValue.length - 1]] : rawValue;
     const currentFormStructure = new FormBuilder(
       fullKeyPath,
       previousValueType,
