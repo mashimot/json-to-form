@@ -135,12 +135,15 @@ export class ValidatorRuleHelper {
     if (['object', 'string'].includes(this.getValueType(value))) {
       return value;
     }
-
     return '';
   }
 
   public static convertArray(value: any[]): any[] {
-    if (value.length === 0) return value;
+    if (!Array.isArray(value) || value.length === 0) return value;
+
+    if (!value.every((item) => typeof item === VALUE_TYPES.OBJECT && item !== null)) {
+      return value;
+    }
 
     const merged = Object.assign({}, ...value);
     return [merged];
