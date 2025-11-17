@@ -1,11 +1,4 @@
-<div class="mt-3">
-  <!-- <div class="alert alert-dismissible alert-info">
-        <strong>
-            You need to import ReactiveFormsModule in order to create reactive forms
-        </strong>
-    </div> -->
-</div>
-<section class="card shadow-sm mb-4">
+<section class="card shadow-sm mt-3 mb-4">
   <div class="card-body">
     <h5 class="card-title"><i class="fas fa-edit mr-2"></i> Form Configuration</h5>
     <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -16,11 +9,13 @@
             [class]="isFieldInvalid('json') ? 'border-danger' : 'border-light'"
           >
             <json-editor [options]="editorOptions" formControlName="json"></json-editor>
-            <div *ngIf="isFieldInvalid('json')" class="invalid-feedback d-block">
-              @for (error of getField('json')?.errors?.messages; track $index) {
-                <div class="my-0" style="white-space: pre">{{ error }}</div>
-              }
-            </div>
+            @if (isFieldInvalid('json')) {
+              <div class="invalid-feedback d-block">
+                @for (error of getField('json')?.errors?.messages; track $index) {
+                  <div class="my-0" style="white-space: pre">{{ error }}</div>
+                }
+              </div>
+            }
           </div>
         </div>
         <div class="col-12 col-md-5 mt-3">
@@ -40,22 +35,6 @@
                 </label>
               }
             </div>
-            <!-- <div class="form-group">
-                            <label for="input-main-folder-name">Main folder name</label>
-                            <input 
-                                type="text" 
-                                class="form-control form-control-sm"  
-                                [ngClass]="{ 'is-invalid': path?.errors }"
-                                id="input-main-folder-name" 
-                                formControlName="path"
-                            >
-                            @if (path?.errors) {
-                                <div class="invalid-feedback">
-                                    Must start with a letter, and must contain only alphanumeric characters or dashes.
-                                    When adding a dash the segment after the dash must also start with a letter.
-                                </div>
-                            }
-                        </div> -->
             <div class="form-group mt-3">
               <label for="input-feature-name" class="form-label fw-bold">Feature name</label>
               <input
@@ -84,9 +63,6 @@
                     <p>
                       <small class="text-muted">{{ mode.description }}</small>
                     </p>
-
-                    <!-- <div class="text-sm text-gray-600 ml-4">{{ mode.description }}</div> -->
-                    <!-- <div class="text-xs text-gray-400 ml-4"><code>{{ mode.example }}</code></div> -->
                   </div>
                 }
               </div>
@@ -98,17 +74,17 @@
   </div>
 </section>
 
-<ng-container *ngIf="isLoadingAction$ | async">
+@if (isLoadingAction$ | async) {
   <div class="my-3">
     <div class="spinner-border text-primary" style="width: 5rem; height: 5rem" role="status">
       <span class="visually-hidden">LOADING...</span>
     </div>
   </div>
-</ng-container>
+}
 
-<ng-container *ngIf="formBuilder$ | async as formBuilder">
-  <ng-container *ngIf="!(isLoadingAction$ | async)">
-    <ng-container *ngIf="form.valid">
+@if (formBuilder$ | async; as formBuilder) {
+  @if (!(isLoadingAction$ | async)) {
+    @if (form.valid) {
       <div class="mt-3">
         <div class="row">
           <div class="col-12 col-md-6">
@@ -135,9 +111,9 @@
           </div>
         </div>
       </div>
-    </ng-container>
-  </ng-container>
-</ng-container>
+    }
+  }
+}
 
 <ng-template
   #formBuilderTemplate
