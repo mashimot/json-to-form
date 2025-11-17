@@ -96,3 +96,8 @@ div.jsoneditor-value.jsoneditor-null {
 div.jsoneditor-value.jsoneditor-invalid {
     color: white;
 }
+
+.error-line-highlight {
+  color:red;
+  background-color: rgba(255, 0, 0, 0.2); /* Cor de fundo vermelha e semi-transparente */
+}
