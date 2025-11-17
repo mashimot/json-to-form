@@ -1,16 +1,15 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
-import { CommonModule, NgClass } from '@angular/common';
-import { Component, inject, Input, OnInit, ViewChild } from '@angular/core';
+import { CommonModule, JsonPipe, NgClass } from '@angular/common';
+import { Component, inject, Input, OnInit } from '@angular/core';
 import {
-  AbstractControl,
+  FormsModule,
   ReactiveFormsModule,
-  UntypedFormArray,
   UntypedFormBuilder,
   UntypedFormControl,
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
-import { JsonEditorComponent, JsonEditorOptions, NgJsonEditorModule } from 'ang-jsoneditor';
+import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { html_beautify, js_beautify } from 'js-beautify';
 import { Observable, of } from 'rxjs';
 import {
@@ -22,6 +21,7 @@ import {
   tap,
 } from 'rxjs/operators';
 import { InputTypeEnum } from '../../enums/input-type.enum';
+import { VALUE_TYPES } from '../../services/angular/models/value.type';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
@@ -32,7 +32,7 @@ import { LoadingService } from './../../../../shared/services/loading.service';
   selector: 'app-json-to-form-form',
   templateUrl: './json-to-form-form.component.html',
   styleUrls: ['./json-to-form-form.component.scss'],
-  imports: [CommonModule, NgJsonEditorModule, ReactiveFormsModule, NgClass],
+  imports: [CommonModule, ReactiveFormsModule, NgClass, FormsModule, MonacoEditorModule, JsonPipe],
   animations: [
     trigger('fade', [
       state('false', style({ opacity: 1 })),
@@ -44,19 +44,29 @@ import { LoadingService } from './../../../../shared/services/loading.service';
 export class JsonToFormFormComponent implements OnInit {
   @Input() json: any;
 
-  @ViewChild(JsonEditorComponent, { static: false })
-  editor?: JsonEditorComponent;
+  private formBuilder: UntypedFormBuilder = inject(UntypedFormBuilder);
+  private loadingService: LoadingService = inject(LoadingService);
 
-  private formBuilder = inject(UntypedFormBuilder);
-  private loadingService = inject(LoadingService);
+  private baseOptions = {
+    theme: 'vs-dark',
+    automaticLayout: true,
+    tabSize: 2,
+  };
+  private editor: monaco.editor.IStandaloneCodeEditor | undefined;
+  private decorations: string[] = [];
 
+  public editorOptions = {
+    ts: { ...this.baseOptions, language: 'typescript' },
+    html: { ...this.baseOptions, language: 'html' },
+    json: { ...this.baseOptions, language: 'json' },
+  };
+  public editorModel: string[] = ['', ''];
   public iconToggle: string[] = ['fa-copy', 'fa-copy'];
   public form!: UntypedFormGroup;
   public childComponents: UntypedFormControl = new UntypedFormControl('', []);
   public inputTypesEnum = Object.values(InputTypeEnum);
-  public editorOptions: JsonEditorOptions;
   public formBuilder$!: Observable<any>;
-  public isLoadingAction$?: Observable<boolean>;
+  public isLoadingAction$?: Observable<boolean> = this.isLoading$();
   public smartAndDumb: string[] = [
     'ng g m :path: --routing',
     'ng g c :path:/components/:featureName:-form',
@@ -66,53 +76,92 @@ export class JsonToFormFormComponent implements OnInit {
     'ng g i :path:/models/:featureName:',
   ];
 
-  constructor() {
-    this.editorOptions = new JsonEditorOptions();
-    this.editorOptions.mode = 'code'; // set all allowed modes
-    this.editorOptions.modes = ['code']; // set all allowed modes
-    this.isLoadingAction$ = this.loadingService.isLoadingAction$;
-    this.editorOptions = {
-      ...this.editorOptions,
-    };
-  }
-
   ngOnInit(): void {
-    this.buildForm();
-    this.onChanges();
+    this.createForm();
+    this.onFormValueChanges();
   }
 
-  public buildForm(): void {
-    const input = this.json;
+  private isLoading$(): Observable<boolean> {
+    return this.loadingService.getLoading();
+  }
+
+  public createForm(): void {
+    const input = JSON.stringify(this.json, null, 2);
 
     this.form = this.formBuilder.group({
       json: [input, [JsonValidators.validateObject()]],
       structure: [1, [Validators.required]],
-      // path: this.formBuilder.control(
-      //     'modules/tasks',
-      //     [
-      //         Validators.required,
-      //         Validators.pattern(ValidatorRuleHelper.htmlSelectorRe)
-      //     ]
-      // ),
       featureName: this.formBuilder.control('task', [
         Validators.required,
         Validators.pattern(ValidatorRuleHelper.htmlSelectorRe),
       ]),
       options: this.formBuilder.group({
         formBuildMode: [this.formBuildModes[1].id, [Validators.required]],
-        // convert_to: ['angular', [Validators.required]],
+        convert_to: ['angular', [Validators.required]],
         framework: ['bootstrap', []],
       }),
+      errors: this.formBuilder.control([]),
     });
-    this.form.markAllAsTouched();
+
+    this.f.markAllAsTouched();
   }
 
-  onChanges(): void {
-    this.formBuilder$ = this.form.valueChanges.pipe(
+  onEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
+    this.editor = editor;
+    const model = editor.getModel();
+
+    if (model) {
+      monaco.editor.onDidChangeMarkers((e) => {
+        if (e.some((uri) => uri.toString() === model.uri.toString())) {
+          this.updateErrorHighlights();
+        }
+      });
+
+      this.updateErrorHighlights();
+    }
+  }
+
+  private updateErrorHighlights(): void {
+    if (!this.editor) return;
+
+    const model = this.editor.getModel();
+    if (!model) return;
+
+    const markers = monaco.editor.getModelMarkers({ resource: model.uri });
+    const errorMarkers = markers.filter(
+      (marker) => marker.severity === monaco.MarkerSeverity.Error,
+    );
+
+    const newDecorations: monaco.editor.IModelDeltaDecoration[] = errorMarkers.map((marker) => {
+      return {
+        range: new monaco.Range(
+          marker.startLineNumber,
+          1,
+          marker.endLineNumber,
+          model.getLineMaxColumn(marker.endLineNumber),
+        ),
+        options: {
+          isWholeLine: true,
+          className: 'error-line-highlight',
+          linesDecorationsClassName: 'error-line-highlight',
+        },
+      };
+    });
+
+    this.decorations = this.editor.deltaDecorations(this.decorations, newDecorations);
+    this.setFormErrors(errorMarkers);
+  }
+
+  private setFormErrors(errorMarkers: monaco.editor.IMarker[]): void {
+    this.f.get('errors')?.setValue(errorMarkers);
+  }
+
+  private onFormValueChanges(): void {
+    this.formBuilder$ = this.f.valueChanges.pipe(
       tap((response) => this.loadingService.isLoading(true)),
-      startWith(this.form.value),
+      startWith(this.f.value),
       filter((value) => {
-        if (this.form.invalid) {
+        if (this.f.invalid) {
           this.loadingService.isLoading(false);
           return false;
         }
@@ -129,8 +178,9 @@ export class JsonToFormFormComponent implements OnInit {
         return false;
       }),
       switchMap(({ json, featureName }) => {
-        if (this.form.valid) {
-          json = typeof json === 'string' ? JSON.parse(json) : json;
+        const errors = this.f.get('errors')?.value || [];
+        if (this.f.valid && errors.length <= 0) {
+          json = typeof json === VALUE_TYPES.STRING ? JSON.parse(json) : json;
 
           const reactiveDrivenHtml = new ReactiveDrivenHtml(json, this.options?.value);
           const reactiveDrivenValidator = new ReactiveDrivenValidator(
@@ -142,12 +192,21 @@ export class JsonToFormFormComponent implements OnInit {
           const html = reactiveDrivenHtml.generate();
 
           return of({
-            component: js_beautify(component.join('\n')),
-            html: html_beautify(html.join('\n')),
+            component: js_beautify(component.join('\n'), {
+              indent_size: 2,
+              wrap_line_length: 80,
+            }),
+            html: html_beautify(html.join('\n'), {
+              indent_size: 2,
+            }),
           });
         }
 
         return of({});
+      }),
+      tap(({ component, html }: { component?: string; html?: string }) => {
+        this.editorModel[0] = component || '';
+        this.editorModel[1] = html || '';
       }),
       tap(() => this.loadingService.isLoading(false)),
     );
@@ -171,31 +230,6 @@ export class JsonToFormFormComponent implements OnInit {
     selBox.select();
     document.execCommand('copy');
     document.body.removeChild(selBox);
-  }
-
-  onSubmit(): void {
-    if (this.f.valid) {
-    } else {
-      this.validateAllFormFields(this.f);
-    }
-  }
-
-  validateAllFormFields(control: AbstractControl): void {
-    if (control instanceof UntypedFormControl) {
-      control.markAsTouched({
-        onlySelf: true,
-      });
-    } else if (control instanceof UntypedFormGroup) {
-      Object.keys(control.controls).forEach((field: string) => {
-        const groupControl = control.get(field)!;
-        this.validateAllFormFields(groupControl);
-      });
-    } else if (control instanceof UntypedFormArray) {
-      const controlAsFormArray = control as UntypedFormArray;
-      controlAsFormArray.controls.forEach((arrayControl: AbstractControl) =>
-        this.validateAllFormFields(arrayControl),
-      );
-    }
   }
 
   get f(): UntypedFormGroup {
