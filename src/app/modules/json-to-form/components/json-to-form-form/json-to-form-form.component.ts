@@ -51,13 +51,14 @@ export class JsonToFormFormComponent implements OnInit {
     theme: 'vs-dark',
     automaticLayout: true,
     tabSize: 2,
+    fontSize: 12, 
   };
   private editor: monaco.editor.IStandaloneCodeEditor | undefined;
   private decorations: string[] = [];
 
   public editorOptions = {
-    ts: { ...this.baseOptions, language: 'typescript' },
-    html: { ...this.baseOptions, language: 'html' },
+    ts: { ...this.baseOptions, language: 'typescript', readOnly: true },
+    html: { ...this.baseOptions, language: 'html', readOnly: true },
     json: { ...this.baseOptions, language: 'json' },
   };
   public editorModel: string[] = ['', ''];
