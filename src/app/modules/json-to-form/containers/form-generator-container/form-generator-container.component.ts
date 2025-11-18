@@ -71,14 +71,6 @@ export class FormGeneratorContainerComponent implements OnInit {
   public inputTypesEnum = Object.values(InputTypeEnum);
   public formBuilder$!: Observable<any>;
   public isLoadingAction$?: Observable<boolean> = this.isLoading$();
-  public smartAndDumb: string[] = [
-    'ng g m :path: --routing',
-    'ng g c :path:/components/:featureName:-form',
-    'ng g c :path:/components/:featureName:-list',
-    'ng g c :path:/containers/:featureName:',
-    'ng g s :path:/services/:featureName:',
-    'ng g i :path:/models/:featureName:',
-  ];
 
   ngOnInit(): void {
     this.getFormExample();
