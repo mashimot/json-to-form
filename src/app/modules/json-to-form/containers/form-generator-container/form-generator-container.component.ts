@@ -89,8 +89,9 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.route.paramMap
       .pipe(
         map((paramMap) => paramMap.get('id')),
-        filter((id) => id != null),
-        switchMap((id) => this.jsonToFormService.getExampleByNumber(Number(id))),
+        switchMap((id) => {
+          return id ? this.jsonToFormService.getExampleByNumber(Number(id)) : of({});
+        }),
       )
       .subscribe({
         next: (response) => {
