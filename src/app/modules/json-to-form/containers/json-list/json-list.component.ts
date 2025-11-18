@@ -1,30 +1,31 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { JsonToFormService } from '../../services/json-to-form.service';
 import { Observable } from 'rxjs';
-import { JsonToFormListComponent } from '../../components/json-to-form-list/json-to-form-list.component';
 import { AsyncPipe } from '@angular/common';
+import { JsonListItemComponent } from '../../components/json-list-item/json-list-item.component';
+import { JsonToFormService } from '../../services/json-to-form.service';
 
 @Component({
-  selector: 'app-json-to-form',
-  templateUrl: './json-to-form.component.html',
-  styleUrls: ['./json-to-form.component.css'],
-  imports: [JsonToFormListComponent, AsyncPipe],
+  selector: 'app-json-list',
+  templateUrl: './json-list.component.html',
+  styleUrls: ['./json-list.component.css'],
+  imports: [JsonListItemComponent, AsyncPipe],
 })
-export class JsonToFormComponent implements OnInit {
+export class JsonListComponent implements OnInit {
   private router = inject(Router);
   private jsonToFormService = inject(JsonToFormService);
+
   public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
 
   constructor() {}
 
   ngOnInit(): void {}
 
-  onCreate(): void {
+  onCreateChange(): void {
     this.router.navigate(['json-to-form', 'create']);
   }
 
-  onEdit(id: number): void {
+  onEditChange(id: number): void {
     this.router.navigate(['json-to-form', id, 'edit']);
   }
 }

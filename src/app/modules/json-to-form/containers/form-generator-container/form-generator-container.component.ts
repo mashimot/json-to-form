@@ -16,6 +16,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   filter,
+  map,
   startWith,
   switchMap,
   tap,
@@ -27,11 +28,13 @@ import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
 import { JsonValidators } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
+import { JsonToFormService } from '../../services/json-to-form.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
-  selector: 'app-json-to-form-form',
-  templateUrl: './json-to-form-form.component.html',
-  styleUrls: ['./json-to-form-form.component.scss'],
+  selector: 'app-form-generator-container',
+  templateUrl: './form-generator-container.component.html',
+  styleUrls: ['./form-generator-container.component.scss'],
   imports: [CommonModule, ReactiveFormsModule, NgClass, FormsModule, MonacoEditorModule, JsonPipe],
   animations: [
     trigger('fade', [
@@ -41,17 +44,17 @@ import { LoadingService } from './../../../../shared/services/loading.service';
     ]),
   ],
 })
-export class JsonToFormFormComponent implements OnInit {
-  @Input() json: any;
-
+export class FormGeneratorContainerComponent implements OnInit {
   private formBuilder: UntypedFormBuilder = inject(UntypedFormBuilder);
   private loadingService: LoadingService = inject(LoadingService);
+  private jsonToFormService = inject(JsonToFormService);
+  private route = inject(ActivatedRoute);
 
   private baseOptions = {
     theme: 'vs-dark',
     automaticLayout: true,
     tabSize: 2,
-    fontSize: 12, 
+    fontSize: 12,
   };
   private editor: monaco.editor.IStandaloneCodeEditor | undefined;
   private decorations: string[] = [];
@@ -78,8 +81,23 @@ export class JsonToFormFormComponent implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.createForm();
+    this.getFormExample();
     this.onFormValueChanges();
+  }
+
+  public getFormExample(): void {
+    this.route.paramMap
+      .pipe(
+        map((paramMap) => paramMap.get('id')),
+        filter((id) => id != null),
+        switchMap((id) => this.jsonToFormService.getExampleByNumber(Number(id))),
+      )
+      .subscribe({
+        next: (response) => {
+          this.createForm();
+          this.f.get('json')?.setValue(JSON.stringify(response, null, 2));
+        },
+      });
   }
 
   private isLoading$(): Observable<boolean> {
@@ -87,10 +105,8 @@ export class JsonToFormFormComponent implements OnInit {
   }
 
   public createForm(): void {
-    const input = JSON.stringify(this.json, null, 2);
-
     this.form = this.formBuilder.group({
-      json: [input, [JsonValidators.validateObject()]],
+      json: ['{}', [JsonValidators.validateObject()]],
       structure: [1, [Validators.required]],
       featureName: this.formBuilder.control('task', [
         Validators.required,

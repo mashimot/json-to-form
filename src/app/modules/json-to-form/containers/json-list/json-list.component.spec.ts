@@ -1,20 +1,20 @@
 // import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-// import { JsonToFormGenerateComponent } from './json-to-form-generate.component';
+// import { JsonListComponent } from './json-to-form.component';
 
-// describe('JsonToFormGenerateComponent', () => {
-//   let component: JsonToFormGenerateComponent;
-//   let fixture: ComponentFixture<JsonToFormGenerateComponent>;
+// describe('JsonListComponent', () => {
+//   let component: JsonListComponent;
+//   let fixture: ComponentFixture<JsonListComponent>;
 
 //   beforeEach(async () => {
 //     await TestBed.configureTestingModule({
-//       declarations: [ JsonToFormGenerateComponent ]
+//       declarations: [ JsonListComponent ]
 //     })
 //     .compileComponents();
 //   });
 
 //   beforeEach(() => {
-//     fixture = TestBed.createComponent(JsonToFormGenerateComponent);
+//     fixture = TestBed.createComponent(JsonListComponent);
 //     component = fixture.componentInstance;
 //     fixture.detectChanges();
 //   });
