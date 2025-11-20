@@ -4,6 +4,7 @@ import { FormBuilder, FormStructure } from './function-definition';
 import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
+import { JsonToInterface } from '../json-to-interface';
 
 interface Rules {
   [name: string]: any;
@@ -113,7 +114,6 @@ export class ReactiveDrivenValidator {
     formBuildMode: FormOutputFormat.AngularFormBuilder,
   };
   private componentName!: string;
-  private arrayIndex: number = 0;
   private formFields: FormStructure[] = [];
   private optionChoices: string[] = [];
 
@@ -193,9 +193,9 @@ export class ReactiveDrivenValidator {
 
   private get getters(): string {
     return wrapLines([
-      `get f(): FormGroup {
-                return this.form as FormGroup;
-            }`,
+      `get f(): FormGroup {`,
+        `return this.form as FormGroup;`,
+      `}`,
       ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? ''),
     ]);
   }
@@ -212,7 +212,7 @@ export class ReactiveDrivenValidator {
     );
   }
 
-  private emptyLine(): string {
+  private addNewLine(): string {
     return '';
   }
 
@@ -239,23 +239,24 @@ export class ReactiveDrivenValidator {
   public generateComponent(): string[] {
     const formGroup: string[] = this.generateFormBuilder();
     return [
+      // new JsonToInterface(this.rules).create(),
       ...this.imports(),
-      this.emptyLine(),
+      this.addNewLine(),
       ...this.componentDecorator(),
       `export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {`,
       ...this.classAttributes(),
       ...this.observableAttributes(),
-      this.emptyLine(),
+      this.addNewLine(),
       ...this.getConstructor(),
-      this.emptyLine(),
+      this.addNewLine(),
       ...this.getNgOnInit(formGroup),
-      this.emptyLine(),
+      this.addNewLine(),
       ...this.submitMethod(),
-      this.emptyLine(),
+      this.addNewLine(),
       this.getters,
-      this.emptyLine(),
+      this.addNewLine(),
       this.creaters,
-      this.emptyLine(),
+      this.addNewLine(),
       ...this.populate(),
       `}`,
     ];
@@ -310,7 +311,6 @@ export class ReactiveDrivenValidator {
         });
 
         const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
-
         const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
@@ -348,26 +348,14 @@ export class ReactiveDrivenValidator {
     previousValueType: ValueType = VALUE_TYPES.OBJECT,
   ): string {
     const validators = Object.keys(object)
-      .map((key: string, index: number) => {
-        const value = ValidatorRuleHelper.normalizeValue(object[key]);
-        const currentValueType = ValidatorRuleHelper.getValueType(value);
-        const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
+      .map((key: string) => {
+        const context = ValidatorFormContextHelper.buildContext({
+          object,
+          key,
           namesArr,
           previousValueType,
-          key,
-          currentValueType,
-        );
-        const fullKeyPath = [...namesArr, ...remainingKeys];
-        if (currentValueType === VALUE_TYPES.ARRAY) {
-          this.arrayIndex = value.length;
-        }
-        const isNotLastArrayItem =
-          currentValueType !== VALUE_TYPES.ARRAY &&
-          previousValueType === VALUE_TYPES.ARRAY &&
-          this.arrayIndex - 1 !== index;
-
-        if (isNotLastArrayItem) return '';
-
+        });
+        const { value, currentValueType, fullKeyPath } = context;
         const formStructureTemplate = this.buildFormWrapper(
           key,
           value,

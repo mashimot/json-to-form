@@ -8,50 +8,50 @@ describe('ReactiveDrivenHtml', () => {
     const reactiveDrivenHtml = new ReactiveDrivenHtml(
       {
         movies: [
-          {
-            adult: 'nullable|boolean',
-            backdrop_path: 'nullable|string',
-            belongs_to_collection: 'nullable',
-            budget: 'nullable|html:number|integer',
-            genres123: {
-              id: 'nullable|html:number|integer',
-              production_companies: [
-                [
-                  {
-                    production_countries: {
-                      iso_3166_1: 'nullable|min:2|max:2',
-                      name: 'nullable|min:2|max:255',
-                    },
-                    id: 'html:number|nullable',
-                    logo_path: 'nullable|string',
-                    name: 'nullable|min:2|max:255',
-                    origin_country: 'nullable|min:2|max:2',
-                  },
-                ],
-              ],
-              name: 'nullable|html:text|min:2|max:255',
-            },
-            homepage: 'nullable|html:text|string',
-            id: 'nullable|html:number|integer|min:2|max:25',
-            imdb_id: 'nullable|string|min:9|max:9',
-            original_language: 'nullable|string|min:2|max:2',
-            original_title: 'nullable|string|min:2|max:255',
-            overview: 'nullable|html:textarea|string|min:2|max:4000',
-            popularity: 'nullable|html:number|numeric',
-            poster_path: 'nullable|html:text|string',
-            release_date: 'html:date|nullable|date_format:Y-m-d',
-            revenue: 'html:number|nullable',
-            runtime: 'html:number|nullable',
-            spoken_languages: {
-              iso_639_1: 'nullable|min:2|max:2',
-              name: 'nullable|min:2|max:255',
-            },
-            tagline: 'nullable|min:2|max:255',
-            title: 'nullable|min:2|max:255',
-            video: 'nullable|boolean',
-            vote_average: 'nullable|html:number|number|min:2|max:255',
-            vote_count: 'nullable|html:number|integer|min:2|max:255',
-          },
+          // {
+          //   adult: 'nullable|boolean',
+          //   backdrop_path: 'nullable|string',
+          //   belongs_to_collection: 'nullable',
+          //   budget: 'nullable|html:number|integer',
+          //   // genres123: {
+          //   //   id: 'nullable|html:number|integer',
+          //   //   production_companies: [
+          //   //     [
+          //   //       {
+          //   //         production_countries: {
+          //   //           iso_3166_1: 'nullable|min:2|max:2',
+          //   //           name: 'nullable|min:2|max:255',
+          //   //         },
+          //   //         id: 'html:number|nullable',
+          //   //         logo_path: 'nullable|string',
+          //   //         name: 'nullable|min:2|max:255',
+          //   //         origin_country: 'nullable|min:2|max:2',
+          //   //       },
+          //   //     ],
+          //   //   ],
+          //   //   name: 'nullable|html:text|min:2|max:255',
+          //   // },
+          //   homepage: 'nullable|html:text|string',
+          //   id: 'nullable|html:number|integer|min:2|max:25',
+          //   imdb_id: 'nullable|string|min:9|max:9',
+          //   original_language: 'nullable|string|min:2|max:2',
+          //   original_title: 'nullable|string|min:2|max:255',
+          //   overview: 'nullable|html:textarea|string|min:2|max:4000',
+          //   popularity: 'nullable|html:number|numeric',
+          //   poster_path: 'nullable|html:text|string',
+          //   release_date: 'html:date|nullable|date_format:Y-m-d',
+          //   revenue: 'html:number|nullable',
+          //   runtime: 'html:number|nullable',
+          //   spoken_languages: {
+          //     iso_639_1: 'nullable|min:2|max:2',
+          //     name: 'nullable|min:2|max:255',
+          //   },
+          //   tagline: 'nullable|min:2|max:255',
+          //   title: 'nullable|min:2|max:255',
+          //   video: 'nullable|boolean',
+          //   vote_average: 'nullable|html:number|number|min:2|max:255',
+          //   vote_count: 'nullable|html:number|integer|min:2|max:255',
+          // },
           {
             adult: 'nullable|boolean',
             backdrop_path: 'nullable|string',

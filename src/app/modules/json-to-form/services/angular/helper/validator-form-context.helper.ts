@@ -1,5 +1,5 @@
 import { FormBuilder, FormStructure } from '../function-definition';
-import { ValueType } from '../models/value.type';
+import { VALUE_TYPES, ValueType } from '../models/value.type';
 import { ValidatorRuleHelper } from '../validator-rule-helper';
 
 interface FormContext {
@@ -28,7 +28,8 @@ export class ValidatorFormContextHelper {
       currentValueType,
     );
     const fullKeyPath = [...namesArr, ...remainingKeys];
-    const value = currentValueType === 'array' ? [rawValue[rawValue.length - 1]] : rawValue;
+    const value =
+      currentValueType === VALUE_TYPES.ARRAY ? [rawValue[rawValue.length - 1]] : rawValue;
     const currentFormStructure = new FormBuilder(
       fullKeyPath,
       previousValueType,

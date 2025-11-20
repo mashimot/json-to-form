@@ -139,14 +139,17 @@ export class ValidatorRuleHelper {
   }
 
   public static convertArray(value: any[]): any[] {
-    if (!Array.isArray(value) || value.length === 0) return value;
+    if (value.length === 0) return value;
 
-    if (!value.every((item) => typeof item === VALUE_TYPES.OBJECT && item !== null)) {
-      return value;
+    const [first] = value;
+
+    const allObjects = value.every((item) => this.getValueType(item) === VALUE_TYPES.OBJECT);
+
+    if (allObjects) {
+      return [Object.assign({}, ...value)];
     }
 
-    const merged = Object.assign({}, ...value);
-    return [merged];
+    return [first];
   }
 
   public static createRemainingKeys(
