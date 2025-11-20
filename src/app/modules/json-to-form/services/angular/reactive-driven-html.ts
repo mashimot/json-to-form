@@ -440,16 +440,12 @@ export class ReactiveDrivenHtml {
     previousValueType: ValueType = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string {
-    const reactiveFormHtml = Object.keys(object)
-      .map((key: string) => {
-        const context = ValidatorFormContextHelper.buildContext({
-          object,
-          key,
-          namesArr,
-          previousValueType,
-        });
-        const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
-
+    const reactiveFormHtml = ValidatorFormContextHelper.loop(
+      object,
+      namesArr,
+      previousValueType,
+      (context) => {
+        const { key, value, currentValueType, fullKeyPath, currentFormStructure } = context;
         const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
@@ -564,8 +560,8 @@ export class ReactiveDrivenHtml {
         }
 
         return '';
-      })
-      .filter(Boolean);
+      },
+    ).filter(Boolean);
 
     return wrapLines(reactiveFormHtml);
   }

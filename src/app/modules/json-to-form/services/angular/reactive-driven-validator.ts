@@ -4,7 +4,6 @@ import { FormBuilder, FormStructure } from './function-definition';
 import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
-import { JsonToInterface } from '../json-to-interface';
 
 interface Rules {
   [name: string]: any;
@@ -194,7 +193,7 @@ export class ReactiveDrivenValidator {
   private get getters(): string {
     return wrapLines([
       `get f(): FormGroup {`,
-        `return this.form as FormGroup;`,
+      `return this.form as FormGroup;`,
       `}`,
       ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? ''),
     ]);
@@ -239,7 +238,6 @@ export class ReactiveDrivenValidator {
   public generateComponent(): string[] {
     const formGroup: string[] = this.generateFormBuilder();
     return [
-      // new JsonToInterface(this.rules).create(),
       ...this.imports(),
       this.addNewLine(),
       ...this.componentDecorator(),
@@ -301,16 +299,13 @@ export class ReactiveDrivenValidator {
     previousValueType: ValueType = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string {
-    const populate = Object.keys(object)
-      .map((key: string) => {
-        const context = ValidatorFormContextHelper.buildContext({
-          object,
-          key,
-          namesArr,
-          previousValueType,
-        });
-
+    const populate = ValidatorFormContextHelper.loop(
+      object,
+      namesArr,
+      previousValueType,
+      (context) => {
         const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
+
         const previousFormStructure = formStructureStack[formStructureStack.length - 1];
         const formContext = {
           current: currentFormStructure,
@@ -336,8 +331,8 @@ export class ReactiveDrivenValidator {
         }
 
         return '';
-      })
-      .filter(Boolean);
+      },
+    ).filter(Boolean);
 
     return wrapLines(populate);
   }
@@ -347,15 +342,12 @@ export class ReactiveDrivenValidator {
     namesArr: string[] = [],
     previousValueType: ValueType = VALUE_TYPES.OBJECT,
   ): string {
-    const validators = Object.keys(object)
-      .map((key: string) => {
-        const context = ValidatorFormContextHelper.buildContext({
-          object,
-          key,
-          namesArr,
-          previousValueType,
-        });
-        const { value, currentValueType, fullKeyPath } = context;
+    const validators = ValidatorFormContextHelper.loop(
+      object,
+      namesArr,
+      previousValueType,
+      (context) => {
+        const { value, currentValueType, fullKeyPath, key } = context;
         const formStructureTemplate = this.buildFormWrapper(
           key,
           value,
@@ -403,8 +395,8 @@ export class ReactiveDrivenValidator {
         }
 
         return '';
-      })
-      .filter((el) => el);
+      },
+    ).filter((el) => el);
 
     return wrapLines(validators);
   }

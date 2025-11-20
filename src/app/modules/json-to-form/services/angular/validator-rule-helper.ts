@@ -135,6 +135,7 @@ export class ValidatorRuleHelper {
     if (['object', 'string'].includes(this.getValueType(value))) {
       return value;
     }
+
     return '';
   }
 

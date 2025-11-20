@@ -8,10 +8,12 @@ interface FormContext {
   currentValueType: ValueType;
   fullKeyPath: string[];
   currentFormStructure: FormStructure;
+  nestedInterfaceName: string;
+  originalCurrentValueType: ValueType;
 }
 
 export class ValidatorFormContextHelper {
-  static buildContext(params: {
+  private static buildContext(params: {
     object: { [key: string]: any };
     key: string;
     namesArr: string[];
@@ -19,6 +21,7 @@ export class ValidatorFormContextHelper {
   }): FormContext {
     const { object, key, namesArr, previousValueType } = params;
 
+    const originalCurrentValueType = ValidatorRuleHelper.getValueType(object[key]);
     const rawValue = ValidatorRuleHelper.normalizeValue(object[key]);
     const currentValueType = ValidatorRuleHelper.getValueType(rawValue);
     const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
@@ -28,6 +31,7 @@ export class ValidatorFormContextHelper {
       currentValueType,
     );
     const fullKeyPath = [...namesArr, ...remainingKeys];
+    const nestedInterfaceName = 'I' + key.charAt(0).toUpperCase() + key.slice(1);
     const value =
       currentValueType === VALUE_TYPES.ARRAY ? [rawValue[rawValue.length - 1]] : rawValue;
     const currentFormStructure = new FormBuilder(
@@ -43,6 +47,26 @@ export class ValidatorFormContextHelper {
       currentValueType,
       fullKeyPath,
       currentFormStructure,
+      nestedInterfaceName,
+      originalCurrentValueType,
     };
+  }
+
+  public static loop<T>(
+    object: { [key: string]: any },
+    namesArr: string[],
+    previousValueType: ValueType,
+    callback: (context: FormContext) => T,
+  ) {
+    return Object.keys(object).map((key) => {
+      const context = this.buildContext({
+        object,
+        key,
+        namesArr,
+        previousValueType,
+      });
+
+      return callback(context);
+    });
   }
 }
