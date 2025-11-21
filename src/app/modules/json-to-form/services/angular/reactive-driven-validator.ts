@@ -1,5 +1,5 @@
 import { wrapLines } from '@shared/utils/string.utils';
-import { __ARRAY__ } from '../../enums/reserved-name.enum';
+import { __ARRAY__, AccessModifier } from '../../enums/reserved-name.enum';
 import { FormBuilder, FormStructure } from './function-definition';
 import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
@@ -92,9 +92,9 @@ export const FORM_OUTPUT_WRAPPERS: any = {
     [VALUE_TYPES.STRING]: { OPEN: '"', CLOSE: '"' },
   },
   [FormOutputFormat.AngularFormBuilder]: {
-    [VALUE_TYPES.ARRAY]: { OPEN: 'this.formBuilder.array([', CLOSE: '])' },
-    [VALUE_TYPES.OBJECT]: { OPEN: 'this.formBuilder.group({', CLOSE: '})' },
-    [VALUE_TYPES.STRING]: { OPEN: 'this.formBuilder.control(', CLOSE: ')' },
+    [VALUE_TYPES.ARRAY]: { OPEN: `${AccessModifier.this}.formBuilder.array([`, CLOSE: '])' },
+    [VALUE_TYPES.OBJECT]: { OPEN: `${AccessModifier.this}.formBuilder.group({`, CLOSE: '})' },
+    [VALUE_TYPES.STRING]: { OPEN: `${AccessModifier.this}.formBuilder.control(`, CLOSE: ')' },
   },
   [FormOutputFormat.AngularRawInstance]: {
     [VALUE_TYPES.ARRAY]: { OPEN: 'new FormArray([', CLOSE: '])' },
@@ -135,7 +135,7 @@ export class ReactiveDrivenValidator {
     const { OPEN, CLOSE } = this.getFormWrapper(VALUE_TYPES.OBJECT);
 
     return [
-      `this.${this._options.formName} = ${OPEN}`,
+      `${AccessModifier.this}.${this._options.formName} = ${OPEN}`,
       this.reactiveDrivenValidators(this.rules),
       `${CLOSE};`,
     ];
@@ -150,21 +150,22 @@ export class ReactiveDrivenValidator {
     ];
   }
 
+  /* eslint-disable */
   private componentDecorator(): string[] {
     const asynPipe = this.observableAttributes().length > 0 ? 'AsyncPipe' : '';
     return [
       `@Component({`,
-      `selector: 'app-${this.componentName}',`,
-      `templateUrl: './${this.componentName}.component.html',`,
-      `styleUrls: ['./${this.componentName}.component.css'],`,
-      `standalone: true,`,
-      `imports: [`,
-      `ReactiveFormsModule,`,
-      `NgIf,`,
-      `NgFor,`,
-      `JsonPipe,`,
-      asynPipe,
-      `]`,
+        `selector: 'app-${this.componentName}',`,
+        `templateUrl: './${this.componentName}.component.html',`,
+        `styleUrls: ['./${this.componentName}.component.css'],`,
+        `standalone: true,`,
+        `imports: [`,
+          `ReactiveFormsModule,`,
+          `NgIf,`,
+          `NgFor,`,
+          `JsonPipe,`,
+          asynPipe,
+        `]`,
       `})`,
     ];
   }
@@ -183,17 +184,18 @@ export class ReactiveDrivenValidator {
   }
 
   private getNgOnInit(formGroup: string[]): string[] {
-    return [`ngOnInit(): void {`, `${wrapLines(formGroup)}`, `this.populate()`, `}`];
+    return [`ngOnInit(): void {`, `${wrapLines(formGroup)}`, `${AccessModifier.this}.populate()`, `}`];
   }
 
   private observableAttributes(): string[] {
     return this.optionChoices;
   }
 
+  /* eslint-disable */
   private get getters(): string {
     return wrapLines([
       `get f(): FormGroup {`,
-      `return this.form as FormGroup;`,
+        `return ${AccessModifier.this}.form as FormGroup;`,
       `}`,
       ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? ''),
     ]);
@@ -215,22 +217,24 @@ export class ReactiveDrivenValidator {
     return '';
   }
 
+  /* eslint-disable */
   private submitMethod(): string[] {
     return [
       `onSubmit(): void {`,
-      `this.formSubmitAttempt = true;`,
-      `if (this.f.valid) {`,
-      `console.log('form submitted');`,
-      `}`,
+        `${AccessModifier.this}.formSubmitAttempt = true;`,
+          `if (${AccessModifier.this}.f.valid) {`,
+          `console.log('form submitted');`,
+        `}`,
       `}`,
     ];
   }
 
+  /* eslint-disable */
   private populate(): string[] {
     return [
-      `private populate(): void {`,
-      this.buildPopulate(this.rules),
-      `this.f.patchValue(this.data);`,
+      `${AccessModifier.private} populate(): void {`,
+        this.buildPopulate(this.rules),
+        `${AccessModifier.this}.f.patchValue(${AccessModifier.this}.data);`,
       `}`,
     ];
   }
@@ -272,16 +276,17 @@ export class ReactiveDrivenValidator {
     const buildKeyPath = (previous: FormStructure): string => {
       const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
       const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
-      const rootKey = lastArrayIndex === -1 ? 'this.data' : `item${previous.paramCounter - 1}`;
+      const rootKey = lastArrayIndex === -1 ? `${AccessModifier.this}.data` : `item${previous.paramCounter - 1}`;
       const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
 
       return [rootKey, ...suffixPath].join('.');
     };
+    
     const keyPath = buildKeyPath(previous);
     const paramName = `item${previous.paramCounter}`;
     const indexParam = previous.lastIndexParam;
-    const getterCall = `this.${previous.getter?.call}`;
-    const creatorCall = `this.${current.creator.call}`;
+    const getterCall = `${AccessModifier.this}.${previous.getter?.call}`;
+    const creatorCall = `${AccessModifier.this}.${current.creator.call}`;
     const openBlock = [
       `// @ts-ignore`,
       `${keyPath}.forEach((${paramName}, ${indexParam}) => {`,
@@ -368,12 +373,12 @@ export class ReactiveDrivenValidator {
         if (currentValueType === VALUE_TYPES.ARRAY) {
           return wrapLines([
             previousValueType === VALUE_TYPES.ARRAY ? '' : `"${key}":`,
-            `this.${formStructure.creator.call},`,
+            `${AccessModifier.this}.${formStructure.creator.call},`,
           ]);
         }
 
         if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
-          return `this.${formStructure.creator.call}`;
+          return `${AccessModifier.this}.${formStructure.creator.call}`;
         }
 
         if (currentValueType === VALUE_TYPES.OBJECT) {
@@ -385,12 +390,12 @@ export class ReactiveDrivenValidator {
           const optionChoices = this.generateValues(rules);
           if (optionChoices.length > 0) {
             this.optionChoices.push(
-              `public ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
+              `${AccessModifier.public} ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
             );
           }
 
           return previousValueType === VALUE_TYPES.ARRAY
-            ? `this.${formStructure.creator.call}`
+            ? `${AccessModifier.this}.${formStructure.creator.call}`
             : formStructureTemplate.toString();
         }
 
@@ -417,7 +422,7 @@ export class ReactiveDrivenValidator {
     }
 
     if (currentType === VALUE_TYPES.STRING) {
-      const rules = value.split('|');
+      const rules = this.extractRules(value);
       const ruleParams = new Validator(rules).get();
       const isCheckbox = rules.some((rule: string) => {
         const [ruleName, ruleArgs] = ValidatorRuleHelper.parseStringRule(rule);
@@ -444,6 +449,10 @@ export class ReactiveDrivenValidator {
 
   private setRules(rules: Rules): void {
     this.rules = rules;
+  }
+
+  private extractRules(value: string): string[] {
+    return value.split('|');
   }
 
   private generateValues(rules: any): any[] {

@@ -16,8 +16,11 @@ enum FormEnum {
   FIELD_ID = `path`,
 }
 
+/* eslint-disable */
 export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
-  constructor(private readonly item: FormStructure) {}
+  constructor(
+    private readonly item: FormStructure
+  ) {}
 
   private formControlClass: string = 'class="form-control"';
   private ngClass: string = `[class.is-invalid]="${FormEnum.IS_FIELD_VALID}"`;
@@ -34,7 +37,7 @@ export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
   }
 
   private get indexName(): string {
-    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join('.'))}`;
+    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
   }
 
   private html(...lines: string[]): string {
@@ -52,34 +55,37 @@ export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
   select(): string {
     return this.html(
       `<select ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} ${this.ngClass}>`,
-      `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
-      `{{ option | json }}`,
-      `</option>`,
-      `</select>`,
+        `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
+          `{{ option | json }}`,
+        `</option>`,
+      `</select>`
     );
   }
 
   radio(): string {
     return this.html(
       `<div *ngFor="let option of (${this.asyncVar} | async); let ${this.indexName} = index" class="form-check">`,
-      `<input type="radio" class="form-check-input" ${this.ngClass} [value]="option" formControlName="{{ ${this.index} }}">`,
-      `<label class="form-check-label">{{ option | json }}</label>`,
-      `</div>`,
+        `<input type="radio" class="form-check-input" ${this.ngClass} [value]="option" formControlName="{{ ${this.index} }}">`,
+        `<label class="form-check-label">{{ option | json }}</label>`,
+      `</div>`
     );
   }
 
   checkbox(): string {
     return this.html(
       `<div *ngFor="let option of (${this.asyncVar} | async); let ${this.indexName} = index" class="form-check">`,
-      `<input type="checkbox" class="form-check-input" ${this.ngClass}>`,
-      `<label class="form-check-label">{{ option }}</label>`,
-      `</div>`,
+        `<input type="checkbox" class="form-check-input" ${this.ngClass}>`,
+        `<label class="form-check-label">{{ option }}</label>`,
+      `</div>`
     );
   }
 }
 
+/* eslint-disable */
 export class PlainInputTemplateBuilder implements InputTemplateStrategy {
-  constructor(private readonly item: FormStructure) {}
+  constructor(
+    private readonly item: FormStructure
+  ) {}
 
   private id: string = '';
   private ngClass: string = '';
@@ -95,7 +101,7 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
     return `${this.item.methodName}$`;
   }
   private get indexName(): string {
-    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join('.'))}`;
+    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
   }
 
   private html(...lines: string[]): string {
@@ -113,34 +119,34 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
   select(): string {
     return this.html(
       `<select ${this.formControlNameAttr}="${this.index}" ${this.id} ${this.formControlClass} ${this.ngClass}>`,
-      `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
-      `{{ option | json }}`,
-      `</option>`,
-      `</select>`,
+        `<option *ngFor="let option of (${this.asyncVar} | async)" [ngValue]="option">`,
+          `{{ option | json }}`,
+        `</option>`,
+      `</select>`
     );
   }
 
   radio(): string {
     return this.html(
       `<ng-container *ngIf="(${this.asyncVar} | async) as options">`,
-      `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
-      `<div class="form-check">`,
-      `<input type="radio" formControlName="{{ ${this.index} }}" [value]="option" ${this.ngClass}>{{ option | json }}`,
-      `</div>`,
-      `</div>`,
-      `</ng-container>`,
+        `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
+          `<div class="form-check">`,
+            `<input type="radio" formControlName="{{ ${this.index} }}" [value]="option" ${this.ngClass}>{{ option | json }}`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
     );
   }
 
   checkbox(): string {
     return this.html(
       `<ng-container *ngIf="(${this.asyncVar} | async) as options">`,
-      `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
-      `<div class="form-check">`,
-      `<input type="checkbox" class="form-check-input" ${this.ngClass}> {{ options[${this.indexName}] | json }}`,
-      `</div>`,
-      `</div>`,
-      `</ng-container>`,
+        `<div *ngFor="let option of options; let ${this.indexName} = index;">`,
+          `<div class="form-check">`,
+            `<input type="checkbox" class="form-check-input" ${this.ngClass}> {{ options[${this.indexName}] | json }}`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
     );
   }
 }
@@ -150,7 +156,9 @@ class FormValidatorGenerator {
     return rules.reduce((validators: string[], rule: string) => {
       const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
 
-      validators.push(this.getErrorsMessages(getField, ruleName, ruleParameters));
+      validators.push(
+        this.getErrorsMessages(getField, ruleName, ruleParameters)
+      );
 
       return validators;
     }, []);
@@ -162,13 +170,14 @@ class FormValidatorGenerator {
       required: `<div *ngIf="${getField}?.hasError('required')">{{ ${fieldId} }} is required</div>`,
       min: `<div *ngIf="${getField}?.hasError('minlength')">{{ ${fieldId} }} min must be ${ruleParameters[0]}</div>`,
       max: `<div *ngIf="${getField}?.hasError('maxlength')">{{ ${fieldId} }} max must be ${ruleParameters[0]}</div>`,
-      email: `<div *ngIf="${getField}?.hasError('email')">{{ ${fieldId} }} an valid Email</div>`,
+      email: `<div *ngIf="${getField}?.hasError('email')">{{ ${fieldId} }} an valid Email</div>`
     };
 
     return errorMessages[ruleName] || '';
   }
 }
 
+/* eslint-disable */
 export class FormUtils {
   generateLoopWrapper(item: FormStructure): [string[], string[]] {
     const index = item.lastIndexParam;
@@ -177,53 +186,56 @@ export class FormUtils {
       [
         [
           `<div`,
-          `*ngFor="let ${item.attributeName}Ctrl of ${item.getter.call}?.controls;`,
-          `let ${index} = index;"`,
-          `>`,
-        ].join(' '),
+            `*ngFor="let ${item.attributeName}Ctrl of ${item.getter.call}?.controls;`,
+            `let ${index} = index;"`,
+          `>`
+        ].join(" "),
       ],
-      ['</div>'],
+      [
+        '</div>'
+      ]
     ];
   }
 
-  public generateDeleteButton(
-    previousFormStructure: FormStructure | undefined,
-    currentFormStructure: FormStructure | undefined,
-  ): string[] {
+  /* eslint-disable */
+  public generateDeleteButton(previousFormStructure: FormStructure | undefined, currentFormStructure: FormStructure | undefined): string[] {
     const get = previousFormStructure?.getter.call;
     const index = previousFormStructure?.lastIndexParam;
 
     return [
-      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT
+      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT 
         ? `<div class="d-flex justify-content-end mb-2">`
         : ``,
-      `<button`,
-      `type="button"`,
-      `(click)="${get}.removeAt(${index})"`,
-      `class="btn btn-danger btn-sm"`,
-      `>`,
-      `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
-      `&times; Delete`,
-      `</button>`,
-      currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT ? `</div>` : ``,
+        `<button`,
+          `type="button"`,
+          `(click)="${get}.removeAt(${index})"`,
+          `class="btn btn-danger btn-sm"`,
+        `>`,
+          `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+          `&times; Delete`,
+        `</button>`,
+        currentFormStructure?.currentValueType === VALUE_TYPES.OBJECT 
+          ? `</div>`
+          : ``,
     ];
   }
 
+  /* eslint-disable */
   public generateAddButton(
     previousFormStructure: FormStructure | undefined,
-    currentFormStructure: FormStructure,
+    currentFormStructure: FormStructure
   ): string[] {
     const get = previousFormStructure?.getter.call;
     const create = currentFormStructure.creator.call;
 
     return [
       `<button`,
-      `type="button" `,
-      `class="btn btn-primary btn-block btn-sm" `,
-      `(click)="${get}.push(${create})"`,
+        `type="button" `,
+        `class="btn btn-primary btn-block btn-sm" `,
+        `(click)="${get}.push(${create})"`,
       `>`,
-      `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
-      `ADD`,
+        `<span class="glyphicon glyphicon-remove" aria-hidden="true"></span>`,
+        `ADD`,
       `</button>`,
     ];
   }
@@ -266,28 +278,29 @@ export class BootstrapFormWrapperBuilder {
     private readonly item: FormStructure,
     private readonly inputHtml: string,
     private readonly validationHtml: string,
-    private readonly deleleButton?: string,
+    private readonly deleleButton?: string
   ) {}
 
   build(): string {
     const pathExpression = `[${this.item.path.join(', ')}] as path`;
-
+    
+    /* eslint-disable */
     return [
       `<ng-container *ngIf="${pathExpression}">`,
-      `<div class="form-group">`,
-      `<label [for]="path" class="form-label">{{ path }}</label>`,
-      `<div class="input-group">`,
-      this.inputHtml,
-      this.deleleButton,
-      `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="invalid-feedback">`,
-      this.validationHtml,
-      `</div>`,
-      `</div>`,
-      `</div>`,
-      `</ng-container>`,
+        `<div class="form-group">`,
+          `<label [for]="path" class="form-label">{{ path }}</label>`,
+          `<div class="input-group">`,
+            this.inputHtml,
+            this.deleleButton,
+            `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="invalid-feedback">`,
+              this.validationHtml,
+            `</div>`,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
     ]
-      .filter(Boolean)
-      .join('\n');
+    .filter(Boolean)
+    .join('\n');
   }
 }
 
@@ -295,23 +308,24 @@ export class PlainFormWrapperBuilder {
   constructor(
     private readonly item: FormStructure,
     private readonly inputHtml: string,
-    private readonly validationHtml: string,
+    private readonly validationHtml: string
   ) {}
 
   build(): string {
     const pathExpression = `[${this.item.path.join(', ')}] as path`;
 
-    return [this.inputHtml].join('\n');
+    return [this.inputHtml].join("\n");
+    /* eslint-disable */
     return [
       `<ng-container *ngIf="${pathExpression}">`,
-      `<div>`,
-      `<label [for]="path">{{ path }}</label>`,
-      this.inputHtml,
-      `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="validation-message">`,
-      this.validationHtml,
-      `</div>`,
-      `</div>`,
-      `</ng-container>`,
+        `<div>`,
+          `<label [for]="path">{{ path }}</label>`,
+          this.inputHtml,
+          `<div *ngIf="f.get(path)?.invalid && f.get(path)?.touched" class="validation-message">`,
+            this.validationHtml,
+          `</div>`,
+        `</div>`,
+      `</ng-container>`
     ].join('\n');
   }
 }
@@ -324,8 +338,8 @@ export class FormInputGenerator {
   constructor(
     private readonly framework: FrameworkType,
     private readonly formContext: any,
-    private readonly rules: string[],
-  ) {}
+    private readonly rules: string[]
+  ) { }
 
   public get currentFormStructure(): FormStructure {
     return this.formContext.current;
@@ -341,16 +355,14 @@ export class FormInputGenerator {
     const dispatcher = new InputTemplateDispatcher(builder);
     const inputType = this.getInputTypeFromRules(this.rules);
     const inputHtml = dispatcher.resolve(inputType);
-    const validationHtml = new FormValidatorGenerator()
-      .generate(this.rules, `${FormEnum.ABSCTRACT_CONTROL}`)
-      .join('');
+    const validationHtml = new FormValidatorGenerator().generate(this.rules, `${FormEnum.ABSCTRACT_CONTROL}`).join('');
 
     return wrapper(inputHtml, validationHtml).build();
   }
 
   public getInputTypeFromRules(rules: string[]): InputTypeEnum {
     const htmlRule = rules
-      .map((rule) => ValidatorRuleHelper.parseStringRule(rule))
+      .map(rule => ValidatorRuleHelper.parseStringRule(rule))
       .find(([name]) => name === 'html');
 
     if (htmlRule) {
@@ -362,7 +374,7 @@ export class FormInputGenerator {
   }
 
   private typeExists(type: InputTypeEnum): InputTypeEnum {
-    return Object.values(InputTypeEnum).find((r) => r === type) || InputTypeEnum.TEXT;
+    return Object.values(InputTypeEnum).find(r => r === type) || InputTypeEnum.TEXT;
   }
 
   private getDependenciesForFramework(): {
@@ -373,23 +385,19 @@ export class FormInputGenerator {
       case FrameworkType.BOOTSTRAP:
         return {
           builder: new BootstrapInputTemplateBuilder(this.currentFormStructure),
-          wrapper: (inputHtml, validationHtml) =>
-            new BootstrapFormWrapperBuilder(
-              this.currentFormStructure,
-              inputHtml,
-              validationHtml,
-              this.currentFormStructure.previousValueType === 'array'
-                ? new FormUtils()
-                    .generateDeleteButton(this.previousFormStructure, this.currentFormStructure)
-                    .join('\n')
-                : '',
-            ),
+          wrapper: (inputHtml, validationHtml) => new BootstrapFormWrapperBuilder(
+            this.currentFormStructure,
+            inputHtml, 
+            validationHtml,
+            this.currentFormStructure.previousValueType === 'array' 
+              ? new FormUtils().generateDeleteButton(this.previousFormStructure, this.currentFormStructure).join("\n")
+              : ''
+          )
         };
       default:
         return {
           builder: new PlainInputTemplateBuilder(this.currentFormStructure),
-          wrapper: (inputHtml, validationHtml) =>
-            new PlainFormWrapperBuilder(this.currentFormStructure, inputHtml, validationHtml),
+          wrapper: (inputHtml, validationHtml) => new PlainFormWrapperBuilder(this.currentFormStructure, inputHtml, validationHtml)
         };
     }
   }
@@ -399,7 +407,6 @@ export class ReactiveDrivenHtml {
   private rules!: any;
   private triggerValidationOnSubmit: boolean = true;
   private formName: string = 'form';
-  private index: number = 0;
   private options = {
     showAddButton: true,
     showDeleteButton: true,
@@ -422,14 +429,15 @@ export class ReactiveDrivenHtml {
     this.triggerValidationOnSubmit = triggerValidationOnSubmit;
   }
 
+  /* eslint-disable */
   public generate(): string[] {
     return [
       `<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
-      `<pre>{{ ${this.formName}.value | json }}</pre>`,
-      this.buildReactiveFormHtml(this.rules),
-      `<button type="submit" class="btn btn-primary">`,
-      `Submit`,
-      `</button>`,
+        `<pre>{{ ${this.formName}.value | json }}</pre>`,
+        this.buildReactiveFormHtml(this.rules),
+        `<button type="submit" class="btn btn-primary">`,
+        `Submit`,
+        `</button>`,
       `</form>`,
     ];
   }
