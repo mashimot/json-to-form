@@ -1,7 +1,8 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
 import { CommonModule, JsonPipe, NgClass } from '@angular/common';
-import { Component, inject, Input, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import {
+  FormControl,
   FormsModule,
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -9,33 +10,48 @@ import {
   UntypedFormGroup,
   Validators,
 } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 import { html_beautify, js_beautify } from 'js-beautify';
-import { Observable, of } from 'rxjs';
-import {
-  debounceTime,
-  distinctUntilChanged,
-  filter,
-  map,
-  startWith,
-  switchMap,
-  tap,
-} from 'rxjs/operators';
+import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
+import { InputTextModule } from 'primeng/inputtext';
+import { MessageModule } from 'primeng/message';
+import { OverlayPanelModule } from 'primeng/overlaypanel';
+import { RadioButtonModule } from 'primeng/radiobutton';
+import { TabsModule } from 'primeng/tabs';
+import { ToolbarModule } from 'primeng/toolbar';
+import { combineLatest, Observable, of } from 'rxjs';
+import { debounceTime, map, startWith, switchMap } from 'rxjs/operators';
 import { InputTypeEnum } from '../../enums/input-type.enum';
 import { VALUE_TYPES } from '../../services/angular/models/value.type';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
+import { JsonToFormService } from '../../services/json-to-form.service';
 import { JsonValidators } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
-import { JsonToFormService } from '../../services/json-to-form.service';
-import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-form-generator-container',
   templateUrl: './form-generator-container.component.html',
   styleUrls: ['./form-generator-container.component.scss'],
-  imports: [CommonModule, ReactiveFormsModule, NgClass, FormsModule, MonacoEditorModule, JsonPipe],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    NgClass,
+    FormsModule,
+    MonacoEditorModule,
+    JsonPipe,
+    TabsModule,
+    ToolbarModule,
+    ButtonModule,
+    CardModule,
+    RadioButtonModule,
+    InputTextModule,
+    OverlayPanelModule,
+    MessageModule,
+  ],
   animations: [
     trigger('fade', [
       state('false', style({ opacity: 1 })),
@@ -56,25 +72,79 @@ export class FormGeneratorContainerComponent implements OnInit {
     tabSize: 2,
     fontSize: 12,
   };
-  private editor: monaco.editor.IStandaloneCodeEditor | undefined;
   private decorations: string[] = [];
+  private editorInputInstance!: monaco.editor.IStandaloneCodeEditor;
+  private editorOutputInstance!: monaco.editor.IStandaloneCodeEditor;
 
+  public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
   public editorOptions = {
     ts: { ...this.baseOptions, language: 'typescript', readOnly: true },
     html: { ...this.baseOptions, language: 'html', readOnly: true },
-    json: { ...this.baseOptions, language: 'json' },
+    json: { ...this.baseOptions, language: 'json', minimap: { enabled: false } },
   };
-  public editorModel: string[] = ['', ''];
-  public iconToggle: string[] = ['fa-copy', 'fa-copy'];
+  public iconToggle: { [key: string]: string } = ['pi pi-copy', 'pi pi-copy'].reduce(
+    (acc, icon, index) => {
+      acc[index.toString()] = icon;
+      return acc;
+    },
+    {} as { [key: string]: string },
+  );
   public form!: UntypedFormGroup;
-  public childComponents: UntypedFormControl = new UntypedFormControl('', []);
-  public inputTypesEnum = Object.values(InputTypeEnum);
-  public formBuilder$!: Observable<any>;
-  public isLoadingAction$?: Observable<boolean> = this.isLoading$();
+  public html: FormControl = new FormControl('');
+  public component: FormControl = new FormControl('');
+  public monacoErrors: FormControl = new FormControl(null);
+  public output: FormControl = new FormControl('');
+  public tabs: any[] = [];
+  public activeIndexPreviewTab: number | string = 0;
+  public activeIndexJsonTab: string | number = 0;
 
   ngOnInit(): void {
+    this.createForm();
     this.getFormExample();
-    this.onFormValueChanges();
+    this.initializeEditorStreams();
+  }
+
+  private initializeEditorStreams(): void {
+    combineLatest([
+      this.f?.valueChanges.pipe(startWith(this.f?.value)),
+      this.monacoErrors.valueChanges.pipe(startWith([])),
+    ])
+      .pipe(
+        debounceTime(10),
+        map(([{ json }, monacoErrors]) => {
+          return {
+            converted: this.convert(json),
+            errors: {
+              form: this.getFormErrors(),
+              monaco: monacoErrors,
+            },
+          };
+        }),
+      )
+      .subscribe((result) => {
+        this.component.setValue(result.converted?.component, { emitEvent: false });
+        this.html.setValue(result.converted?.html, { emitEvent: false });
+        this.output.setValue(JSON.stringify(result?.errors, null, 2), { emitEvent: false });
+      });
+  }
+
+  public addTab(): void {
+    this.tabs.push({
+      name: 'oxi ' + this.tabs.length,
+      data: {},
+    });
+
+    this.setActive(this.tabs.length);
+  }
+
+  public removeTab({ index: i }: { index: number }): void {
+    this.tabs.splice(i, 1);
+    this.setActive(this.tabs.length - 1);
+  }
+
+  public setActive(i: string | number): void {
+    this.activeIndexJsonTab = i;
+    this.setJsonValue(JSON.stringify(this.tabs[Number(i)]?.data || {}, null, 2));
   }
 
   public getFormExample(): void {
@@ -86,15 +156,64 @@ export class FormGeneratorContainerComponent implements OnInit {
         }),
       )
       .subscribe({
-        next: (response) => {
-          this.createForm();
-          this.f.get('json')?.setValue(JSON.stringify(response, null, 2));
+        next: ({ data, name }) => {
+          this.tabs = [
+            {
+              name: name,
+              data: data,
+            },
+          ];
+          this.setJsonValue(JSON.stringify(data, null, 2));
         },
       });
   }
 
-  private isLoading$(): Observable<boolean> {
-    return this.loadingService.getLoading();
+  public onInputEditorInit(editor: monaco.editor.IStandaloneCodeEditor) {
+    this.editorInputInstance = editor;
+    const model = editor.getModel();
+
+    if (model) {
+      monaco.editor.onDidChangeMarkers((e) => {
+        if (e.some((uri) => uri.toString() === model.uri.toString())) {
+          this.syncMarkersToEditor();
+        }
+      });
+    }
+  }
+
+  public onOutputEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
+    this.editorOutputInstance = editor;
+  }
+
+  public convert(json: any): { component: string; html: string } {
+    const newJson = typeof json === VALUE_TYPES.STRING ? JSON.parse(json) : json;
+
+    const reactiveDrivenHtml = new ReactiveDrivenHtml(newJson, this.options?.value);
+    const reactiveDrivenValidator = new ReactiveDrivenValidator(
+      newJson,
+      this.featureNameControl?.value,
+      this.options?.value,
+    );
+    const component = reactiveDrivenValidator.generateComponent();
+    const html = reactiveDrivenHtml.generate();
+
+    return {
+      component: js_beautify(component.join('\n'), {
+        indent_size: 2,
+      }),
+      html: html_beautify(html.join('\n'), {
+        indent_size: 2,
+      }),
+    };
+  }
+
+  private getFormErrors(): string[] {
+    const errors = this.jsonControl?.errors;
+    return errors ? Object.keys(errors) : [];
+  }
+
+  public setJsonValue(string: string): void {
+    this.jsonControl?.setValue(string);
   }
 
   public createForm(): void {
@@ -110,123 +229,62 @@ export class FormGeneratorContainerComponent implements OnInit {
         convert_to: ['angular', [Validators.required]],
         framework: ['bootstrap', []],
       }),
-      errors: this.formBuilder.control([]),
     });
 
     this.f.markAllAsTouched();
   }
 
-  onEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
-    this.editor = editor;
-    const model = editor.getModel();
+  public syncMarkersToEditor(): void {
+    this.monacoErrors.setValue([]);
 
-    if (model) {
-      monaco.editor.onDidChangeMarkers((e) => {
-        if (e.some((uri) => uri.toString() === model.uri.toString())) {
-          this.updateErrorHighlights();
-        }
+    if (!this.editorInputInstance) {
+      return;
+    }
+
+    const modelEditorInput = this.editorInputInstance.getModel();
+
+    if (modelEditorInput) {
+      const markers = monaco.editor.getModelMarkers({ resource: modelEditorInput.uri });
+      const errorMarkers = markers.filter(
+        (marker) => marker.severity === monaco.MarkerSeverity.Error,
+      );
+
+      const newDecorations: monaco.editor.IModelDeltaDecoration[] = errorMarkers.map((marker) => {
+        return {
+          range: new monaco.Range(
+            marker.startLineNumber,
+            1,
+            marker.endLineNumber,
+            modelEditorInput.getLineMaxColumn(marker.endLineNumber),
+          ),
+          options: {
+            isWholeLine: true,
+            className: 'error-line-highlight',
+            linesDecorationsClassName: 'error-line-highlight',
+          },
+        };
       });
 
-      this.updateErrorHighlights();
+      this.decorations = this.editorInputInstance.deltaDecorations(
+        this.decorations,
+        newDecorations,
+      );
+      const errors = errorMarkers.map((error) => {
+        return `Erro na linha ${error.startLineNumber}: ${error.message}`;
+      });
+
+      if (errors.length > 0) {
+        this.monacoErrors.setValue(errors);
+      }
     }
   }
 
-  private updateErrorHighlights(): void {
-    if (!this.editor) return;
-
-    const model = this.editor.getModel();
-    if (!model) return;
-
-    const markers = monaco.editor.getModelMarkers({ resource: model.uri });
-    const errorMarkers = markers.filter(
-      (marker) => marker.severity === monaco.MarkerSeverity.Error,
-    );
-
-    const newDecorations: monaco.editor.IModelDeltaDecoration[] = errorMarkers.map((marker) => {
-      return {
-        range: new monaco.Range(
-          marker.startLineNumber,
-          1,
-          marker.endLineNumber,
-          model.getLineMaxColumn(marker.endLineNumber),
-        ),
-        options: {
-          isWholeLine: true,
-          className: 'error-line-highlight',
-          linesDecorationsClassName: 'error-line-highlight',
-        },
-      };
-    });
-
-    this.decorations = this.editor.deltaDecorations(this.decorations, newDecorations);
-    this.setFormErrors(errorMarkers);
-  }
-
-  private setFormErrors(errorMarkers: monaco.editor.IMarker[]): void {
-    this.f.get('errors')?.setValue(errorMarkers);
-  }
-
-  private onFormValueChanges(): void {
-    this.formBuilder$ = this.f.valueChanges.pipe(
-      tap((response) => this.loadingService.isLoading(true)),
-      startWith(this.f.value),
-      filter((value) => {
-        if (this.f.invalid) {
-          this.loadingService.isLoading(false);
-          return false;
-        }
-
-        return true;
-      }),
-      debounceTime(600),
-      distinctUntilChanged((a, b) => {
-        if (JSON.stringify(a) === JSON.stringify(b)) {
-          this.loadingService.isLoading(false);
-          return true;
-        }
-
-        return false;
-      }),
-      switchMap(({ json, featureName }) => {
-        const errors = this.f.get('errors')?.value || [];
-        if (this.f.valid && errors.length <= 0) {
-          json = typeof json === VALUE_TYPES.STRING ? JSON.parse(json) : json;
-
-          const reactiveDrivenHtml = new ReactiveDrivenHtml(json, this.options?.value);
-          const reactiveDrivenValidator = new ReactiveDrivenValidator(
-            json,
-            this.featureNamePlusForm,
-            this.options?.value,
-          );
-          const component = reactiveDrivenValidator.generateComponent();
-          const html = reactiveDrivenHtml.generate();
-
-          return of({
-            component: js_beautify(component.join('\n'), {
-              indent_size: 2,
-              wrap_line_length: 80,
-            }),
-            html: html_beautify(html.join('\n'), {
-              indent_size: 2,
-            }),
-          });
-        }
-
-        return of({});
-      }),
-      tap(({ component, html }: { component?: string; html?: string }) => {
-        this.editorModel[0] = component || '';
-        this.editorModel[1] = html || '';
-      }),
-      tap(() => this.loadingService.isLoading(false)),
-    );
-  }
-
-  copyToClipboard(val: string, index: number): void {
-    this.iconToggle[index] = 'fa-check';
+  copyToClipboard(val: string = ''): void {
+    const index = this.activeIndexPreviewTab;
+    this.iconToggle[index] = 'pi pi-check';
 
     setTimeout(() => {
-      this.iconToggle[index] = 'fa-copy';
+      this.iconToggle[index] = 'pi pi-copy';
     }, 800);
 
     const selBox = document.createElement('textarea');
@@ -246,27 +304,35 @@ export class FormGeneratorContainerComponent implements OnInit {
     return this.form as UntypedFormGroup;
   }
 
-  get featureName(): UntypedFormControl {
+  get jsonControl(): UntypedFormControl {
+    return this.f?.get('json') as UntypedFormControl;
+  }
+
+  get featureNameControl(): UntypedFormControl {
     return this.f?.get('featureName') as UntypedFormControl;
   }
 
-  get path(): UntypedFormControl {
+  get featureNameValue(): string {
+    return this.f?.get('featureName')?.value;
+  }
+
+  get pathControl(): UntypedFormControl {
     return this.f?.get('path') as UntypedFormControl;
   }
 
   get featureNamePlusForm(): string {
-    return `${this.featureName?.value}-form`;
+    return `${this.featureNameControl?.value}-form`;
   }
 
   get options(): UntypedFormGroup {
     return this.f?.get('options') as UntypedFormGroup;
   }
 
-  isFieldInvalid(field: string): boolean | undefined {
+  public isFieldInvalid(field: string): boolean | undefined {
     return this.f?.get(field)?.invalid && this.f.get(field)?.touched;
   }
 
-  getField(field: string): UntypedFormControl {
+  public getField(field: string): UntypedFormControl {
     return this.f?.get(field) as UntypedFormControl;
   }
 
@@ -289,14 +355,18 @@ export class FormGeneratorContainerComponent implements OnInit {
     {
       id: 1,
       type: 'Structural Directives',
-      description: 'Structural Directives (ex: *ngIf, *ngFor, *ngSwitch)',
+      description: '*ngIf, *ngFor, *ngSwitch',
       disabled: null,
     },
     // {
-    //     id: 2,
-    //     type: 'Control Flow Blocks',
-    //     description: 'Control Flow Blocks (ex: @if, @for, @switch)',
-    //     disabled: true
-    // }
+    //   id: 2,
+    //   type: 'Control Flow Blocks',
+    //   description: 'Control Flow Blocks (ex: @if, @for, @switch)',
+    //   disabled: true,
+    // },
   ];
+
+  private isLoading$(): Observable<boolean> {
+    return this.loadingService.getLoading();
+  }
 }

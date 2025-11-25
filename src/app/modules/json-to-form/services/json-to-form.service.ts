@@ -22,7 +22,7 @@ export class JsonToFormService {
   public getExampleByNumber(id: number): Observable<any> {
     return this.getExamples().pipe(
       map((examples) => examples[id]),
-      map((example) => (example ? example.data : null)),
+      // map((example) => (example ? example.data : null)),
     );
   }
 

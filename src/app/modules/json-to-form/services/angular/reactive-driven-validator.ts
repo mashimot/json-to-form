@@ -183,8 +183,18 @@ export class ReactiveDrivenValidator {
     return [`constructor(`, `private formBuilder: FormBuilder`, `) {}`];
   }
 
+  /* eslint-disable */
   private getNgOnInit(formGroup: string[]): string[] {
-    return [`ngOnInit(): void {`, `${wrapLines(formGroup)}`, `${AccessModifier.this}.populate()`, `}`];
+    return [
+      `ngOnInit(): void {`, 
+        `${AccessModifier.this}.buildForm()`, 
+        `${AccessModifier.this}.patchForm()`, 
+      `}`,
+      this.addNewLine(),
+      `buildForm(): void {`, 
+        `${wrapLines(formGroup)}`, 
+      `}`,
+    ];
   }
 
   private observableAttributes(): string[] {
@@ -230,10 +240,10 @@ export class ReactiveDrivenValidator {
   }
 
   /* eslint-disable */
-  private populate(): string[] {
+  private patchForm(): string[] {
     return [
-      `${AccessModifier.private} populate(): void {`,
-        this.buildPopulate(this.rules),
+      `${AccessModifier.private} patchForm(): void {`,
+        this.buildPatchForm(this.rules),
         `${AccessModifier.this}.f.patchValue(${AccessModifier.this}.data);`,
       `}`,
     ];
@@ -259,7 +269,7 @@ export class ReactiveDrivenValidator {
       this.addNewLine(),
       this.creaters,
       this.addNewLine(),
-      ...this.populate(),
+      ...this.patchForm(),
       `}`,
     ];
   }
@@ -298,13 +308,13 @@ export class ReactiveDrivenValidator {
     return [openBlock, closeBlock];
   }
 
-  private buildPopulate(
+  private buildPatchForm(
     object: { [key: string]: any },
     namesArr: string[] = [],
     previousValueType: ValueType = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string {
-    const populate = ValidatorFormContextHelper.loop(
+    const patchForm = ValidatorFormContextHelper.loop(
       object,
       namesArr,
       previousValueType,
@@ -330,7 +340,7 @@ export class ReactiveDrivenValidator {
           const innerForEachBlock =
             currentValueType === VALUE_TYPES.STRING
               ? ''
-              : this.buildPopulate(value, fullKeyPath, currentValueType, nextStack);
+              : this.buildPatchForm(value, fullKeyPath, currentValueType, nextStack);
 
           return wrapLines([...openForEach, innerForEachBlock, ...closeForEach].filter(Boolean));
         }
@@ -339,7 +349,7 @@ export class ReactiveDrivenValidator {
       },
     ).filter(Boolean);
 
-    return wrapLines(populate);
+    return wrapLines(patchForm);
   }
 
   public reactiveDrivenValidators(

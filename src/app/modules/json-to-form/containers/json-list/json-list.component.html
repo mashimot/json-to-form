@@ -1,13 +1,15 @@
-<a class="btn btn-primary mb-3" (click)="onCreateChange()"> Create </a>
-<div class="row">
-  @for (formExample of formExamples$ | async; track $index) {
-    <div class="col-sm-6 col-lg-4 col-12 pb-4">
-      <app-json-list-item
-        [item]="formExample"
-        [index]="$index"
-        (create)="onCreateChange()"
-        (edit)="onEditChange($event)"
-      ></app-json-list-item>
-    </div>
-  }
+<div class="p-3">
+  <p-button label="Create" severity="info" (click)="onCreateChange()" />
+  <div class="grid">
+    @for (formExample of formExamples$ | async; track $index) {
+      <div class="col-4">
+        <app-json-list-item
+          [item]="formExample"
+          [index]="$index"
+          (create)="onCreateChange()"
+          (edit)="onEditChange($event)"
+        ></app-json-list-item>
+      </div>
+    }
+  </div>
 </div>
