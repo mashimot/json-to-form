@@ -1,15 +1,11 @@
-<div
-  class="card card-dark"
+<p-card
   (click)="editJsonToForm(index)"
   [ngClass]="hoverEffect[index]"
   (mouseover)="hoverEffect[index] = 'animate__animated animate__headShake'"
   (mouseout)="hoverEffect[index] = ''"
   [style]="{ cursor: 'pointer' }"
 >
-  <div class="card-header">
-    <h4>{{ item.name }}</h4>
-  </div>
-  <div class="card-body">
+  <div class="overflow-x-auto">
     <pre><small>{{ item.data | json }}</small></pre>
   </div>
-</div>
+</p-card>

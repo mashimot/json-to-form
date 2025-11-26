@@ -1,120 +1,123 @@
-<section class="my-4">
+<section class="mb-4">
   @let hasAnyErrors = f.invalid || monacoErrors?.value?.length > 0;
   <div class="grid grid-nogutter align-items-start">
-    <form [formGroup]="form" class="col-4">
-      <div class="json-wrapper">
-        <p-toolbar>
-          <div class="p-toolbar-group-start">
-            @for (tab of tabs; track tab) {
-              <p-button
-                [label]="featureNameValue"
-                variant="text"
-                severity="contrast"
-                styleClass="p-button-sm"
-              >
-              </p-button>
-            }
-          </div>
-
-          <div class="p-toolbar-group-end">
-            <p-button
-              (onClick)="op.toggle($event)"
-              label="config"
-              variant="text"
-              [severity]="featureNameControl?.invalid ? 'danger' : 'contrast'"
-              [icon]="featureNameControl?.invalid ? 'pi pi-exclamation-triangle' : 'pi pi-wrench'"
-              styleClass="p-button-sm"
-            >
-            </p-button>
-          </div>
-        </p-toolbar>
-
-        <div class="editor-wrapper">
-          <ngx-monaco-editor
-            [options]="editorOptions.json"
-            formControlName="json"
-            [style.height]="'100vh'"
-            (init)="onInputEditorInit($event)"
-          >
-          </ngx-monaco-editor>
-        </div>
-      </div>
-    </form>
-
-    <p-overlayPanel #op [style]="{ width: '450px' }" [showCloseIcon]="true">
-      <ng-template pTemplate="content">
-        <form [formGroup]="form">
-          <div class="p-1">
-            <div class="mb-4">
-              <label class="block text-900 font-bold mb-2">Control Flow Syntax</label>
-
-              <div class="p-grid p-dir-col p-gap-2">
-                @for (option of formControlType; track $index) {
-                  <div class="p-col">
-                    <p-radioButton
-                      [inputId]="'form-control-' + option.id"
-                      formControlName="structure"
-                      [value]="option.id"
-                    ></p-radioButton>
-                    <label [for]="'form-control-' + option.id" class="ml-2">
-                      {{ option.description }}
-                    </label>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <div class="mb-4">
-              <label for="input-feature-name" class="block text-900 font-bold mb-2">
-                Feature name
-              </label>
-
-              <input
-                type="text"
-                pInputText
-                id="input-feature-name"
-                formControlName="featureName"
-                [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
-                class="w-full"
-              />
-
-              @if (featureNameControl?.errors) {
-                <p-message severity="error" size="small" variant="simple">
-                  Must start with a letter, and must contain only alphanumeric characters or dashes.
-                  When adding a dash the segment after the dash must also start with a letter.
-                </p-message>
+    <div class="col-12 sm:col-6 md:col-4">
+      <form [formGroup]="form">
+        <div class="json-wrapper">
+          <p-toolbar>
+            <div class="p-toolbar-group-start">
+              @for (tab of tabs; track tab) {
+                <p-button
+                  [label]="featureNameValue"
+                  variant="text"
+                  severity="contrast"
+                  styleClass="p-button-sm"
+                >
+                </p-button>
               }
             </div>
 
-            <ng-container formGroupName="options">
+            <div class="p-toolbar-group-end">
+              <p-button
+                (onClick)="op.toggle($event)"
+                label="config"
+                variant="text"
+                [severity]="featureNameControl?.invalid ? 'danger' : 'contrast'"
+                [icon]="featureNameControl?.invalid ? 'pi pi-exclamation-triangle' : 'pi pi-cog'"
+                styleClass="p-button-sm"
+              >
+              </p-button>
+            </div>
+          </p-toolbar>
+
+          <div class="editor-wrapper">
+            <ngx-monaco-editor
+              [options]="editorOptions.json"
+              formControlName="json"
+              [style.height]="'100vh'"
+              (init)="onInputEditorInit($event)"
+            >
+            </ngx-monaco-editor>
+          </div>
+        </div>
+      </form>
+
+      <p-overlayPanel #op [showCloseIcon]="true">
+        <ng-template pTemplate="content">
+          <form [formGroup]="form">
+            <div class="p-1">
               <div class="mb-4">
-                <label class="block text-900 font-bold mb-2">Select form build mode</label>
+                <label class="block text-900 font-bold mb-2">Control Flow Syntax</label>
 
                 <div class="p-grid p-dir-col p-gap-2">
-                  @for (mode of formBuildModes; track $index) {
-                    <div class="p-col mb-2">
+                  @for (option of formControlType; track $index) {
+                    <div class="p-col">
                       <p-radioButton
-                        [inputId]="'form-build-mode-' + mode.id"
-                        formControlName="formBuildMode"
-                        [value]="mode.id"
+                        [inputId]="'form-control-' + option.id"
+                        formControlName="structure"
+                        [value]="option.id"
                       ></p-radioButton>
-                      <label [for]="'form-build-mode-' + mode.id" class="ml-2">
-                        {{ mode.label }}
+                      <label [for]="'form-control-' + option.id" class="ml-2">
+                        {{ option.description }}
                       </label>
-                      <p class="text-500 mt-1 ml-4">
-                        <small>{{ mode.description }}</small>
-                      </p>
                     </div>
                   }
                 </div>
               </div>
-            </ng-container>
-          </div>
-        </form>
-      </ng-template>
-    </p-overlayPanel>
 
-    <div class="col-8">
+              <div class="mb-4">
+                <label for="input-feature-name" class="block text-900 font-bold mb-2">
+                  Feature name
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  id="input-feature-name"
+                  formControlName="featureName"
+                  [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
+                  class="w-full"
+                />
+
+                @if (featureNameControl?.errors) {
+                  <p-message severity="error" size="small" variant="simple" class="w-full">
+                    Must start with a letter, and must contain only alphanumeric characters or
+                    dashes. When adding a dash the segment after the dash must also start with a
+                    letter.
+                  </p-message>
+                }
+              </div>
+
+              <ng-container formGroupName="options">
+                <div class="mb-4">
+                  <label class="block text-900 font-bold mb-2">Select form build mode</label>
+
+                  <div class="p-grid p-dir-col p-gap-2">
+                    @for (mode of formBuildModes; track $index) {
+                      <div class="p-col mb-2">
+                        <p-radioButton
+                          [inputId]="'form-build-mode-' + mode.id"
+                          formControlName="formBuildMode"
+                          [value]="mode.id"
+                        ></p-radioButton>
+                        <label [for]="'form-build-mode-' + mode.id" class="ml-2">
+                          {{ mode.label }}
+                        </label>
+                        <p class="text-500 mt-1 ml-4">
+                          <small>{{ mode.description }}</small>
+                        </p>
+                      </div>
+                    }
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </form>
+        </ng-template>
+      </p-overlayPanel>
+    </div>
+
+    <div class="col-12 sm:col-6 md:col-8">
       <p-toolbar>
         <div class="p-toolbar-group-start">
           @for (

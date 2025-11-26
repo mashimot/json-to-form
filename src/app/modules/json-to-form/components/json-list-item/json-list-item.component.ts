@@ -1,11 +1,12 @@
 import { JsonPipe, NgClass } from '@angular/common';
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { CardModule } from 'primeng/card';
 
 @Component({
   selector: 'app-json-list-item',
   templateUrl: './json-list-item.component.html',
   styleUrls: ['./json-list-item.component.css'],
-  imports: [JsonPipe, NgClass],
+  imports: [JsonPipe, NgClass, CardModule],
 })
 export class JsonListItemComponent implements OnInit {
   @Input() item!: any;
