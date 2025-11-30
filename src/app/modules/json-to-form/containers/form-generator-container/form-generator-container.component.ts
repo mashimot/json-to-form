@@ -2,7 +2,10 @@ import { animate, state, style, transition, trigger } from '@angular/animations'
 import { CommonModule, JsonPipe, NgClass } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import {
+  AbstractControl,
+  FormArray,
   FormControl,
+  FormGroup,
   FormsModule,
   ReactiveFormsModule,
   UntypedFormBuilder,
@@ -22,7 +25,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { combineLatest, Observable, of } from 'rxjs';
-import { debounceTime, map, startWith, switchMap } from 'rxjs/operators';
+import { map, startWith, switchMap } from 'rxjs/operators';
 import { VALUE_TYPES } from '../../services/angular/models/value.type';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
@@ -76,11 +79,6 @@ export class FormGeneratorContainerComponent implements OnInit {
   private editorOutputInstance!: monaco.editor.IStandaloneCodeEditor;
 
   public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
-  public editorOptions = {
-    ts: { ...this.baseOptions, language: 'typescript', readOnly: true },
-    html: { ...this.baseOptions, language: 'html', readOnly: true },
-    json: { ...this.baseOptions, language: 'json', minimap: { enabled: false } },
-  };
   public iconToggle: { [key: string]: string } = ['pi pi-copy', 'pi pi-copy'].reduce(
     (acc, icon, index) => {
       acc[index.toString()] = icon;
@@ -91,11 +89,44 @@ export class FormGeneratorContainerComponent implements OnInit {
   public form!: UntypedFormGroup;
   public html: FormControl = new FormControl('');
   public component: FormControl = new FormControl('');
-  public monacoErrors: FormControl = new FormControl(null);
+  public monacoErrors: FormControl = new FormControl([]);
   public output: FormControl = new FormControl('');
   public tabs: any[] = [];
-  public activeIndexPreviewTab: number | string = 0;
-  public activeIndexJsonTab: string | number = 0;
+  public activeIndexPreviewTab: number = 0;
+  public activeIndexJsonTab: number = 0;
+  public hasAnyErrors: boolean = false;
+  public outputTabs: { label: string; value: string }[] = [];
+  public editorOptionsMap: Record<string, any> = {
+    input: {
+      ...this.baseOptions,
+      minimap: { enabled: false },
+      readOnly: false,
+      language: 'json',
+    },
+    output: {
+      ...this.baseOptions,
+      readOnly: true,
+      minimap: { enabled: true },
+      wordWrap: 'on',
+      occurrencesHighlight: false,
+      renderWhitespace: 'none',
+      renderLineHighlight: 'none',
+      matchBrackets: 'never',
+      quickSuggestions: true,
+      suggestOnTriggerCharacters: true,
+      semanticHighlighting: { enabled: true },
+      codeLens: false,
+      folding: false,
+      parameterHints: { enabled: false },
+      snippetSuggestions: 'none',
+    },
+    errors: {
+      ...this.baseOptions,
+      readOnly: true,
+      wordWrap: 'on',
+      language: 'typescript',
+    },
+  };
 
   ngOnInit(): void {
     this.createForm();
@@ -103,47 +134,93 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.initializeEditorStreams();
   }
 
+  public setTabPreview(index: number): void {
+    this.applyOutputTab(index);
+  }
+
+  private updateOutputLanguage(label: string): void {
+    this.editorOptionsMap.output = {
+      ...this.editorOptionsMap.output,
+      language: this.detectLanguage(label),
+    };
+  }
+
+  private detectLanguage(file: string): string {
+    const mappings = [
+      { extension: '.html', language: 'html' },
+      { extension: '.ts', language: 'typescript' },
+    ];
+
+    for (const mapping of mappings) {
+      if (file.endsWith(mapping.extension)) {
+        return mapping.language;
+      }
+    }
+
+    return 'plaintext';
+  }
+  private updatePreview(form: any, errors: string = ''): void {
+    const output = form?.converted;
+    const baseTabs = [
+      { label: 'component.ts', valueKey: 'component' },
+      { label: 'template.html', valueKey: 'html' },
+      { label: 'interface.ts', valueKey: 'interfaceCode' },
+    ];
+
+    this.outputTabs = baseTabs.map((tab) => {
+      if (this.hasAnyErrors) {
+        return { label: tab.label, value: errors };
+      }
+
+      const value = output?.[tab.valueKey] ?? '';
+      return { label: tab.label, value: value };
+    });
+
+    this.applyOutputTab(this.activeIndexPreviewTab);
+  }
+
+  private applyOutputTab(index: number): void {
+    const tab = this.outputTabs[index];
+
+    this.activeIndexPreviewTab = index;
+    this.updateOutputLanguage(tab.label);
+
+    this.output.setValue(tab.value, { emitEvent: false });
+  }
+
   private initializeEditorStreams(): void {
     combineLatest([
       this.f?.valueChanges.pipe(startWith(this.f?.value)),
-      this.monacoErrors.valueChanges.pipe(startWith([])),
+      this.monacoErrors?.valueChanges.pipe(startWith(this.monacoErrors.value ?? [])),
     ])
       .pipe(
-        debounceTime(10),
         map(([{ json }, monacoErrors]) => {
+          const hasFormErrors = this.f.status === 'INVALID';
+          const hasMonacoErrors = monacoErrors.length > 0;
+
+          this.hasAnyErrors = hasFormErrors || hasMonacoErrors;
+
+          if (this.hasAnyErrors) {
+            return {
+              converted: null,
+              errors: {
+                form: this.getRawErrors(),
+                monaco: monacoErrors,
+              },
+            };
+          }
+
           return {
             converted: this.convert(json),
-            errors: {
-              form: this.getFormErrors(),
-              monaco: monacoErrors,
-            },
+            errors: null,
           };
         }),
       )
-      .subscribe((result) => {
-        this.component.setValue(result.converted?.component, { emitEvent: false });
-        this.html.setValue(result.converted?.html, { emitEvent: false });
-        this.output.setValue(JSON.stringify(result?.errors, null, 2), { emitEvent: false });
+      .subscribe({
+        next: (result) => {
+          this.updatePreview(result, JSON.stringify(result.errors, null, 2));
+        },
       });
-  }
-
-  public addTab(): void {
-    this.tabs.push({
-      name: 'oxi ' + this.tabs.length,
-      data: {},
-    });
-
-    this.setActive(this.tabs.length);
-  }
-
-  public removeTab({ index: i }: { index: number }): void {
-    this.tabs.splice(i, 1);
-    this.setActive(this.tabs.length - 1);
-  }
-
-  public setActive(i: string | number): void {
-    this.activeIndexJsonTab = i;
-    this.setJsonValue(JSON.stringify(this.tabs[Number(i)]?.data || {}, null, 2));
   }
 
   public getFormExample(): void {
@@ -206,9 +283,31 @@ export class FormGeneratorContainerComponent implements OnInit {
     };
   }
 
-  private getFormErrors(): string[] {
-    const errors = this.jsonControl?.errors;
-    return errors ? Object.keys(errors) : [];
+  private getRawErrors(): string[] {
+    const errors = this.jsonControl?.errors ?? {};
+    return errors?.messages ?? [];
+  }
+
+  private getFormErrors(control: AbstractControl = this.f): string[] {
+    const errors: string[] = [];
+
+    if (control.errors) {
+      errors.push(...Object.values(control.errors));
+    }
+
+    if (control instanceof FormGroup) {
+      Object.values(control.controls).forEach((child) => {
+        errors.push(...this.getFormErrors(child));
+      });
+    }
+
+    if (control instanceof FormArray) {
+      control.controls.forEach((child) => {
+        errors.push(...this.getFormErrors(child));
+      });
+    }
+
+    return errors;
   }
 
   public setJsonValue(string: string): void {
@@ -234,7 +333,7 @@ export class FormGeneratorContainerComponent implements OnInit {
   }
 
   public syncMarkersToEditor(): void {
-    this.monacoErrors.setValue([]);
+    this.monacoErrors.setValue([], { emitEvent: true });
 
     if (!this.editorInputInstance) {
       return;

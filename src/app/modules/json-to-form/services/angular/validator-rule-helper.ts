@@ -44,7 +44,7 @@ export class ValidatorRuleHelper {
       const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
 
       if (!re.test(k)) {
-        errors.push(`Errors at:  "${names + rest}"`);
+        errors.push(`Errors at: \`${names + rest}\``);
       }
 
       if (Object.prototype.toString.call(v) === '[object Array]') {

@@ -1,5 +1,4 @@
 <section class="mb-4">
-  @let hasAnyErrors = f.invalid || monacoErrors?.value?.length > 0;
   <div class="grid grid-nogutter align-items-start">
     <div class="col-12 sm:col-6 md:col-4">
       <form [formGroup]="form">
@@ -32,7 +31,7 @@
 
           <div class="editor-wrapper">
             <ngx-monaco-editor
-              [options]="editorOptions.json"
+              [options]="editorOptionsMap.input"
               formControlName="json"
               [style.height]="'100vh'"
               (init)="onInputEditorInit($event)"
@@ -120,17 +119,14 @@
     <div class="col-12 sm:col-6 md:col-8">
       <p-toolbar>
         <div class="p-toolbar-group-start">
-          @for (
-            tab of [featureNameValue + '.component.ts', featureNameValue + '.component.html'];
-            track tab
-          ) {
+          @for (tab of outputTabs; track tab) {
             <p-button
-              [label]="tab"
+              [label]="tab.label"
               styleClass="p-button-sm"
               [variant]="activeIndexPreviewTab === $index ? 'outlined' : 'text'"
               [severity]="hasAnyErrors ? 'danger' : 'contrast'"
               class="mr-2"
-              (click)="activeIndexPreviewTab = $index"
+              (click)="setTabPreview($index)"
             >
             </p-button>
           }
@@ -154,25 +150,10 @@
       </p-toolbar>
 
       <div class="editor-wrapper">
-        @if (hasAnyErrors) {
-          <ngx-monaco-editor
-            [options]="editorOptions.ts"
-            [formControl]="output"
-          ></ngx-monaco-editor>
-        } @else {
-          @if (activeIndexPreviewTab === 0) {
-            <ngx-monaco-editor
-              [options]="editorOptions.ts"
-              [formControl]="component"
-            ></ngx-monaco-editor>
-          }
-          @if (activeIndexPreviewTab === 1) {
-            <ngx-monaco-editor
-              [options]="editorOptions.html"
-              [formControl]="html"
-            ></ngx-monaco-editor>
-          }
-        }
+        <ngx-monaco-editor
+          [options]="editorOptionsMap.output"
+          [formControl]="output"
+        ></ngx-monaco-editor>
       </div>
     </div>
   </div>
