@@ -3,7 +3,7 @@ body {
   height: 100%;
   width: 100%;
   margin: 0;
-  font-family: Inter, sans-serif;
+  font-family: Monaco, Menlo, Consolas, "Droid Sans Mono", "Inconsolata", "Courier New", monospace;
 }
 
 .error-line-highlight {
