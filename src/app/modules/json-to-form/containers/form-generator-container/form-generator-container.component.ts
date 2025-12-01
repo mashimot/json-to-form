@@ -1,4 +1,5 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { Clipboard, ClipboardModule } from '@angular/cdk/clipboard';
 import { CommonModule, JsonPipe, NgClass } from '@angular/common';
 import { Component, inject, OnInit } from '@angular/core';
 import {
@@ -53,6 +54,7 @@ import { LoadingService } from './../../../../shared/services/loading.service';
     InputTextModule,
     OverlayPanelModule,
     MessageModule,
+    ClipboardModule,
   ],
   animations: [
     trigger('fade', [
@@ -67,6 +69,7 @@ export class FormGeneratorContainerComponent implements OnInit {
   private loadingService: LoadingService = inject(LoadingService);
   private jsonToFormService = inject(JsonToFormService);
   private route = inject(ActivatedRoute);
+  private clipboard: Clipboard = inject(Clipboard);
 
   private baseOptions = {
     theme: 'vs-dark',
@@ -159,6 +162,7 @@ export class FormGeneratorContainerComponent implements OnInit {
 
     return 'plaintext';
   }
+
   private updatePreview(form: any, errors: string = ''): void {
     const output = form?.converted;
     const baseTabs = [
@@ -223,7 +227,7 @@ export class FormGeneratorContainerComponent implements OnInit {
       });
   }
 
-  public getFormExample(): void {
+  private getFormExample(): void {
     this.route.paramMap
       .pipe(
         map((paramMap) => paramMap.get('id')),
@@ -261,7 +265,7 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.editorOutputInstance = editor;
   }
 
-  public convert(json: any): { component: string; html: string } {
+  private convert(json: any): { component: string; html: string; interfaceCode: string } {
     const newJson = typeof json === VALUE_TYPES.STRING ? JSON.parse(json) : json;
 
     const reactiveDrivenHtml = new ReactiveDrivenHtml(newJson, this.options?.value);
@@ -278,6 +282,9 @@ export class FormGeneratorContainerComponent implements OnInit {
         indent_size: 2,
       }),
       html: html_beautify(html.join('\n'), {
+        indent_size: 2,
+      }),
+      interfaceCode: js_beautify('Under construction', {
         indent_size: 2,
       }),
     };
@@ -332,7 +339,7 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.f.markAllAsTouched();
   }
 
-  public syncMarkersToEditor(): void {
+  private syncMarkersToEditor(): void {
     this.monacoErrors.setValue([], { emitEvent: true });
 
     if (!this.editorInputInstance) {
@@ -377,25 +384,18 @@ export class FormGeneratorContainerComponent implements OnInit {
     }
   }
 
-  copyToClipboard(val: string = ''): void {
+  public copyToClipboard(content: string = ''): void {
     const index = this.activeIndexPreviewTab;
-    this.iconToggle[index] = 'pi pi-check';
 
+    this.clipboard.copy(content);
+    this.toggleCopyIcon(index);
+  }
+
+  private toggleCopyIcon(index: number): void {
+    this.iconToggle[index] = 'pi pi-check';
     setTimeout(() => {
       this.iconToggle[index] = 'pi pi-copy';
     }, 800);
-
-    const selBox = document.createElement('textarea');
-    selBox.style.position = 'fixed';
-    selBox.style.left = '0';
-    selBox.style.top = '0';
-    selBox.style.opacity = '0';
-    selBox.value = val;
-    document.body.appendChild(selBox);
-    selBox.focus();
-    selBox.select();
-    document.execCommand('copy');
-    document.body.removeChild(selBox);
   }
 
   get f(): UntypedFormGroup {

@@ -44,63 +44,62 @@
       <p-overlayPanel #op [showCloseIcon]="true">
         <ng-template pTemplate="content">
           <form [formGroup]="form">
-              <div class="mb-4">
-                <label class="block text-900 font-bold mb-1">Control Flow Syntax</label>
+            <div class="mb-4">
+              <label class="block text-900 font-bold mb-1">Control Flow Syntax</label>
 
-                @for (option of formControlType; track $index) {
-                  <p-radioButton
-                    [inputId]="'form-control-' + option.id"
-                    formControlName="structure"
-                    [value]="option.id"
-                  ></p-radioButton>
-                  <label [for]="'form-control-' + option.id">
-                    {{ option.description }}
-                  </label>
-                }
-              </div>
-
-              <div class="mb-4">
-                <label for="input-feature-name" class="block text-900 font-bold mb-2">
-                  Feature name
+              @for (option of formControlType; track $index) {
+                <p-radioButton
+                  [inputId]="'form-control-' + option.id"
+                  formControlName="structure"
+                  [value]="option.id"
+                ></p-radioButton>
+                <label [for]="'form-control-' + option.id">
+                  {{ option.description }}
                 </label>
+              }
+            </div>
 
-                <input
-                  type="text"
-                  pInputText
-                  id="input-feature-name"
-                  formControlName="featureName"
-                  [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
-                  class="w-full"
-                />
+            <div class="mb-4">
+              <label for="input-feature-name" class="block text-900 font-bold mb-2">
+                Feature name
+              </label>
 
-                @if (featureNameControl?.errors) {
-                  <p-message severity="error" size="small" variant="simple" class="w-full">
-                    Must start with a letter, and must contain only alphanumeric characters or
-                    dashes. When adding a dash the segment after the dash must also start with a
-                    letter.
-                  </p-message>
+              <input
+                type="text"
+                pInputText
+                id="input-feature-name"
+                formControlName="featureName"
+                [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
+                class="w-full"
+              />
+
+              @if (featureNameControl?.errors) {
+                <p-message severity="error" size="small" variant="simple" class="w-full">
+                  Must start with a letter, and must contain only alphanumeric characters or dashes.
+                  When adding a dash the segment after the dash must also start with a letter.
+                </p-message>
+              }
+            </div>
+
+            <ng-container formGroupName="options">
+              <div class="mb-4">
+                <label class="block text-900 font-bold mb-2">Select form build mode</label>
+
+                @for (mode of formBuildModes; track $index) {
+                  <p-radioButton
+                    [inputId]="'form-build-mode-' + mode.id"
+                    formControlName="formBuildMode"
+                    [value]="mode.id"
+                  ></p-radioButton>
+                  <label [for]="'form-build-mode-' + mode.id">
+                    {{ mode.label }}
+                  </label>
+                  <p class="text-500 mt-1">
+                    <small>{{ mode.description }}</small>
+                  </p>
                 }
               </div>
-
-              <ng-container formGroupName="options">
-                <div class="mb-4">
-                  <label class="block text-900 font-bold mb-2">Select form build mode</label>
-
-                  @for (mode of formBuildModes; track $index) {
-                    <p-radioButton
-                      [inputId]="'form-build-mode-' + mode.id"
-                      formControlName="formBuildMode"
-                      [value]="mode.id"
-                    ></p-radioButton>
-                    <label [for]="'form-build-mode-' + mode.id">
-                      {{ mode.label }}
-                    </label>
-                    <p class="text-500 mt-1">
-                      <small>{{ mode.description }}</small>
-                    </p>
-                  }
-                </div>
-              </ng-container>
+            </ng-container>
           </form>
         </ng-template>
       </p-overlayPanel>
@@ -128,11 +127,7 @@
               [icon]="iconToggle[activeIndexPreviewTab]"
               styleClass="p-button-sm"
               severity="contrast"
-              (click)="
-                copyToClipboard(
-                  activeIndexPreviewTab === 0 ? this.component?.value : this.html?.value
-                )
-              "
+              (click)="copyToClipboard(output?.value)"
             >
             </p-button>
           </div>
