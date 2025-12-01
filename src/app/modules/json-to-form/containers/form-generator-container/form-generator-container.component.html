@@ -44,24 +44,19 @@
       <p-overlayPanel #op [showCloseIcon]="true">
         <ng-template pTemplate="content">
           <form [formGroup]="form">
-            <div class="p-1">
               <div class="mb-4">
-                <label class="block text-900 font-bold mb-2">Control Flow Syntax</label>
+                <label class="block text-900 font-bold mb-1">Control Flow Syntax</label>
 
-                <div class="p-grid p-dir-col p-gap-2">
-                  @for (option of formControlType; track $index) {
-                    <div class="p-col">
-                      <p-radioButton
-                        [inputId]="'form-control-' + option.id"
-                        formControlName="structure"
-                        [value]="option.id"
-                      ></p-radioButton>
-                      <label [for]="'form-control-' + option.id" class="ml-2">
-                        {{ option.description }}
-                      </label>
-                    </div>
-                  }
-                </div>
+                @for (option of formControlType; track $index) {
+                  <p-radioButton
+                    [inputId]="'form-control-' + option.id"
+                    formControlName="structure"
+                    [value]="option.id"
+                  ></p-radioButton>
+                  <label [for]="'form-control-' + option.id">
+                    {{ option.description }}
+                  </label>
+                }
               </div>
 
               <div class="mb-4">
@@ -91,26 +86,21 @@
                 <div class="mb-4">
                   <label class="block text-900 font-bold mb-2">Select form build mode</label>
 
-                  <div class="p-grid p-dir-col p-gap-2">
-                    @for (mode of formBuildModes; track $index) {
-                      <div class="p-col mb-2">
-                        <p-radioButton
-                          [inputId]="'form-build-mode-' + mode.id"
-                          formControlName="formBuildMode"
-                          [value]="mode.id"
-                        ></p-radioButton>
-                        <label [for]="'form-build-mode-' + mode.id" class="ml-2">
-                          {{ mode.label }}
-                        </label>
-                        <p class="text-500 mt-1 ml-4">
-                          <small>{{ mode.description }}</small>
-                        </p>
-                      </div>
-                    }
-                  </div>
+                  @for (mode of formBuildModes; track $index) {
+                    <p-radioButton
+                      [inputId]="'form-build-mode-' + mode.id"
+                      formControlName="formBuildMode"
+                      [value]="mode.id"
+                    ></p-radioButton>
+                    <label [for]="'form-build-mode-' + mode.id">
+                      {{ mode.label }}
+                    </label>
+                    <p class="text-500 mt-1">
+                      <small>{{ mode.description }}</small>
+                    </p>
+                  }
                 </div>
               </ng-container>
-            </div>
           </form>
         </ng-template>
       </p-overlayPanel>
