@@ -1,8 +1,8 @@
 import { wrapLines } from 'src/app/shared/utils/string.utils';
 import { InputTypeEnum } from '../../enums/input-type.enum';
 import { FormStructure } from './function-definition';
-import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
-import { VALUE_TYPES, ValueType } from './models/value.type';
+import { FormContext, ValidatorProcessorBase } from './helper/validator-form-context.helper';
+import { VALUE_TYPES } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
 interface Rules {
@@ -151,7 +151,7 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
   }
 }
 
-class FormValidatorGenerator {
+export class FormValidatorGenerator {
   generate(rules: string[], getField: string): string[] {
     return rules.reduce((validators: string[], rule: string) => {
       const [ruleName, ruleParameters] = ValidatorRuleHelper.parseStringRule(rule);
@@ -403,7 +403,7 @@ export class FormInputGenerator {
   }
 }
 
-export class ReactiveDrivenHtml {
+export class ReactiveDrivenHtml extends ValidatorProcessorBase {
   private rules!: any;
   private triggerValidationOnSubmit: boolean = true;
   private formName: string = 'form';
@@ -414,6 +414,7 @@ export class ReactiveDrivenHtml {
   };
 
   constructor(rules: Rules, options?: object) {
+    super();
     this.options = {
       ...this.options,
       ...(options || {}),
@@ -434,7 +435,7 @@ export class ReactiveDrivenHtml {
     return [
       `<form [formGroup]="${this.formName}" (ngSubmit)="onSubmit()">`,
         `<pre>{{ ${this.formName}.value | json }}</pre>`,
-        this.buildReactiveFormHtml(this.rules),
+        ...this.process(this.rules),
         `<button type="submit" class="btn btn-primary">`,
         `Submit`,
         `</button>`,
@@ -442,136 +443,122 @@ export class ReactiveDrivenHtml {
     ];
   }
 
-  public buildReactiveFormHtml(
-    object: { [key: string]: any },
-    namesArr: string[] = [],
-    previousValueType: ValueType = VALUE_TYPES.OBJECT,
-    formStructureStack: FormStructure[] = [],
-  ): string {
-    const reactiveFormHtml = ValidatorFormContextHelper.loop(
-      object,
-      namesArr,
-      previousValueType,
-      (context) => {
-        const { key, value, currentValueType, fullKeyPath, currentFormStructure } = context;
-        const previousFormStructure = formStructureStack[formStructureStack.length - 1];
-        const formContext = {
-          current: currentFormStructure,
-          previous: previousFormStructure,
-        };
+  public handleContext(context: FormContext): string {
+    const { key, value, currentValueType, previousValueType, fullKeyPath, currentFormStructure, formStructureStack } = context;
+    const previousFormStructure = formStructureStack[formStructureStack.length - 1];
+    const formContext = {
+      current: currentFormStructure,
+      previous: previousFormStructure,
+    };
 
-        const formUtils = new FormUtils();
+    const formUtils = new FormUtils();
 
-        const [openLoopTag, closeLoopTag] =
-          previousValueType === VALUE_TYPES.ARRAY
-            ? formUtils.generateLoopWrapper(formContext.previous!)
-            : [[], []];
+    const [openLoopTag, closeLoopTag] =
+      previousValueType === VALUE_TYPES.ARRAY
+        ? formUtils.generateLoopWrapper(formContext.previous!)
+        : [[], []];
 
-        const addButton = this.options.showAddButton
-          ? formUtils.generateAddButton(formContext.previous, formContext.current)
-          : [];
+    const addButton = this.options.showAddButton
+      ? formUtils.generateAddButton(formContext.previous, formContext.current)
+      : [];
 
-        const deleteButton = this.options.showDeleteButton
-          ? formUtils.generateDeleteButton(formContext.previous, formContext.current)
-          : [];
+    const deleteButton = this.options.showDeleteButton
+      ? formUtils.generateDeleteButton(formContext.previous, formContext.current)
+      : [];
 
-        const buildWrapperTags = (): string[][] => {
-          const customCssClass =
-            this.options.framework === FrameworkType.BOOTSTRAP
-              ? 'class="p-1 my-1 border border-dark"'
-              : '';
+    const buildWrapperTags = (): string[][] => {
+      const customCssClass =
+        this.options.framework === FrameworkType.BOOTSTRAP
+          ? 'class="p-1 my-1 border border-dark"'
+          : '';
 
-          const formIndex =
-            previousValueType === VALUE_TYPES.ARRAY
-              ? formContext.previous?.lastIndexParam
-              : `'${key}'`;
+      const formIndex =
+        previousValueType === VALUE_TYPES.ARRAY
+          ? formContext.previous?.lastIndexParam
+          : `'${key}'`;
 
-          if (currentValueType === VALUE_TYPES.ARRAY) {
-            return [
-              [`<fieldset [formArrayName]="${formIndex}" ${customCssClass}>`],
-              [`</fieldset>`],
-            ];
-          }
+      if (currentValueType === VALUE_TYPES.ARRAY) {
+        return [
+          [`<fieldset [formArrayName]="${formIndex}" ${customCssClass}>`],
+          [`</fieldset>`],
+        ];
+      }
 
-          if (currentValueType === VALUE_TYPES.OBJECT) {
-            const customClass =
-              previousValueType === VALUE_TYPES.ARRAY &&
-              this.options.framework === FrameworkType.BOOTSTRAP
-                ? 'class="p-1 mb-2"'
-                : '';
+      if (currentValueType === VALUE_TYPES.OBJECT) {
+        const customClass =
+          previousValueType === VALUE_TYPES.ARRAY &&
+          this.options.framework === FrameworkType.BOOTSTRAP
+            ? 'class="p-1 mb-2"'
+            : '';
 
-            return [[`<div [formGroupName]="${formIndex}" ${customClass}>`], [`</div>`]];
-          }
+        return [[`<div [formGroupName]="${formIndex}" ${customClass}>`], [`</div>`]];
+      }
 
-          return [];
-        };
+      return [];
+    };
 
-        const nextStack = [...formStructureStack, currentFormStructure];
+    const nextStack = [...formStructureStack, currentFormStructure];
 
-        if (currentValueType === VALUE_TYPES.ARRAY) {
-          const [open, close] = buildWrapperTags();
-          const innerHtml = this.buildReactiveFormHtml(
-            value,
-            fullKeyPath,
-            VALUE_TYPES.ARRAY,
-            nextStack,
-          );
+    if (currentValueType === VALUE_TYPES.ARRAY) {
+      const [open, close] = buildWrapperTags();
+      const innerHtml = this.process(
+        value,
+        fullKeyPath,
+        VALUE_TYPES.ARRAY,
+        nextStack,
+      );
 
-          return previousValueType === VALUE_TYPES.ARRAY
-            ? wrapLines([
-                ...openLoopTag,
-                // '<div class="d-flex mb-2">',
-                ...addButton,
-                ...deleteButton,
-                // '</div>',
-                ...open,
-                innerHtml,
-                ...close,
-                ...closeLoopTag,
-              ])
-            : wrapLines([...open, innerHtml, ...close]);
-        }
+      return previousValueType === VALUE_TYPES.ARRAY
+        ? wrapLines([
+            ...openLoopTag,
+            // '<div class="d-flex mb-2">',
+            ...addButton,
+            ...deleteButton,
+            // '</div>',
+            ...open,
+            ...innerHtml,
+            ...close,
+            ...closeLoopTag,
+          ])
+        : wrapLines([...open, ...innerHtml, ...close]);
+    }
 
-        if (currentValueType === VALUE_TYPES.OBJECT) {
-          const [open, close] = buildWrapperTags();
-          const innerHtml = this.buildReactiveFormHtml(
-            value,
-            fullKeyPath,
-            VALUE_TYPES.OBJECT,
-            nextStack,
-          );
+    if (currentValueType === VALUE_TYPES.OBJECT) {
+      const [open, close] = buildWrapperTags();
+      const innerHtml = this.process(
+        value,
+        fullKeyPath,
+        VALUE_TYPES.OBJECT,
+        nextStack,
+      );
 
-          return previousValueType === VALUE_TYPES.ARRAY
-            ? wrapLines([
-                ...addButton,
-                ...openLoopTag,
-                ...open,
-                ...deleteButton,
-                innerHtml,
-                ...close,
-                ...closeLoopTag,
-              ])
-            : wrapLines([...open, innerHtml, ...close]);
-        }
+      return previousValueType === VALUE_TYPES.ARRAY
+        ? wrapLines([
+            ...addButton,
+            ...openLoopTag,
+            ...open,
+            ...deleteButton,
+            ...innerHtml,
+            ...close,
+            ...closeLoopTag,
+          ])
+        : wrapLines([...open, ...innerHtml, ...close]);
+    }
 
-        if (currentValueType === VALUE_TYPES.STRING) {
-          const rules = this.extractRules(value);
-          const stringInput = new FormInputGenerator(
-            this.options.framework,
-            formContext,
-            rules,
-          ).generate();
+    if (currentValueType === VALUE_TYPES.STRING) {
+      const rules = this.extractRules(value);
+      const stringInput = new FormInputGenerator(
+        this.options.framework,
+        formContext,
+        rules,
+      ).generate();
 
-          return previousValueType === VALUE_TYPES.ARRAY
-            ? wrapLines([...addButton, ...openLoopTag, stringInput, ...closeLoopTag])
-            : stringInput;
-        }
+      return previousValueType === VALUE_TYPES.ARRAY
+        ? wrapLines([...addButton, ...openLoopTag, stringInput, ...closeLoopTag])
+        : stringInput;
+    }
 
-        return '';
-      },
-    ).filter(Boolean);
-
-    return wrapLines(reactiveFormHtml);
+    return '';
   }
 
   private extractRules(value: string): string[] {

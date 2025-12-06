@@ -1,7 +1,7 @@
 import { wrapLines } from '@shared/utils/string.utils';
 import { __ARRAY__, AccessModifier } from '../../enums/reserved-name.enum';
 import { FormBuilder, FormStructure } from './function-definition';
-import { ValidatorFormContextHelper } from './helper/validator-form-context.helper';
+import { FormContext, ValidatorProcessorBase } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 import { ValidatorRuleHelper } from './validator-rule-helper';
 
@@ -79,6 +79,78 @@ export class Validator {
   }
 }
 
+export class BuildPathForm extends ValidatorProcessorBase {
+  public constructor(private rules: any) {
+    super();
+  }
+
+  public get(): string[] {
+    return this.process(this.rules);
+  }
+
+  handleContext(context: FormContext): string {
+    const { value, currentValueType, fullKeyPath, currentFormStructure, formStructureStack } =
+      context;
+
+    const previousFormStructure = formStructureStack[formStructureStack.length - 1];
+    const formContext = {
+      current: currentFormStructure,
+      previous: previousFormStructure,
+    };
+
+    if (
+      currentValueType === VALUE_TYPES.ARRAY ||
+      currentValueType === VALUE_TYPES.OBJECT ||
+      currentValueType === VALUE_TYPES.STRING
+    ) {
+      const [openForEach, closeForEach] = this.forEachWrapper(
+        formContext.previous!,
+        formContext.current,
+      );
+      const nextStack = [...formStructureStack, currentFormStructure];
+      const innerForEachBlock =
+        currentValueType === VALUE_TYPES.STRING
+          ? ''
+          : this.process(value, fullKeyPath, currentValueType, nextStack);
+
+      return wrapLines([...openForEach, ...innerForEachBlock, ...closeForEach].filter(Boolean));
+    }
+
+    return '';
+  }
+
+  private forEachWrapper(previous: FormStructure, current: FormStructure): [string[], string[]] {
+    if (current.previousValueType !== VALUE_TYPES.ARRAY) {
+      return [[], []];
+    }
+
+    const buildKeyPath = (previous: FormStructure): string => {
+      const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
+      const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
+      const rootKey =
+        lastArrayIndex === -1 ? `${AccessModifier.this}.data` : `item${previous.paramCounter - 1}`;
+      const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
+
+      return [rootKey, ...suffixPath].join('.');
+    };
+
+    const keyPath = buildKeyPath(previous);
+    const paramName = `item${previous.paramCounter}`;
+    const indexParam = previous.lastIndexParam;
+    const getterCall = `${AccessModifier.this}.${previous.getter?.call}`;
+    const creatorCall = `${AccessModifier.this}.${current.creator.call}`;
+    const openBlock = [
+      `// @ts-ignore`,
+      `${keyPath}.forEach((${paramName}, ${indexParam}) => {`,
+      `${getterCall}.push(${creatorCall})`,
+    ];
+
+    const closeBlock = [`});`];
+
+    return [openBlock, closeBlock];
+  }
+}
+
 export enum FormOutputFormat {
   Json = 'JSON',
   AngularFormBuilder = 'ANGULAR_FORM_BUILDER',
@@ -103,7 +175,7 @@ export const FORM_OUTPUT_WRAPPERS: any = {
   },
 } as const;
 
-export class ReactiveDrivenValidator {
+export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   private rules!: any;
   private _options: Options = {
     formName: 'form',
@@ -112,23 +184,26 @@ export class ReactiveDrivenValidator {
     container: 'container',
     formBuildMode: FormOutputFormat.AngularFormBuilder,
   };
-  private componentName!: string;
   private formFields: FormStructure[] = [];
   private optionChoices: string[] = [];
 
   constructor(
     rules: any,
-    componentName: string,
+    private componentName: string,
     private options?: any,
   ) {
-    this.componentName = componentName;
+    super();
+    this.setOptions(options);
+    this.setRules(rules);
+  }
+
+  private setOptions(options: any): void {
     this.options = {
       ...this.options,
       formBuildMode: options?.formBuildMode
         ? options?.formBuildMode
         : FormOutputFormat.AngularFormBuilder,
     };
-    this.setRules(rules);
   }
 
   public generateFormBuilder(): string[] {
@@ -136,7 +211,7 @@ export class ReactiveDrivenValidator {
 
     return [
       `${AccessModifier.this}.${this._options.formName} = ${OPEN}`,
-      this.reactiveDrivenValidators(this.rules),
+      ...this.process(this.rules),
       `${CLOSE};`,
     ];
   }
@@ -243,7 +318,7 @@ export class ReactiveDrivenValidator {
   private patchForm(): string[] {
     return [
       `${AccessModifier.private} patchForm(): void {`,
-        this.buildPatchForm(this.rules),
+        ...new BuildPathForm(this.rules).get(),
         `${AccessModifier.this}.f.patchValue(${AccessModifier.this}.data);`,
       `}`,
     ];
@@ -278,142 +353,55 @@ export class ReactiveDrivenValidator {
     return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode][type];
   }
 
-  private forEachWrapper(previous: FormStructure, current: FormStructure): [string[], string[]] {
-    if (current.previousValueType !== VALUE_TYPES.ARRAY) {
-      return [[], []];
+  handleContext(context: FormContext): string {
+    const { value, currentValueType, fullKeyPath, key, previousValueType } = context;
+    const formStructureTemplate = this.buildFormWrapper(
+      key,
+      value,
+      currentValueType,
+      previousValueType,
+      fullKeyPath,
+    );
+    const formStructure = new FormBuilder(
+      fullKeyPath,
+      previousValueType,
+      currentValueType,
+      formStructureTemplate,
+    ).formStructure();
+
+    this.formFields.push({ ...formStructure });
+
+    //value: can be an array ['required', 'min:40'] or either an object {}
+    if (currentValueType === VALUE_TYPES.ARRAY) {
+      return wrapLines([
+        previousValueType === VALUE_TYPES.ARRAY ? '' : `"${key}":`,
+        `${AccessModifier.this}.${formStructure.creator.call},`,
+      ]);
     }
 
-    const buildKeyPath = (previous: FormStructure): string => {
-      const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
-      const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
-      const rootKey = lastArrayIndex === -1 ? `${AccessModifier.this}.data` : `item${previous.paramCounter - 1}`;
-      const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
+    if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
+      return `${AccessModifier.this}.${formStructure.creator.call}`;
+    }
 
-      return [rootKey, ...suffixPath].join('.');
-    };
-    
-    const keyPath = buildKeyPath(previous);
-    const paramName = `item${previous.paramCounter}`;
-    const indexParam = previous.lastIndexParam;
-    const getterCall = `${AccessModifier.this}.${previous.getter?.call}`;
-    const creatorCall = `${AccessModifier.this}.${current.creator.call}`;
-    const openBlock = [
-      `// @ts-ignore`,
-      `${keyPath}.forEach((${paramName}, ${indexParam}) => {`,
-      `${getterCall}.push(${creatorCall})`,
-    ];
+    if (currentValueType === VALUE_TYPES.OBJECT) {
+      return wrapLines([...formStructureTemplate, ',']);
+    }
 
-    const closeBlock = [`});`];
-
-    return [openBlock, closeBlock];
-  }
-
-  private buildPatchForm(
-    object: { [key: string]: any },
-    namesArr: string[] = [],
-    previousValueType: ValueType = VALUE_TYPES.OBJECT,
-    formStructureStack: FormStructure[] = [],
-  ): string {
-    const patchForm = ValidatorFormContextHelper.loop(
-      object,
-      namesArr,
-      previousValueType,
-      (context) => {
-        const { value, currentValueType, fullKeyPath, currentFormStructure } = context;
-
-        const previousFormStructure = formStructureStack[formStructureStack.length - 1];
-        const formContext = {
-          current: currentFormStructure,
-          previous: previousFormStructure,
-        };
-
-        if (
-          currentValueType === VALUE_TYPES.ARRAY ||
-          currentValueType === VALUE_TYPES.OBJECT ||
-          currentValueType === VALUE_TYPES.STRING
-        ) {
-          const [openForEach, closeForEach] = this.forEachWrapper(
-            formContext.previous!,
-            formContext.current,
-          );
-          const nextStack = [...formStructureStack, currentFormStructure];
-          const innerForEachBlock =
-            currentValueType === VALUE_TYPES.STRING
-              ? ''
-              : this.buildPatchForm(value, fullKeyPath, currentValueType, nextStack);
-
-          return wrapLines([...openForEach, innerForEachBlock, ...closeForEach].filter(Boolean));
-        }
-
-        return '';
-      },
-    ).filter(Boolean);
-
-    return wrapLines(patchForm);
-  }
-
-  public reactiveDrivenValidators(
-    object: { [key: string]: any },
-    namesArr: string[] = [],
-    previousValueType: ValueType = VALUE_TYPES.OBJECT,
-  ): string {
-    const validators = ValidatorFormContextHelper.loop(
-      object,
-      namesArr,
-      previousValueType,
-      (context) => {
-        const { value, currentValueType, fullKeyPath, key } = context;
-        const formStructureTemplate = this.buildFormWrapper(
-          key,
-          value,
-          currentValueType,
-          previousValueType,
-          fullKeyPath,
+    if (currentValueType === VALUE_TYPES.STRING) {
+      const rules = value.split('|');
+      const optionChoices = this.generateValues(rules);
+      if (optionChoices.length > 0) {
+        this.optionChoices.push(
+          `${AccessModifier.public} ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
         );
-        const formStructure = new FormBuilder(
-          fullKeyPath,
-          previousValueType,
-          currentValueType,
-          formStructureTemplate,
-        ).formStructure();
+      }
 
-        this.formFields.push({ ...formStructure });
+      return previousValueType === VALUE_TYPES.ARRAY
+        ? `${AccessModifier.this}.${formStructure.creator.call}`
+        : formStructureTemplate.toString();
+    }
 
-        //value: can be an array ['required', 'min:40'] or either an object {}
-        if (currentValueType === VALUE_TYPES.ARRAY) {
-          return wrapLines([
-            previousValueType === VALUE_TYPES.ARRAY ? '' : `"${key}":`,
-            `${AccessModifier.this}.${formStructure.creator.call},`,
-          ]);
-        }
-
-        if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
-          return `${AccessModifier.this}.${formStructure.creator.call}`;
-        }
-
-        if (currentValueType === VALUE_TYPES.OBJECT) {
-          return wrapLines([...formStructureTemplate, ',']);
-        }
-
-        if (currentValueType === VALUE_TYPES.STRING) {
-          const rules = value.split('|');
-          const optionChoices = this.generateValues(rules);
-          if (optionChoices.length > 0) {
-            this.optionChoices.push(
-              `${AccessModifier.public} ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
-            );
-          }
-
-          return previousValueType === VALUE_TYPES.ARRAY
-            ? `${AccessModifier.this}.${formStructure.creator.call}`
-            : formStructureTemplate.toString();
-        }
-
-        return '';
-      },
-    ).filter((el) => el);
-
-    return wrapLines(validators);
+    return '';
   }
 
   private buildFormWrapper(
@@ -426,9 +414,9 @@ export class ReactiveDrivenValidator {
     const { OPEN, CLOSE } = this.getFormWrapper(currentType);
 
     if (currentType === VALUE_TYPES.ARRAY) {
-      const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.ARRAY);
+      const content = this.process(value, fullKeyPath, VALUE_TYPES.ARRAY);
 
-      return [OPEN, content, CLOSE];
+      return [OPEN, ...content, CLOSE];
     }
 
     if (currentType === VALUE_TYPES.STRING) {
@@ -447,11 +435,11 @@ export class ReactiveDrivenValidator {
     }
 
     if (currentType === VALUE_TYPES.OBJECT) {
-      const content = this.reactiveDrivenValidators(value, fullKeyPath, VALUE_TYPES.OBJECT);
+      const content = this.process(value, fullKeyPath, VALUE_TYPES.OBJECT);
 
       return previousType === VALUE_TYPES.ARRAY
-        ? [OPEN, content, CLOSE]
-        : [`"${key}":${OPEN}`, content, CLOSE];
+        ? [OPEN, ...content, CLOSE]
+        : [`"${key}":${OPEN}`, ...content, CLOSE];
     }
 
     return [];
