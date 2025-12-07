@@ -261,6 +261,12 @@ export class FormGeneratorContainerComponent implements OnInit {
     }
   }
 
+  public formatJson(): void {
+    if (!this.editorInputInstance) return;
+
+    this.editorInputInstance.getAction('editor.action.formatDocument').run();
+  }
+
   public onOutputEditorInit(editor: monaco.editor.IStandaloneCodeEditor): void {
     this.editorOutputInstance = editor;
   }

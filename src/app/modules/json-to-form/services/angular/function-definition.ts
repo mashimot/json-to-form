@@ -220,13 +220,18 @@ export class FormBuilder {
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
-  public formStructure(): FormStructure {
+  private trimArrayPlaceholder(): (string | null)[] {
     const stack = [...this.fullKeyPath];
 
     if (this.currentValueType === VALUE_TYPES.ARRAY) {
       stack.pop();
     }
 
+    return stack;
+  }
+
+  public formStructure(): FormStructure {
+    const stack = this.trimArrayPlaceholder();
     const accessors = this.getAccessors(stack);
 
     return {

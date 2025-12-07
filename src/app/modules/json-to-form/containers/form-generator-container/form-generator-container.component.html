@@ -16,6 +16,16 @@
               }
             </div>
 
+            <div class="p-toolbar-group-middle">
+              <p-button
+                icon="pi pi-align-left"
+                styleClass="p-button-sm"
+                variant="text"
+                severity="contrast"
+                (click)="formatJson()"
+              ></p-button>
+            </div>
+
             <div class="p-toolbar-group-end">
               <p-button
                 (onClick)="op.toggle($event)"

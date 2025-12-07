@@ -184,7 +184,6 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     container: 'container',
     formBuildMode: FormOutputFormat.AngularFormBuilder,
   };
-  private formFields: FormStructure[] = [];
   private optionChoices: string[] = [];
 
   constructor(
@@ -282,19 +281,17 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       `get f(): FormGroup {`,
         `return ${AccessModifier.this}.form as FormGroup;`,
       `}`,
-      ...this.formFields.map((field: FormStructure) => field?.getter.withReturn ?? ''),
+      ...Object.keys(this.formContext).map(key => {
+        return this.formContext[key]?.getters || '';
+      }).filter(el => el)
     ]);
   }
 
   private get creaters(): string {
     return wrapLines(
-      this.formFields
-        .filter(
-          (field: FormStructure) =>
-            field.previousValueType === VALUE_TYPES.ARRAY ||
-            field.currentValueType === VALUE_TYPES.ARRAY,
-        )
-        .map((field: FormStructure) => field?.creator.withReturn ?? ''),
+      Object.keys(this.formContext).map(key => {
+        return this.formContext[key]?.creaters || '';
+      }).filter(el => el)
     );
   }
 
@@ -369,7 +366,28 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       formStructureTemplate,
     ).formStructure();
 
-    this.formFields.push({ ...formStructure });
+    const registerFormFieldHandlers = () => {
+      const keyPath = [...fullKeyPath];
+      const normalizedPath = keyPath.map(segment => segment === null ? 'At' : segment).join('.');
+      const contextKey = `${normalizedPath}  |previous:${previousValueType}|current:${currentValueType}`;
+
+      this.formContext[contextKey] = {
+        getters: formStructure.getter.withReturn
+      };
+
+      const isArrayType = 
+        previousValueType === VALUE_TYPES.ARRAY || 
+        currentValueType === VALUE_TYPES.ARRAY;
+
+      if (isArrayType) {
+        this.formContext[contextKey] = {
+          ...this.formContext[contextKey],
+          creaters: formStructure.creator.withReturn
+        };
+      }
+    };
+
+    registerFormFieldHandlers();
 
     //value: can be an array ['required', 'min:40'] or either an object {}
     if (currentValueType === VALUE_TYPES.ARRAY) {

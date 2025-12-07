@@ -15,6 +15,8 @@ export interface FormContext {
 }
 
 export abstract class ValidatorProcessorBase {
+  public formContext: { [key: string]: { getters: string; creaters?: string } } = {};
+
   public process(
     object: { [key: string]: any },
     namesArr: string[] = [],
