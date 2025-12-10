@@ -126,7 +126,7 @@ export class BuildPathForm extends ValidatorProcessorBase {
 
     const buildKeyPath = (previous: FormStructure): string => {
       const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
-      const lastArrayIndex = previous.stack.lastIndexOf(__ARRAY__);
+      const lastArrayIndex = previous.fullKeyPath.lastIndexOf(__ARRAY__);
       const rootKey =
         lastArrayIndex === -1 ? `${AccessModifier.this}.data` : `item${previous.paramCounter - 1}`;
       const suffixPath = cleanedPath.slice(lastArrayIndex + 1);
@@ -226,7 +226,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
 
   /* eslint-disable */
   private componentDecorator(): string[] {
-    const asynPipe = this.observableAttributes().length > 0 ? 'AsyncPipe' : '';
+    const asyncPipe = this.observableAttributes().length > 0 ? 'AsyncPipe' : '';
     return [
       `@Component({`,
         `selector: 'app-${this.componentName}',`,
@@ -238,10 +238,11 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
           `NgIf,`,
           `NgFor,`,
           `JsonPipe,`,
-          asynPipe,
+          asyncPipe,
         `]`,
       `})`,
-    ];
+    ]
+    .filter(el => el);
   }
 
   private classAttributes(): string[] {
@@ -351,7 +352,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   }
 
   handleContext(context: FormContext): string {
-    const { value, currentValueType, fullKeyPath, key, previousValueType } = context;
+    const { value, currentValueType, fullKeyPath, key, previousValueType, nameDotNotation, currentFormStructure } = context;
     const formStructureTemplate = this.buildFormWrapper(
       key,
       value,
@@ -359,20 +360,11 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       previousValueType,
       fullKeyPath,
     );
-    const formStructure = new FormBuilder(
-      fullKeyPath,
-      previousValueType,
-      currentValueType,
-      formStructureTemplate,
-    ).formStructure();
 
+    this.malmsteen[nameDotNotation] = currentFormStructure;
     const registerFormFieldHandlers = () => {
-      const keyPath = [...fullKeyPath];
-      const normalizedPath = keyPath.map(segment => segment === null ? 'At' : segment).join('.');
-      const contextKey = `${normalizedPath}  |previous:${previousValueType}|current:${currentValueType}`;
-
-      this.formContext[contextKey] = {
-        getters: formStructure.getter.withReturn
+      this.formContext[nameDotNotation] = {
+        getters: currentFormStructure.getter.withReturn
       };
 
       const isArrayType = 
@@ -380,9 +372,9 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
         currentValueType === VALUE_TYPES.ARRAY;
 
       if (isArrayType) {
-        this.formContext[contextKey] = {
-          ...this.formContext[contextKey],
-          creaters: formStructure.creator.withReturn
+        this.formContext[nameDotNotation] = {
+          ...this.formContext[nameDotNotation],
+          creaters: currentFormStructure.creator.withReturn(formStructureTemplate)
         };
       }
     };
@@ -393,12 +385,12 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     if (currentValueType === VALUE_TYPES.ARRAY) {
       return wrapLines([
         previousValueType === VALUE_TYPES.ARRAY ? '' : `"${key}":`,
-        `${AccessModifier.this}.${formStructure.creator.call},`,
+        `${AccessModifier.this}.${currentFormStructure.creator.call},`,
       ]);
     }
 
     if (previousValueType === VALUE_TYPES.ARRAY && currentValueType === VALUE_TYPES.OBJECT) {
-      return `${AccessModifier.this}.${formStructure.creator.call}`;
+      return `${AccessModifier.this}.${currentFormStructure.creator.call}`;
     }
 
     if (currentValueType === VALUE_TYPES.OBJECT) {
@@ -410,12 +402,12 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       const optionChoices = this.generateValues(rules);
       if (optionChoices.length > 0) {
         this.optionChoices.push(
-          `${AccessModifier.public} ${formStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
+          `${AccessModifier.public} ${currentFormStructure.methodName}$ = of(${JSON.stringify(optionChoices)})`,
         );
       }
 
       return previousValueType === VALUE_TYPES.ARRAY
-        ? `${AccessModifier.this}.${formStructure.creator.call}`
+        ? `${AccessModifier.this}.${currentFormStructure.creator.call}`
         : formStructureTemplate.toString();
     }
 
@@ -457,7 +449,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
 
       return previousType === VALUE_TYPES.ARRAY
         ? [OPEN, ...content, CLOSE]
-        : [`"${key}":${OPEN}`, ...content, CLOSE];
+        : [`"${key}": ${OPEN}`, ...content, CLOSE];
     }
 
     return [];

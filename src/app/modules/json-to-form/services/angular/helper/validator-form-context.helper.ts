@@ -8,14 +8,17 @@ export interface FormContext {
   currentValueType: ValueType;
   fullKeyPath: string[];
   currentFormStructure: FormStructure;
-  nestedInterfaceName: string;
+  interfaceName: string;
   originalCurrentValueType: ValueType;
   previousValueType: ValueType;
   formStructureStack: FormStructure[];
+  nameDotNotation: string;
 }
 
 export abstract class ValidatorProcessorBase {
   public formContext: { [key: string]: { getters: string; creaters?: string } } = {};
+  public names: string[] = [];
+  public malmsteen: { [key: string]: any } = {};
 
   public process(
     object: { [key: string]: any },
@@ -25,18 +28,21 @@ export abstract class ValidatorProcessorBase {
   ): string[] {
     const results = Object.keys(object).map((key) => {
       const originalCurrentValueType = ValidatorRuleHelper.getValueType(object[key]);
-      const rawValue = ValidatorRuleHelper.normalizeValue(object[key]);
-      const currentValueType = ValidatorRuleHelper.getValueType(rawValue);
+      const normalizedValue = ValidatorRuleHelper.normalizeValue(object[key]);
+      const currentValueType = ValidatorRuleHelper.getValueType(normalizedValue);
+      const interfaceName = this.buildInterfaceName(key);
+      const value =
+        currentValueType === VALUE_TYPES.ARRAY
+          ? [normalizedValue[normalizedValue.length - 1]]
+          : normalizedValue;
+
       const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
-        namesArr,
+        value,
         previousValueType,
         key,
         currentValueType,
       );
       const fullKeyPath = [...namesArr, ...remainingKeys];
-      const nestedInterfaceName = 'I' + key.charAt(0).toUpperCase() + key.slice(1);
-      const value =
-        currentValueType === VALUE_TYPES.ARRAY ? [rawValue[rawValue.length - 1]] : rawValue;
       const currentFormStructure = new FormBuilder(
         fullKeyPath,
         previousValueType,
@@ -44,16 +50,23 @@ export abstract class ValidatorProcessorBase {
         [],
       ).formStructure();
 
+      const nameDotNotation = fullKeyPath
+        .map((segment) => (segment === null ? 'At' : segment))
+        .join('.');
+
+      this.names.push(nameDotNotation);
+
       const fullContext = {
         key,
         value,
         currentValueType,
         fullKeyPath,
         currentFormStructure,
-        nestedInterfaceName,
+        interfaceName,
         previousValueType,
         originalCurrentValueType,
         formStructureStack,
+        nameDotNotation,
       };
 
       return this.handleContext(fullContext);
@@ -65,5 +78,9 @@ export abstract class ValidatorProcessorBase {
   public handleContext(context: FormContext): string {
     const { value, currentValueType, fullKeyPath, key } = context;
     return '';
+  }
+
+  private buildInterfaceName(key: string): string {
+    return `I${key.charAt(0).toUpperCase()}${key.slice(1)}`;
   }
 }

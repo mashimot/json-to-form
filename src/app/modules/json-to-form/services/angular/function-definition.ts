@@ -13,7 +13,6 @@ export interface Accessors {
   lastIndexParam: string;
   path: string[];
   reactiveFormType: string;
-  stack: (string | null)[];
   paramCounter: number;
 }
 
@@ -21,7 +20,6 @@ export interface FormStructure extends Accessors, MethodFromKeypath {
   attributeName: string;
   fullKeyPath: (string | null)[];
   index: string;
-  formStructureTemplate: string[];
   previousValueType: string;
   currentValueType?: string;
 }
@@ -35,7 +33,7 @@ export interface MethodFromKeypath {
   creator: {
     name: string;
     call: string;
-    withReturn: string;
+    withReturn: ((content: string[]) => string);
   };
 }
 
@@ -44,48 +42,6 @@ export interface GeneratedMethod {
   call: string;
   previousCall: string;
   withReturn: string;
-}
-
-export class PathUtils {
-  public static getPath(dotNotation: string[]): string[] {
-    const id = [...dotNotation];
-    let count = 0;
-    for (let i = 0; i < id.length; i++) {
-      const item = id[i];
-      if (item === __ARRAY__) {
-        id[i] = this.getIndexName(count);
-        count++;
-      } else {
-        id[i] = `'${item}'`;
-      }
-    }
-
-    return id;
-  }
-
-  public static buildChainedReactiveFormAccess(path: string[]): string[] {
-    let count = 0;
-
-    for (let i = 0; i < path.length; i++) {
-      const item = path[i];
-      if (item === __ARRAY__) {
-        const currentParameter = this.getIndexName(count);
-        path[i] = ` as FormArray).at(${currentParameter})`;
-        count++;
-      } else {
-        path[i] = `.get('${item}')`;
-        if (i === 0) {
-          path[i] = `this.form${path[i]}`;
-        }
-      }
-    }
-
-    return path;
-  }
-
-  public static getIndexName(count: number): string {
-    return `index${(count || 0) + 1}`;
-  }
 }
 
 export class CodeTemplateGenerator {
@@ -106,58 +62,62 @@ export class FormBuilder {
     private formStructureTemplate?: string[],
   ) {}
 
-  private get hasReservedWord(): boolean {
-    return this.fullKeyPath.includes(__ARRAY__);
+  private get hasArrayInPath(): boolean {
+    const hasAnyArrayElement = this.fullKeyPath.includes(__ARRAY__);
+    return (
+      hasAnyArrayElement ||
+      this.currentValueType === VALUE_TYPES.ARRAY ||
+      this.previousValueType === VALUE_TYPES.ARRAY
+    );
   }
 
   private generateMethodFromKeypath(stack: (string | null)[]): MethodFromKeypath {
-    const { methodName, params, path, reactiveFormType } = this.getAccessors(stack);
-    const result: MethodFromKeypath = {} as MethodFromKeypath;
+    const { methodName, params, path, reactiveFormType } = this.getAccessors();
 
-    // GETTER
     const capitalized = this.capitalize(methodName);
     const uncapitalized = this.uncapitalize(methodName);
 
-    const getterName = this.hasReservedWord ? `get${capitalized}` : `get ${uncapitalized}`;
+    const accessorName = this.hasArrayInPath ? `get${capitalized}` : `get ${uncapitalized}`;
+    const accessorCallName = this.hasArrayInPath ? accessorName : uncapitalized;
 
-    const callName = this.hasReservedWord ? getterName : uncapitalized;
+    const createFunctionName = `create${capitalized}`;
 
-    result.getter = {
-      name: getterName,
-      call: this.functionCall(callName, params),
-      withReturn: this.generateFunctionWithReturn(
-        'get',
-        getterName,
-        params,
-        path,
-        reactiveFormType,
-      ),
+    return {
+      getter: {
+        name: accessorName,
+        call: this.buildFunctionCall(accessorCallName, params),
+        withReturn: this.buildFunctionWithReturn(
+          'get',
+          accessorName,
+          params,
+          path,
+          reactiveFormType,
+        ),
+      },
+      creator: {
+        name: createFunctionName,
+        call: this.buildFunctionCall(createFunctionName, []),
+        withReturn: (content: string[]) => {
+          return this.buildFunctionWithReturn(
+            'create',
+            createFunctionName,
+            params,
+            path,
+            reactiveFormType,
+            content
+          );
+        }
+      },
     };
-
-    // CREATOR
-    const createFunctionName = `create${this.capitalize(methodName)}`;
-
-    result.creator = {
-      name: createFunctionName,
-      call: this.functionCall(createFunctionName, []),
-      withReturn: this.generateFunctionWithReturn(
-        'create',
-        createFunctionName,
-        params,
-        path,
-        reactiveFormType,
-      ),
-    };
-
-    return result;
   }
 
-  private generateFunctionWithReturn(
+  private buildFunctionWithReturn(
     operation: string,
     name: string,
     params: string[],
     pathArray: string[],
     reactiveFormType: string,
+    content: string[] = []
   ): string {
     const paramListTyped = params.map((p) => `${p}:number`).join(', ');
 
@@ -165,7 +125,7 @@ export class FormBuilder {
       return CodeTemplateGenerator.createTemplate(
         name,
         reactiveFormType,
-        this.formStructureTemplate || [],
+        content,
       ).join('\n');
     }
 
@@ -180,37 +140,42 @@ export class FormBuilder {
     return `${name}(${paramListTyped}) { /* ${operation} logic here */ }`;
   }
 
-  private getAccessors(stack: (string | null)[]): Accessors {
-    const path: string[] = [];
-    const methodNameParts: string[] = [];
-    const paramList: string[] = [];
+  private getAccessors(): Accessors {
     const suffixArray = 'At';
     const indexerPreffix = 'index';
-    let paramCounter = 0;
-
-    stack.forEach((s: string | null) => {
-      if (s === __ARRAY__) {
-        methodNameParts.push(suffixArray);
-        paramList.push(`${indexerPreffix}${paramCounter}`);
-        path.push(`${indexerPreffix}${paramCounter}`);
-        paramCounter++;
-      } else {
-        methodNameParts.push(this.capitalize(s as string));
-        path.push(`'${s}'`);
-      }
-    });
-
-    const methodName = this.uncapitalize(methodNameParts.join(''));
     const reactiveFormType = this.getReactiveFormType();
+
+    const methodName = this.uncapitalize(
+      this.fullKeyPath
+        .map((value) => (value === __ARRAY__ ? suffixArray : value))
+        .map((value) => this.capitalize(value as string))
+        .join(''),
+    );
+
+    const { path, paramCounter } = this.fullKeyPath.reduce(
+      (acc, value: string | null) => {
+        if (value === __ARRAY__) {
+          acc.path.push(`${indexerPreffix}${acc.paramCounter}`);
+          acc.paramCounter++;
+        } else {
+          acc.path.push(`'${value}'`);
+        }
+        return acc;
+      },
+      { path: [] as string[], paramCounter: 0 },
+    );
+
+    const paramList = [...Array(paramCounter).keys()].map((index) => `${indexerPreffix}${index}`);
 
     return {
       methodName,
       params: paramList,
       index: path?.[path.length - 1],
-      lastIndexParam: `${indexerPreffix}${paramCounter}`,
-      path,
+      lastIndexParam: this.currentValueType === VALUE_TYPES.ARRAY 
+        ? `${indexerPreffix}${paramCounter}`
+        : '',
+      path: path,
       reactiveFormType,
-      stack,
       paramCounter,
     };
   }
@@ -220,28 +185,16 @@ export class FormBuilder {
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
-  private trimArrayPlaceholder(): (string | null)[] {
-    const stack = [...this.fullKeyPath];
-
-    if (this.currentValueType === VALUE_TYPES.ARRAY) {
-      stack.pop();
-    }
-
-    return stack;
-  }
-
   public formStructure(): FormStructure {
-    const stack = this.trimArrayPlaceholder();
-    const accessors = this.getAccessors(stack);
+    const accessors = this.getAccessors();
 
     return {
       ...accessors,
       attributeName: this.getAttributeName(accessors.paramCounter),
-      fullKeyPath: stack,
-      formStructureTemplate: this.formStructureTemplate || [],
+      fullKeyPath: this.fullKeyPath,
       previousValueType: this.previousValueType,
       currentValueType: this.currentValueType,
-      ...this.generateMethodFromKeypath(stack),
+      ...this.generateMethodFromKeypath(this.fullKeyPath),
     };
   }
 
@@ -259,7 +212,7 @@ export class FormBuilder {
     return [`${name}(): ${reactiveFormType} {`, `return ${(content || []).join('\n')};`, `}`];
   }
 
-  private functionCall(name: string, params: string[]): string {
+  private buildFunctionCall(name: string, params: string[]): string {
     return `${name}(${params.join(', ')})`;
   }
 

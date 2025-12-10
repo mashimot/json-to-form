@@ -161,15 +161,14 @@ export class ValidatorRuleHelper {
   ): any[] {
     const modifiers: (string | typeof __ARRAY__)[] = [];
 
-    const isRootOrNonArrayValueTypeParent =
-      path.length === 0 || previousValueType !== VALUE_TYPES.ARRAY;
-    const isArrayValue = currentValueType === VALUE_TYPES.ARRAY;
+    const isParentNotArrayOrRoot = path.length === 0 || previousValueType !== VALUE_TYPES.ARRAY;
+    const isParentArray = previousValueType === VALUE_TYPES.ARRAY;
 
-    if (isRootOrNonArrayValueTypeParent) {
+    if (isParentNotArrayOrRoot) {
       modifiers.push(currentKey);
     }
 
-    if (isArrayValue) {
+    if (isParentArray) {
       modifiers.push(__ARRAY__);
     }
 
