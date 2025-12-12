@@ -33,7 +33,7 @@ export interface MethodFromKeypath {
   creator: {
     name: string;
     call: string;
-    withReturn: ((content: string[]) => string);
+    withReturn: (content: string[]) => string;
   };
 }
 
@@ -59,7 +59,6 @@ export class FormBuilder {
     private fullKeyPath: (string | null)[] = [],
     private previousValueType: ValueType,
     private currentValueType?: ValueType | undefined,
-    private formStructureTemplate?: string[],
   ) {}
 
   private get hasArrayInPath(): boolean {
@@ -71,7 +70,7 @@ export class FormBuilder {
     );
   }
 
-  private generateMethodFromKeypath(stack: (string | null)[]): MethodFromKeypath {
+  private generateMethodFromKeypath(): MethodFromKeypath {
     const { methodName, params, path, reactiveFormType } = this.getAccessors();
 
     const capitalized = this.capitalize(methodName);
@@ -104,9 +103,9 @@ export class FormBuilder {
             params,
             path,
             reactiveFormType,
-            content
+            content,
           );
-        }
+        },
       },
     };
   }
@@ -117,16 +116,12 @@ export class FormBuilder {
     params: string[],
     pathArray: string[],
     reactiveFormType: string,
-    content: string[] = []
+    content: string[] = [],
   ): string {
     const paramListTyped = params.map((p) => `${p}:number`).join(', ');
 
     if (operation === 'create') {
-      return CodeTemplateGenerator.createTemplate(
-        name,
-        reactiveFormType,
-        content,
-      ).join('\n');
+      return CodeTemplateGenerator.createTemplate(name, reactiveFormType, content).join('\n');
     }
 
     if (operation === 'get') {
@@ -171,9 +166,8 @@ export class FormBuilder {
       methodName,
       params: paramList,
       index: path?.[path.length - 1],
-      lastIndexParam: this.currentValueType === VALUE_TYPES.ARRAY 
-        ? `${indexerPreffix}${paramCounter}`
-        : '',
+      lastIndexParam:
+        this.currentValueType === VALUE_TYPES.ARRAY ? `${indexerPreffix}${paramCounter}` : '',
       path: path,
       reactiveFormType,
       paramCounter,
@@ -194,7 +188,7 @@ export class FormBuilder {
       fullKeyPath: this.fullKeyPath,
       previousValueType: this.previousValueType,
       currentValueType: this.currentValueType,
-      ...this.generateMethodFromKeypath(this.fullKeyPath),
+      ...this.generateMethodFromKeypath(),
     };
   }
 

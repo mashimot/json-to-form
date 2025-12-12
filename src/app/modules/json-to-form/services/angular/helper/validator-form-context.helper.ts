@@ -47,7 +47,6 @@ export abstract class ValidatorProcessorBase {
         fullKeyPath,
         previousValueType,
         currentValueType,
-        [],
       ).formStructure();
 
       const nameDotNotation = fullKeyPath

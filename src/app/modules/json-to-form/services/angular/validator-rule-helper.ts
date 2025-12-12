@@ -37,28 +37,6 @@ export class ValidatorRuleHelper {
     return true;
   }
 
-  public static validateObject(obj: any, names: string = '', errors: string[] = []): string[] {
-    return Object.keys(obj).map((k: any) => {
-      const v = obj[k];
-      const rest = names.length > 0 ? '.' + k : k;
-      const re = /^[a-zA-Z0-9_-]*(\.\*)*$/;
-
-      if (!re.test(k)) {
-        errors.push(`Errors at: \`${names + rest}\``);
-      }
-
-      if (Object.prototype.toString.call(v) === '[object Array]') {
-        this.validateObject(v, names + rest, errors);
-      }
-
-      if (Object.prototype.toString.call(v) === '[object Object]') {
-        this.validateObject(v, names + rest, errors);
-      }
-
-      return errors;
-    })[0];
-  }
-
   public static parseStringRule(rule: string | any[]): any[] {
     if (typeof rule === 'string') {
       const afterColon = rule.substr(rule.indexOf(':') + 1);
