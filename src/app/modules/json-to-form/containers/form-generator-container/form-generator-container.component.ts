@@ -32,7 +32,7 @@ import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html'
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
 import { JsonToFormService } from '../../services/json-to-form.service';
-import { JsonValidators } from '../../validators/json.validator';
+import { validateJsonObject } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
 
 @Component({
@@ -329,7 +329,7 @@ export class FormGeneratorContainerComponent implements OnInit {
 
   public createForm(): void {
     this.form = this.formBuilder.group({
-      json: ['{}', [JsonValidators.validateObject()]],
+      json: ['{}', [validateJsonObject()]],
       structure: [1, [Validators.required]],
       featureName: this.formBuilder.control('task', [
         Validators.required,
