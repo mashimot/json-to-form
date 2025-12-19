@@ -30,8 +30,8 @@ import { map, startWith, switchMap } from 'rxjs/operators';
 import { VALUE_TYPES } from '../../services/angular/models/value.type';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
-import { ValidatorRuleHelper } from '../../services/angular/validator-rule-helper';
 import { JsonToFormService } from '../../services/json-to-form.service';
+import { htmlSelectorValidator } from '../../validators/html-selector.validator';
 import { validateJsonObject } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
 
@@ -331,10 +331,7 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.form = this.formBuilder.group({
       json: ['{}', [validateJsonObject()]],
       structure: [1, [Validators.required]],
-      featureName: this.formBuilder.control('task', [
-        Validators.required,
-        Validators.pattern(ValidatorRuleHelper.htmlSelectorRe),
-      ]),
+      featureName: this.formBuilder.control('task', [Validators.required, htmlSelectorValidator()]),
       options: this.formBuilder.group({
         formBuildMode: [this.formBuildModes[1].id, [Validators.required]],
         convert_to: ['angular', [Validators.required]],

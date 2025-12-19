@@ -1,16 +1,4 @@
-
 export class ValidatorRuleHelper {
-  // public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][.0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
-  public static htmlSelectorRe =
-    /^[a-zA-Z][/0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][/0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
-  public static validateHtmlSelector(selector: string): string | boolean {
-    if (selector && !this.htmlSelectorRe.test(selector)) {
-      return `Selector (${selector}) is invalid.`;
-    }
-
-    return true;
-  }
-
   public static parseStringRule(rule: string | any[]): any[] {
     if (typeof rule === 'string') {
       const afterColon = rule.substr(rule.indexOf(':') + 1);
