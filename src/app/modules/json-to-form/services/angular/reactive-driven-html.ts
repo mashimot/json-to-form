@@ -504,7 +504,7 @@ export class ReactiveDrivenHtml extends ValidatorProcessorBase {
       const innerHtml = this.process(
         value,
         fullKeyPath,
-        VALUE_TYPES.ARRAY,
+        currentValueType,
         nextStack,
       );
 
@@ -528,7 +528,7 @@ export class ReactiveDrivenHtml extends ValidatorProcessorBase {
       const innerHtml = this.process(
         value,
         fullKeyPath,
-        VALUE_TYPES.OBJECT,
+        currentValueType,
         nextStack,
       );
 

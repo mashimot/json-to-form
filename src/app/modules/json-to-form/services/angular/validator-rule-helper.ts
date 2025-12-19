@@ -1,31 +1,5 @@
-import { typeMap } from '../../constants/type-map.constant';
-import { __ARRAY__ } from '../../enums/reserved-name.enum';
-import { VALUE_TYPES, ValueType } from './models/value.type';
 
 export class ValidatorRuleHelper {
-  static str_getcsv(text: string) {
-    let p = '',
-      row = [''],
-      ret = [row],
-      i = 0,
-      r = 0,
-      s = !0,
-      l;
-    for (l of text) {
-      if ('"' === l) {
-        if (s && l === p) row[i] += l;
-        s = !s;
-      } else if (',' === l && s) l = row[++i] = '';
-      else if ('\n' === l && s) {
-        if ('\r' === p) row[i] = row[i].slice(0, -1);
-        row = ret[++r] = [(l = '')];
-        i = 0;
-      } else row[i] += l;
-      p = l;
-    }
-    return ret;
-  }
-
   // public static htmlSelectorRe = /^[a-zA-Z][.0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][.0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
   public static htmlSelectorRe =
     /^[a-zA-Z][/0-9a-zA-Z]*((:?-[0-9]+)*|(:?-[a-zA-Z][/0-9a-zA-Z]*(:?-[0-9]+)*)*)$/;
@@ -90,66 +64,7 @@ export class ValidatorRuleHelper {
     }
 
     return isFirstLetterLowerCase
-      ? ValidatorRuleHelper.lowercaseFirstLetter(camelCase)
-      : ValidatorRuleHelper.capitalizeFirstLetter(camelCase);
-  }
-
-  public static getValueType(value: unknown): ValueType {
-    const rawType = Object.prototype.toString.call(value);
-    const typeofValue = typeof value;
-
-    if (typeofValue === VALUE_TYPES.OBJECT || typeofValue === VALUE_TYPES.FUNCTION) {
-      return typeMap[rawType] ?? (typeofValue as ValueType);
-    }
-
-    return typeofValue as ValueType;
-  }
-
-  public static normalizeValue(value: any): any {
-    if (['array'].includes(this.getValueType(value))) {
-      return this.convertArray(value);
-    }
-
-    if (['object', 'string'].includes(this.getValueType(value))) {
-      return value;
-    }
-
-    return '';
-  }
-
-  public static convertArray(value: any[]): any[] {
-    if (value.length === 0) return value;
-
-    const [first] = value;
-
-    const allObjects = value.every((item) => this.getValueType(item) === VALUE_TYPES.OBJECT);
-
-    if (allObjects) {
-      return [Object.assign({}, ...value)];
-    }
-
-    return [first];
-  }
-
-  public static createRemainingKeys(
-    path: string[],
-    previousValueType: ValueType,
-    currentKey: string,
-    currentValueType: ValueType,
-  ): any[] {
-    const modifiers: (string | typeof __ARRAY__)[] = [];
-
-    const isParentNotArrayOrRoot = path.length === 0 || previousValueType !== VALUE_TYPES.ARRAY;
-    const isParentArray = previousValueType === VALUE_TYPES.ARRAY;
-
-    if (isParentNotArrayOrRoot) {
-      modifiers.push(currentKey);
-    }
-
-    if (isParentArray) {
-      modifiers.push(__ARRAY__);
-    }
-
-    return modifiers;
+      ? this.lowercaseFirstLetter(camelCase)
+      : this.capitalizeFirstLetter(camelCase);
   }
 }

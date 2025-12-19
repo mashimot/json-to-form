@@ -361,7 +361,6 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       fullKeyPath,
     );
 
-    this.malmsteen[nameDotNotation] = currentFormStructure;
     const registerFormFieldHandlers = () => {
       this.formContext[nameDotNotation] = {
         getters: currentFormStructure.getter.withReturn
@@ -417,19 +416,19 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   private buildFormWrapper(
     key: string,
     value: any,
-    currentType: ValueType,
+    currentValueType: ValueType,
     previousType: ValueType,
     fullKeyPath: string[],
   ): string[] {
-    const { OPEN, CLOSE } = this.getFormWrapper(currentType);
+    const { OPEN, CLOSE } = this.getFormWrapper(currentValueType);
 
-    if (currentType === VALUE_TYPES.ARRAY) {
+    if (currentValueType === VALUE_TYPES.ARRAY) {
       const content = this.process(value, fullKeyPath, VALUE_TYPES.ARRAY);
 
       return [OPEN, ...content, CLOSE];
     }
 
-    if (currentType === VALUE_TYPES.STRING) {
+    if (currentValueType === VALUE_TYPES.STRING) {
       const rules = this.extractRules(value);
       const ruleParams = new Validator(rules).get();
       const isCheckbox = rules.some((rule: string) => {
@@ -444,8 +443,8 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
         : [`"${key}": ${formControl}` + ','];
     }
 
-    if (currentType === VALUE_TYPES.OBJECT) {
-      const content = this.process(value, fullKeyPath, VALUE_TYPES.OBJECT);
+    if (currentValueType === VALUE_TYPES.OBJECT) {
+      const content = this.process(value, fullKeyPath, currentValueType);
 
       return previousType === VALUE_TYPES.ARRAY
         ? [OPEN, ...content, CLOSE]

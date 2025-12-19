@@ -11,4 +11,5 @@ export const typeMap: Record<string, ValueType> = {
   '[object Object]': 'object',
   '[object Error]': 'error',
   '[object Null]': 'null',
-};
+  '[object Undefined]': 'undefined',
+} as const;

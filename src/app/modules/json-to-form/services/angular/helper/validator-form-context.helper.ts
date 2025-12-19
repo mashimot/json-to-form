@@ -1,6 +1,7 @@
+import { __ARRAY__ } from '@app/modules/json-to-form/enums/reserved-name.enum';
 import { FormBuilder, FormStructure } from '../function-definition';
 import { VALUE_TYPES, ValueType } from '../models/value.type';
-import { ValidatorRuleHelper } from '../validator-rule-helper';
+import { ValueAnalyzer } from '../value-analyzer';
 
 export interface FormContext {
   key: string;
@@ -8,8 +9,6 @@ export interface FormContext {
   currentValueType: ValueType;
   fullKeyPath: string[];
   currentFormStructure: FormStructure;
-  interfaceName: string;
-  originalCurrentValueType: ValueType;
   previousValueType: ValueType;
   formStructureStack: FormStructure[];
   nameDotNotation: string;
@@ -17,8 +16,6 @@ export interface FormContext {
 
 export abstract class ValidatorProcessorBase {
   public formContext: { [key: string]: { getters: string; creaters?: string } } = {};
-  public names: string[] = [];
-  public malmsteen: { [key: string]: any } = {};
 
   public process(
     object: { [key: string]: any },
@@ -26,21 +23,16 @@ export abstract class ValidatorProcessorBase {
     previousValueType: any = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string[] {
-    const results = Object.keys(object).map((key) => {
-      const originalCurrentValueType = ValidatorRuleHelper.getValueType(object[key]);
-      const normalizedValue = ValidatorRuleHelper.normalizeValue(object[key]);
-      const currentValueType = ValidatorRuleHelper.getValueType(normalizedValue);
-      const interfaceName = this.buildInterfaceName(key);
-      const value =
-        currentValueType === VALUE_TYPES.ARRAY
-          ? [normalizedValue[normalizedValue.length - 1]]
-          : normalizedValue;
+    const results: string[] = [];
 
-      const remainingKeys = ValidatorRuleHelper.createRemainingKeys(
-        value,
-        previousValueType,
+    for (const key in object) {
+      const value = object[key];
+      const normalizedValue = ValueAnalyzer.normalizeValue(value);
+      const currentValueType = ValueAnalyzer.getValueType(normalizedValue);
+      const remainingKeys = ValueAnalyzer.createRemainingKeys(
         key,
-        currentValueType,
+        normalizedValue,
+        previousValueType,
       );
       const fullKeyPath = [...namesArr, ...remainingKeys];
       const currentFormStructure = new FormBuilder(
@@ -49,27 +41,21 @@ export abstract class ValidatorProcessorBase {
         currentValueType,
       ).formStructure();
 
-      const nameDotNotation = fullKeyPath
-        .map((segment) => (segment === null ? 'At' : segment))
-        .join('.');
-
-      this.names.push(nameDotNotation);
+      const nameDotNotation = this.buildNameDotNotation(fullKeyPath).join('.');
 
       const fullContext = {
         key,
-        value,
+        value: normalizedValue,
         currentValueType,
         fullKeyPath,
         currentFormStructure,
-        interfaceName,
         previousValueType,
-        originalCurrentValueType,
         formStructureStack,
         nameDotNotation,
       };
 
-      return this.handleContext(fullContext);
-    });
+      results.push(this.handleContext(fullContext));
+    }
 
     return results.filter((el) => el);
   }
@@ -79,7 +65,7 @@ export abstract class ValidatorProcessorBase {
     return '';
   }
 
-  private buildInterfaceName(key: string): string {
-    return `I${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  private buildNameDotNotation(name: (string | typeof __ARRAY__)[]): string[] {
+    return name.map((segment) => (segment === null ? 'At' : segment));
   }
 }
