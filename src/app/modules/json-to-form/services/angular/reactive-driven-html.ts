@@ -1,4 +1,4 @@
-import { wrapLines } from 'src/app/shared/utils/string.utils';
+import { camelCasedString, wrapLines } from 'src/app/shared/utils/string.utils';
 import { InputTypeEnum } from '../../enums/input-type.enum';
 import { FormStructure } from './function-definition';
 import { FormContext, ValidatorProcessorBase } from './helper/validator-form-context.helper';
@@ -37,7 +37,7 @@ export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
   }
 
   private get indexName(): string {
-    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
+    return `index${camelCasedString(this.item.fullKeyPath.join("."))}`;
   }
 
   private html(...lines: string[]): string {
@@ -101,7 +101,7 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
     return `${this.item.methodName}$`;
   }
   private get indexName(): string {
-    return `index${ValidatorRuleHelper.camelCasedString(this.item.fullKeyPath.join("."))}`;
+    return `index${camelCasedString(this.item.fullKeyPath.join("."))}`;
   }
 
   private html(...lines: string[]): string {

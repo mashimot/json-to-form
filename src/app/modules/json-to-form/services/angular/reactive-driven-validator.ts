@@ -1,4 +1,4 @@
-import { wrapLines } from '@shared/utils/string.utils';
+import { camelCasedString, wrapLines } from '@shared/utils/string.utils';
 import { __ARRAY__, AccessModifier } from '../../enums/reserved-name.enum';
 import { FormStructure } from './function-definition';
 import { FormContext, ValidatorProcessorBase } from './helper/validator-form-context.helper';
@@ -328,7 +328,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       ...this.imports(),
       this.addNewLine(),
       ...this.componentDecorator(),
-      `export class ${ValidatorRuleHelper.camelCasedString(this.componentName)}Component implements OnInit {`,
+      `export class ${camelCasedString(this.componentName)}Component implements OnInit {`,
       ...this.classAttributes(),
       ...this.observableAttributes(),
       this.addNewLine(),

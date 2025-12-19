@@ -1,6 +1,6 @@
+import { camelCasedString } from '@app/shared/utils/string.utils';
 import { __ARRAY__ } from '../../enums/reserved-name.enum';
 import { VALUE_TYPES, ValueType } from './models/value.type';
-import { ValidatorRuleHelper } from './validator-rule-helper';
 
 export type PathInput = string;
 export type Operation = 'get' | 'create';
@@ -175,7 +175,7 @@ export class FormBuilder {
   }
 
   private getAttributeName(suffix: number = 1): string {
-    const baseName = ValidatorRuleHelper.camelCasedString(this.fullKeyPath.join('.'), true);
+    const baseName = camelCasedString(this.fullKeyPath.join('.'), true);
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
