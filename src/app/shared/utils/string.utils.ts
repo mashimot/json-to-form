@@ -2,17 +2,17 @@ export function wrapLines(lines: string[], separator: string = '\n'): string {
   return lines.join(separator);
 }
 
-export function capitalizeFirstLetter(str = ''): string {
+export function capitalizeFirstLetter(str: string = ''): string {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function lowercaseFirstLetter(str = ''): string {
+export function lowercaseFirstLetter(str: string = ''): string {
   if (!str) return '';
   return str.charAt(0).toLowerCase() + str.slice(1);
 }
 
-export function camelCasedString(value = '', isFirstLetterLowerCase = false): string {
+export function camelCasedString(value: string = '', isFirstLetterLowerCase = false): string {
   if (!value) return '';
 
   const onlyLettersAndNumbers = value.toLowerCase().match(/[a-z0-9]+/gi);
