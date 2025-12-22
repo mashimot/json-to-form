@@ -18,7 +18,7 @@ export interface Accessors {
 
 export interface FormStructure extends Accessors, MethodFromKeypath {
   attributeName: string;
-  fullKeyPath: (string | null)[];
+  pathSegments: (string | null)[];
   index: string;
   previousValueType: string;
   currentValueType?: string;
@@ -56,22 +56,29 @@ export class CodeTemplateGenerator {
 
 export class FormBuilder {
   constructor(
-    private fullKeyPath: (string | null)[] = [],
+    private pathSegments: (string | null)[] = [],
     private previousValueType: ValueType,
     private currentValueType?: ValueType | undefined,
   ) {}
 
+  private readonly INDEX_PREFIX = 'index';
+  private readonly ARRAY_TOKEN = __ARRAY__;
+  private readonly REACTIVE_FORM_TYPE_MAP: Record<string, string> = {
+    array: 'FormArray',
+    object: 'FormGroup',
+    string: 'FormControl',
+  };
+
   private get hasArrayInPath(): boolean {
-    const hasAnyArrayElement = this.fullKeyPath.includes(__ARRAY__);
     return (
-      hasAnyArrayElement ||
+      this.pathSegments.includes(this.ARRAY_TOKEN) ||
       this.currentValueType === VALUE_TYPES.ARRAY ||
       this.previousValueType === VALUE_TYPES.ARRAY
     );
   }
 
   private generateMethodFromKeypath(): MethodFromKeypath {
-    const { methodName, params, path, reactiveFormType } = this.getAccessors();
+    const { methodName, params, path, reactiveFormType } = this.buildAccessors();
 
     const capitalized = this.capitalize(methodName);
     const uncapitalized = this.uncapitalize(methodName);
@@ -135,19 +142,19 @@ export class FormBuilder {
     return `${name}(${paramListTyped}) { /* ${operation} logic here */ }`;
   }
 
-  private getAccessors(): Accessors {
+  private buildAccessors(): Accessors {
     const suffixArray = 'At';
     const indexerPreffix = 'index';
-    const reactiveFormType = this.getReactiveFormType();
+    const reactiveFormType = this.resolveReactiveType();
 
     const methodName = this.uncapitalize(
-      this.fullKeyPath
+      this.pathSegments
         .map((value) => (value === __ARRAY__ ? suffixArray : value))
         .map((value) => this.capitalize(value as string))
         .join(''),
     );
 
-    const { path, paramCounter } = this.fullKeyPath.reduce(
+    const { path, paramCounter } = this.pathSegments.reduce(
       (acc, value: string | null) => {
         if (value === __ARRAY__) {
           acc.path.push(`${indexerPreffix}${acc.paramCounter}`);
@@ -175,31 +182,25 @@ export class FormBuilder {
   }
 
   private getAttributeName(suffix: number = 1): string {
-    const baseName = camelCasedString(this.fullKeyPath.join('.'), true);
+    const baseName = camelCasedString(this.pathSegments.join('.'), true);
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
   public formStructure(): FormStructure {
-    const accessors = this.getAccessors();
+    const accessors = this.buildAccessors();
 
     return {
       ...accessors,
       attributeName: this.getAttributeName(accessors.paramCounter),
-      fullKeyPath: this.fullKeyPath,
+      pathSegments: this.pathSegments,
       previousValueType: this.previousValueType,
       currentValueType: this.currentValueType,
       ...this.generateMethodFromKeypath(),
     };
   }
 
-  private getReactiveFormType(): string {
-    const map: Record<string, string> = {
-      array: 'FormArray',
-      object: 'FormGroup',
-      string: 'FormControl',
-    };
-
-    return map[this.currentValueType!] ?? '';
+  private resolveReactiveType(): string {
+    return this.REACTIVE_FORM_TYPE_MAP[this.currentValueType!] ?? '';
   }
 
   private create(name: string, reactiveFormType: string, content: string[] | undefined): string[] {

@@ -126,7 +126,7 @@ export class BuildPathForm extends ValidatorProcessorBase {
 
     const buildKeyPath = (previous: FormStructure): string => {
       const cleanedPath = (previous.path || []).map((p) => p.replace(/^'|'$/g, ''));
-      const lastArrayIndex = previous.fullKeyPath.lastIndexOf(__ARRAY__);
+      const lastArrayIndex = previous.pathSegments.lastIndexOf(__ARRAY__);
       const rootKey =
         lastArrayIndex === -1 ? `${AccessModifier.this}.data` : `item${previous.paramCounter - 1}`;
       const suffixPath = cleanedPath.slice(lastArrayIndex + 1);

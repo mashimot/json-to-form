@@ -37,7 +37,7 @@ export class BootstrapInputTemplateBuilder implements InputTemplateStrategy {
   }
 
   private get indexName(): string {
-    return `index${camelCasedString(this.item.fullKeyPath.join("."))}`;
+    return `index${camelCasedString(this.item.pathSegments.join("."))}`;
   }
 
   private html(...lines: string[]): string {
@@ -101,7 +101,7 @@ export class PlainInputTemplateBuilder implements InputTemplateStrategy {
     return `${this.item.methodName}$`;
   }
   private get indexName(): string {
-    return `index${camelCasedString(this.item.fullKeyPath.join("."))}`;
+    return `index${camelCasedString(this.item.pathSegments.join("."))}`;
   }
 
   private html(...lines: string[]): string {
