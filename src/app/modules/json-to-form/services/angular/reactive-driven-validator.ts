@@ -364,7 +364,6 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     const registerFormFieldHandlers = () => {
       this.formContext[nameDotNotation] = {
         getters: currentFormStructure.getter.withReturn,
-        formStructureTemplate: formStructureTemplate
       };
 
       const isArrayType = 
@@ -423,8 +422,11 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   ): string[] {
     const { OPEN, CLOSE } = this.getFormWrapper(currentValueType);
 
-    if (currentValueType === VALUE_TYPES.ARRAY) {
-      const content = this.process(value, fullKeyPath, VALUE_TYPES.ARRAY);
+    if (
+      currentValueType === VALUE_TYPES.ARRAY ||
+      currentValueType === VALUE_TYPES.OBJECT
+    ) {
+      const content = this.process(value, fullKeyPath, currentValueType);
 
       return [OPEN, ...content, CLOSE];
     }
@@ -440,12 +442,6 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       const formControl = `${OPEN}'' , ${validators}${CLOSE}`;
 
       return [formControl + (previousType === VALUE_TYPES.ARRAY ? ';' : ',')]
-    }
-
-    if (currentValueType === VALUE_TYPES.OBJECT) {
-      const content = this.process(value, fullKeyPath, currentValueType);
-
-      return [OPEN, ...content, CLOSE]
     }
 
     return [];
