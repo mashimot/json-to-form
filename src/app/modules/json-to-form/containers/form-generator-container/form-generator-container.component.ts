@@ -31,6 +31,7 @@ import { VALUE_TYPES } from '../../services/angular/models/value.type';
 import { ReactiveDrivenHtml } from '../../services/angular/reactive-driven-html';
 import { ReactiveDrivenValidator } from '../../services/angular/reactive-driven-validator';
 import { JsonToFormService } from '../../services/json-to-form.service';
+import { jsonToTsInterface } from '../../services/json-to-interface';
 import { htmlSelectorValidator } from '../../validators/html-selector.validator';
 import { validateJsonObject } from '../../validators/json.validator';
 import { LoadingService } from './../../../../shared/services/loading.service';
@@ -290,7 +291,7 @@ export class FormGeneratorContainerComponent implements OnInit {
       html: html_beautify(html.join('\n'), {
         indent_size: 2,
       }),
-      interfaceCode: js_beautify('Under construction', {
+      interfaceCode: js_beautify(jsonToTsInterface(newJson), {
         indent_size: 2,
       }),
     };
