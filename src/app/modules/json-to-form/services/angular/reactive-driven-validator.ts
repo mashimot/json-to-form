@@ -363,7 +363,8 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
 
     const registerFormFieldHandlers = () => {
       this.formContext[nameDotNotation] = {
-        getters: currentFormStructure.getter.withReturn
+        getters: currentFormStructure.getter.withReturn,
+        formStructureTemplate: formStructureTemplate
       };
 
       const isArrayType = 
@@ -393,7 +394,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     }
 
     if (currentValueType === VALUE_TYPES.OBJECT) {
-      return wrapLines([...formStructureTemplate, ',']);
+      return wrapLines([`"${key}": `, ...formStructureTemplate, ',']);
     }
 
     if (currentValueType === VALUE_TYPES.STRING) {
@@ -407,7 +408,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
 
       return previousValueType === VALUE_TYPES.ARRAY
         ? `${AccessModifier.this}.${currentFormStructure.creator.call}`
-        : formStructureTemplate.toString();
+        : wrapLines([`"${key}": `, ...formStructureTemplate]);
     }
 
     return '';
@@ -438,17 +439,13 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       const validators = `[${ruleParams.join(',')}]`;
       const formControl = `${OPEN}'' , ${validators}${CLOSE}`;
 
-      return previousType === VALUE_TYPES.ARRAY
-        ? [formControl + ';']
-        : [`"${key}": ${formControl}` + ','];
+      return [formControl + (previousType === VALUE_TYPES.ARRAY ? ';' : ',')]
     }
 
     if (currentValueType === VALUE_TYPES.OBJECT) {
       const content = this.process(value, fullKeyPath, currentValueType);
 
-      return previousType === VALUE_TYPES.ARRAY
-        ? [OPEN, ...content, CLOSE]
-        : [`"${key}": ${OPEN}`, ...content, CLOSE];
+      return [OPEN, ...content, CLOSE]
     }
 
     return [];
