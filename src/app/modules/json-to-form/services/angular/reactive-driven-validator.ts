@@ -1,5 +1,6 @@
 import { camelCasedString, wrapLines } from '@shared/utils/string.utils';
 import { __ARRAY__, AccessModifier } from '../../enums/reserved-name.enum';
+import { PathSegmentInterface } from '../../interfaces/path-segment.interface';
 import { FormStructure } from './function-definition';
 import { FormContext, ValidatorProcessorBase } from './helper/validator-form-context.helper';
 import { VALUE_TYPES, ValueType } from './models/value.type';
@@ -89,7 +90,7 @@ export class BuildPathForm extends ValidatorProcessorBase {
   }
 
   handleContext(context: FormContext): string {
-    const { value, currentValueType, fullKeyPath, currentFormStructure, formStructureStack } =
+    const { value, currentValueType, currentFormStructure, formStructureStack, pathSegments } =
       context;
 
     const previousFormStructure = formStructureStack[formStructureStack.length - 1];
@@ -111,7 +112,7 @@ export class BuildPathForm extends ValidatorProcessorBase {
       const innerForEachBlock =
         currentValueType === VALUE_TYPES.STRING
           ? ''
-          : this.process(value, fullKeyPath, currentValueType, nextStack);
+          : this.process(value, pathSegments, currentValueType, nextStack);
 
       return wrapLines([...openForEach, ...innerForEachBlock, ...closeForEach].filter(Boolean));
     }
@@ -352,13 +353,15 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   }
 
   handleContext(context: FormContext): string {
-    const { value, currentValueType, fullKeyPath, key, previousValueType, nameDotNotation, currentFormStructure } = context;
+    const { value, currentValueType, fullKeyPath, key, previousValueType, nameDotNotation, currentFormStructure,
+      pathSegments
+     } = context;
     const formStructureTemplate = this.buildFormWrapper(
       key,
       value,
       currentValueType,
       previousValueType,
-      fullKeyPath,
+      pathSegments
     );
 
     const registerFormFieldHandlers = () => {
@@ -418,7 +421,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     value: any,
     currentValueType: ValueType,
     previousType: ValueType,
-    fullKeyPath: string[],
+    pathSegments: PathSegmentInterface[],
   ): string[] {
     const { OPEN, CLOSE } = this.getFormWrapper(currentValueType);
 
@@ -426,7 +429,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       currentValueType === VALUE_TYPES.ARRAY ||
       currentValueType === VALUE_TYPES.OBJECT
     ) {
-      const content = this.process(value, fullKeyPath, currentValueType);
+      const content = this.process(value, pathSegments, currentValueType, []);
 
       return [OPEN, ...content, CLOSE];
     }

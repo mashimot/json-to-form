@@ -444,7 +444,7 @@ export class ReactiveDrivenHtml extends ValidatorProcessorBase {
   }
 
   public handleContext(context: FormContext): string {
-    const { key, value, currentValueType, previousValueType, fullKeyPath, currentFormStructure, formStructureStack } = context;
+    const { key, value, currentValueType, previousValueType, currentFormStructure, formStructureStack, pathSegments } = context;
     const previousFormStructure = formStructureStack[formStructureStack.length - 1];
     const formContext = {
       current: currentFormStructure,
@@ -503,7 +503,7 @@ export class ReactiveDrivenHtml extends ValidatorProcessorBase {
       const [open, close] = buildWrapperTags();
       const innerHtml = this.process(
         value,
-        fullKeyPath,
+        pathSegments,
         currentValueType,
         nextStack,
       );
@@ -527,7 +527,7 @@ export class ReactiveDrivenHtml extends ValidatorProcessorBase {
       const [open, close] = buildWrapperTags();
       const innerHtml = this.process(
         value,
-        fullKeyPath,
+        pathSegments,
         currentValueType,
         nextStack,
       );

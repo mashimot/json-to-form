@@ -1,4 +1,5 @@
 import { __ARRAY__ } from '@app/modules/json-to-form/enums/reserved-name.enum';
+import { PathSegmentInterface } from '@app/modules/json-to-form/interfaces/path-segment.interface';
 import { FormBuilder, FormStructure } from '../function-definition';
 import { VALUE_TYPES, ValueType } from '../models/value.type';
 import { ValueAnalyzer } from '../value-analyzer';
@@ -7,11 +8,12 @@ export interface FormContext {
   key: string;
   value: any;
   currentValueType: ValueType;
-  fullKeyPath: string[];
+  fullKeyPath: PathSegmentInterface['pathKey'][];
   currentFormStructure: FormStructure;
   previousValueType: ValueType;
   formStructureStack: FormStructure[];
   nameDotNotation: string;
+  pathSegments: PathSegmentInterface[];
 }
 
 export abstract class ValidatorProcessorBase {
@@ -19,7 +21,7 @@ export abstract class ValidatorProcessorBase {
 
   public process(
     object: { [key: string]: any },
-    namesArr: string[] = [],
+    pathSegments: PathSegmentInterface[] = [],
     previousValueType: any = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string[] {
@@ -29,12 +31,13 @@ export abstract class ValidatorProcessorBase {
       const value = object[key];
       const normalizedValue = ValueAnalyzer.normalizeValue(value);
       const currentValueType = ValueAnalyzer.getValueType(normalizedValue);
-      const remainingKeys = ValueAnalyzer.createRemainingKeys(
+      const remainingPathSegments = ValueAnalyzer.buildPathSegments(
         key,
-        normalizedValue,
-        previousValueType,
+        pathSegments,
+        currentValueType,
       );
-      const fullKeyPath = [...namesArr, ...remainingKeys];
+      const mergedPathSegments = [...pathSegments, ...remainingPathSegments];
+      const fullKeyPath = mergedPathSegments.map((path) => path.pathKey);
       const currentFormStructure = new FormBuilder(
         fullKeyPath,
         previousValueType,
@@ -52,6 +55,7 @@ export abstract class ValidatorProcessorBase {
         previousValueType,
         formStructureStack,
         nameDotNotation,
+        pathSegments: mergedPathSegments,
       };
 
       results.push(this.handleContext(fullContext));

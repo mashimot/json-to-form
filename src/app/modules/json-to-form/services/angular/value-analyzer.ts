@@ -1,5 +1,6 @@
 import { typeMap } from '../../constants/type-map.constant';
 import { __ARRAY__ } from '../../enums/reserved-name.enum';
+import { PathSegmentInterface } from '../../interfaces/path-segment.interface';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 
 export class ValueAnalyzer {
@@ -40,23 +41,18 @@ export class ValueAnalyzer {
     return [first];
   }
 
-  public static createRemainingKeys(
+  public static buildPathSegments(
     currentKey: string,
-    path: string[],
-    previousValueType: ValueType,
-  ): any[] {
-    const modifiers: (string | typeof __ARRAY__)[] = [];
+    pathSegments: PathSegmentInterface[],
+    currentValueType: ValueType,
+  ): PathSegmentInterface[] {
+    const modifiers: PathSegmentInterface[] = [];
+    const previous = pathSegments?.[pathSegments.length - 1]?.pathType === VALUE_TYPES.ARRAY;
 
-    const isParentNotArrayOrRoot = path.length === 0 || previousValueType !== VALUE_TYPES.ARRAY;
-    const isParentArray = previousValueType === VALUE_TYPES.ARRAY;
-
-    if (isParentNotArrayOrRoot) {
-      modifiers.push(currentKey);
-    }
-
-    if (isParentArray) {
-      modifiers.push(__ARRAY__);
-    }
+    modifiers.push({
+      pathKey: previous ? __ARRAY__ : currentKey,
+      pathType: currentValueType,
+    });
 
     return modifiers;
   }
