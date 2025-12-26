@@ -1,5 +1,6 @@
 import { camelCasedString } from '@app/shared/utils/string.utils';
 import { __ARRAY__ } from '../../enums/reserved-name.enum';
+import { PathSegmentInterface } from '../../interfaces/path-segment.interface';
 import { VALUE_TYPES, ValueType } from './models/value.type';
 
 export type PathInput = string;
@@ -20,7 +21,7 @@ export interface FormStructure extends Accessors, MethodFromKeypath {
   attributeName: string;
   pathSegments: (string | null)[];
   index: string;
-  previousValueType: string;
+  previousValueType: string | undefined;
   currentValueType?: string;
 }
 
@@ -55,11 +56,7 @@ export class CodeTemplateGenerator {
 }
 
 export class FormBuilder {
-  constructor(
-    private pathSegments: (string | null)[] = [],
-    private previousValueType: ValueType,
-    private currentValueType?: ValueType | undefined,
-  ) {}
+  constructor(private mergePathSegments: PathSegmentInterface[] = []) {}
 
   private readonly INDEX_PREFIX = 'index';
   private readonly ARRAY_TOKEN = __ARRAY__;
@@ -68,6 +65,18 @@ export class FormBuilder {
     object: 'FormGroup',
     string: 'FormControl',
   };
+
+  private get pathSegments(): (string | null)[] {
+    return this.mergePathSegments.map((path) => path.pathKey);
+  }
+
+  private get previousValueType(): ValueType | undefined {
+    return this.mergePathSegments?.[this.mergePathSegments.length - 2]?.pathType;
+  }
+
+  private get currentValueType(): ValueType | undefined {
+    return this.mergePathSegments?.[this.mergePathSegments.length - 1]?.pathType;
+  }
 
   private get hasArrayInPath(): boolean {
     return (
@@ -148,20 +157,33 @@ export class FormBuilder {
     const reactiveFormType = this.resolveReactiveType();
 
     const methodName = this.uncapitalize(
-      this.pathSegments
-        .map((value) => (value === __ARRAY__ ? suffixArray : value))
+      this.mergePathSegments
+        .map((segment, index) => {
+          if (index - 1 >= 0) {
+            const previousType = this.mergePathSegments[index - 1]?.pathType;
+            return previousType === VALUE_TYPES.ARRAY ? suffixArray : segment.pathKey;
+          }
+
+          return segment.pathKey;
+        })
         .map((value) => this.capitalize(value as string))
         .join(''),
     );
 
-    const { path, paramCounter } = this.pathSegments.reduce(
-      (acc, value: string | null) => {
-        if (value === __ARRAY__) {
-          acc.path.push(`${indexerPreffix}${acc.paramCounter}`);
-          acc.paramCounter++;
-        } else {
-          acc.path.push(`'${value}'`);
+    console.log('methodName', methodName);
+
+    const { path, paramCounter } = this.mergePathSegments.reduce(
+      (acc, item: PathSegmentInterface, index: number) => {
+        if (index >= 0) {
+          const previousType = this.mergePathSegments[index - 1]?.pathType;
+          if (previousType === VALUE_TYPES.ARRAY) {
+            acc.path.push(`${indexerPreffix}${acc.paramCounter}`);
+            acc.paramCounter++;
+          } else {
+            acc.path.push(`'${item.pathKey}'`);
+          }
         }
+
         return acc;
       },
       { path: [] as string[], paramCounter: 0 },

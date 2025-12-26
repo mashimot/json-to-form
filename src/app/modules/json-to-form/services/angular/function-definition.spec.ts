@@ -4,12 +4,31 @@ import { VALUE_TYPES } from './models/value.type';
 
 describe('FormBuilder', () => {
   it('should create an instance', () => {
-    const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
+    const builder = new FormBuilder([
+      {
+        pathKey: 'user',
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'name',
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
     expect(builder).toBeTruthy();
   });
 
   it('should generate formStructure for basic path without array', () => {
-    const builder = new FormBuilder(['user', 'name'], VALUE_TYPES.OBJECT, VALUE_TYPES.STRING);
+    const builder = new FormBuilder([
+      {
+        pathKey: 'user',
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'name',
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
+
     const result = builder.formStructure();
 
     expect(result.methodName).toBe('userName');
@@ -22,11 +41,21 @@ describe('FormBuilder', () => {
   });
 
   it('should generate formStructure with reserved __ARRAY__ handling', () => {
-    const builder = new FormBuilder(
-      ['users', __ARRAY__, 'name'],
-      VALUE_TYPES.ARRAY,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder([
+      {
+        pathKey: 'users',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.STRING,
+      },
+      {
+        pathKey: 'name',
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
+
     const result = builder.formStructure();
 
     expect(result.methodName).toBe('usersAtName');
@@ -40,11 +69,29 @@ describe('FormBuilder', () => {
   });
 
   it('should generate method with multiple array levels correctly', () => {
-    const builder = new FormBuilder(
-      ['companies', __ARRAY__, 'departments', __ARRAY__, 'name'],
-      VALUE_TYPES.ARRAY,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder([
+      {
+        pathKey: 'companies',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'departments',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.STRING,
+      },
+      {
+        pathKey: 'name',
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
+
     const result = builder.formStructure();
 
     expect(result.methodName).toBe('companiesAtDepartmentsAtName');
@@ -55,11 +102,29 @@ describe('FormBuilder', () => {
   });
 
   it('should generate getter function with parameters typed 0', () => {
-    const builder = new FormBuilder(
-      ['people', __ARRAY__, 'phones', __ARRAY__, 'number'],
-      VALUE_TYPES.ARRAY,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder([
+      {
+        pathKey: 'peoples',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'phones',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'number',
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
+
     const result = builder.formStructure();
     expect(result.getter.withReturn).toContain('index0:number, index1:number');
     expect(result.getter.withReturn).toContain('this.f.get');
@@ -67,14 +132,32 @@ describe('FormBuilder', () => {
   });
 
   it('should generate getter function with parameters typed 1', () => {
-    const builder = new FormBuilder(
-      ['people', __ARRAY__, 'phones', __ARRAY__, __ARRAY__],
-      VALUE_TYPES.ARRAY,
-      VALUE_TYPES.STRING,
-    );
+    const builder = new FormBuilder([
+      {
+        pathKey: 'peoples',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'phones',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.STRING,
+      },
+    ]);
+
     const result = builder.formStructure();
 
-    expect(result.methodName).toBe('peopleAtPhonesAtAt');
+    expect(result.methodName).toBe('peoplesAtPhonesAtAt');
     expect(result.paramCounter).toBe(3);
     expect(result.getter.withReturn).toContain('index0:number, index1:number');
     expect(result.getter.withReturn).toContain('this.f.get');
@@ -82,11 +165,21 @@ describe('FormBuilder', () => {
   });
 
   it('should generate getter function with parameters typed 1', () => {
-    const builder = new FormBuilder(
-      ['people', __ARRAY__, 'phones'],
-      VALUE_TYPES.ARRAY,
-      VALUE_TYPES.OBJECT,
-    );
+    const builder = new FormBuilder([
+      {
+        pathKey: 'people',
+        pathType: VALUE_TYPES.ARRAY,
+      },
+      {
+        pathKey: __ARRAY__,
+        pathType: VALUE_TYPES.OBJECT,
+      },
+      {
+        pathKey: 'phones',
+        pathType: VALUE_TYPES.OBJECT,
+      },
+    ]);
+
     const result = builder.formStructure();
 
     expect(result.methodName).toBe('peopleAtPhones');

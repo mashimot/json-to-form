@@ -38,11 +38,7 @@ export abstract class ValidatorProcessorBase {
       );
       const mergedPathSegments = [...pathSegments, ...remainingPathSegments];
       const fullKeyPath = mergedPathSegments.map((path) => path.pathKey);
-      const currentFormStructure = new FormBuilder(
-        fullKeyPath,
-        previousValueType,
-        currentValueType,
-      ).formStructure();
+      const currentFormStructure = new FormBuilder(mergedPathSegments).formStructure();
 
       const nameDotNotation = this.buildNameDotNotation(fullKeyPath).join('.');
 
