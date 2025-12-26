@@ -40,20 +40,4 @@ export class ValueAnalyzer {
 
     return [first];
   }
-
-  public static buildPathSegments(
-    currentKey: string,
-    pathSegments: PathSegmentInterface[],
-    currentValueType: ValueType,
-  ): PathSegmentInterface[] {
-    const modifiers: PathSegmentInterface[] = [];
-    const previous = pathSegments?.[pathSegments.length - 1]?.pathType === VALUE_TYPES.ARRAY;
-
-    modifiers.push({
-      pathKey: previous ? __ARRAY__ : currentKey,
-      pathType: currentValueType,
-    });
-
-    return modifiers;
-  }
 }

@@ -170,8 +170,6 @@ export class FormBuilder {
         .join(''),
     );
 
-    console.log('methodName', methodName);
-
     const { path, paramCounter } = this.mergePathSegments.reduce(
       (acc, item: PathSegmentInterface, index: number) => {
         if (index >= 0) {

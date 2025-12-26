@@ -7,10 +7,10 @@ import { ValueAnalyzer } from '../value-analyzer';
 export interface FormContext {
   key: string;
   value: any;
-  currentValueType: ValueType;
+  currentValueType: ValueType | undefined;
   fullKeyPath: PathSegmentInterface['pathKey'][];
   currentFormStructure: FormStructure;
-  previousValueType: ValueType;
+  previousValueType: ValueType | undefined;
   formStructureStack: FormStructure[];
   nameDotNotation: string;
   pathSegments: PathSegmentInterface[];
@@ -22,7 +22,6 @@ export abstract class ValidatorProcessorBase {
   public process(
     object: { [key: string]: any },
     pathSegments: PathSegmentInterface[] = [],
-    previousValueType: any = VALUE_TYPES.OBJECT,
     formStructureStack: FormStructure[] = [],
   ): string[] {
     const results: string[] = [];
@@ -31,24 +30,18 @@ export abstract class ValidatorProcessorBase {
       const value = object[key];
       const normalizedValue = ValueAnalyzer.normalizeValue(value);
       const currentValueType = ValueAnalyzer.getValueType(normalizedValue);
-      const remainingPathSegments = ValueAnalyzer.buildPathSegments(
-        key,
-        pathSegments,
-        currentValueType,
-      );
-      const mergedPathSegments = [...pathSegments, ...remainingPathSegments];
+      const mergedPathSegments = this.buildPathSegments(key, pathSegments, currentValueType);
       const fullKeyPath = mergedPathSegments.map((path) => path.pathKey);
       const currentFormStructure = new FormBuilder(mergedPathSegments).formStructure();
-
       const nameDotNotation = this.buildNameDotNotation(fullKeyPath).join('.');
 
       const fullContext = {
         key,
         value: normalizedValue,
-        currentValueType,
+        previousValueType: this.getPreviousValueType(mergedPathSegments),
+        currentValueType: this.getCurrentValueType(mergedPathSegments),
         fullKeyPath,
         currentFormStructure,
-        previousValueType,
         formStructureStack,
         nameDotNotation,
         pathSegments: mergedPathSegments,
@@ -67,5 +60,29 @@ export abstract class ValidatorProcessorBase {
 
   private buildNameDotNotation(name: (string | typeof __ARRAY__)[]): string[] {
     return name.map((segment) => (segment === null ? 'At' : segment));
+  }
+
+  private buildPathSegments(
+    currentKey: string,
+    pathSegments: PathSegmentInterface[],
+    currentValueType: ValueType,
+  ): PathSegmentInterface[] {
+    const modifiers: PathSegmentInterface[] = [];
+    const previous = pathSegments?.[pathSegments.length - 1]?.pathType === VALUE_TYPES.ARRAY;
+
+    modifiers.push({
+      pathKey: previous ? __ARRAY__ : currentKey,
+      pathType: currentValueType,
+    });
+
+    return [...pathSegments, ...modifiers];
+  }
+
+  private getPreviousValueType(pathSegments: PathSegmentInterface[]): ValueType | undefined {
+    return pathSegments?.[pathSegments.length - 2]?.pathType;
+  }
+
+  private getCurrentValueType(pathSegments: PathSegmentInterface[]): ValueType | undefined {
+    return pathSegments?.[pathSegments.length - 1]?.pathType;
   }
 }

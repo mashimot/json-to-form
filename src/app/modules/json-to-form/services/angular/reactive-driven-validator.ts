@@ -110,9 +110,7 @@ export class BuildPathForm extends ValidatorProcessorBase {
       );
       const nextStack = [...formStructureStack, currentFormStructure];
       const innerForEachBlock =
-        currentValueType === VALUE_TYPES.STRING
-          ? ''
-          : this.process(value, pathSegments, currentValueType, nextStack);
+        currentValueType === VALUE_TYPES.STRING ? '' : this.process(value, pathSegments, nextStack);
 
       return wrapLines([...openForEach, ...innerForEachBlock, ...closeForEach].filter(Boolean));
     }
@@ -348,8 +346,10 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
     ];
   }
 
-  private getFormWrapper(type: ValueType): { OPEN: string; CLOSE: string } {
-    return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode][type];
+  private getFormWrapper(type: ValueType | undefined): { OPEN: string; CLOSE: string } {
+    if(!type) return { OPEN: '', CLOSE: '' };
+    
+    return FORM_OUTPUT_WRAPPERS[this.options.formBuildMode]?.[type!];
   }
 
   handleContext(context: FormContext): string {
@@ -419,8 +419,8 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
   private buildFormWrapper(
     key: string,
     value: any,
-    currentValueType: ValueType,
-    previousType: ValueType,
+    currentValueType: ValueType | undefined,
+    previousType: ValueType | undefined,
     pathSegments: PathSegmentInterface[],
   ): string[] {
     const { OPEN, CLOSE } = this.getFormWrapper(currentValueType);
@@ -429,7 +429,7 @@ export class ReactiveDrivenValidator extends ValidatorProcessorBase {
       currentValueType === VALUE_TYPES.ARRAY ||
       currentValueType === VALUE_TYPES.OBJECT
     ) {
-      const content = this.process(value, pathSegments, currentValueType, []);
+      const content = this.process(value, pathSegments, []);
 
       return [OPEN, ...content, CLOSE];
     }
