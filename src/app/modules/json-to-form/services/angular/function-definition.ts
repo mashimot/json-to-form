@@ -58,15 +58,13 @@ export class CodeTemplateGenerator {
 export class FormBuilder {
   constructor(private mergePathSegments: PathSegmentInterface[] = []) {}
 
-  private readonly INDEX_PREFIX = 'index';
-  private readonly ARRAY_TOKEN = __ARRAY__;
   private readonly REACTIVE_FORM_TYPE_MAP: Record<string, string> = {
     array: 'FormArray',
     object: 'FormGroup',
     string: 'FormControl',
   };
 
-  private get pathSegments(): (string | null)[] {
+  private get pathKeySegments(): (string | null)[] {
     return this.mergePathSegments.map((path) => path.pathKey);
   }
 
@@ -79,11 +77,7 @@ export class FormBuilder {
   }
 
   private get hasArrayInPath(): boolean {
-    return (
-      this.pathSegments.includes(this.ARRAY_TOKEN) ||
-      this.currentValueType === VALUE_TYPES.ARRAY ||
-      this.previousValueType === VALUE_TYPES.ARRAY
-    );
+    return this.mergePathSegments.some((path) => path.pathType === VALUE_TYPES.ARRAY);
   }
 
   private generateMethodFromKeypath(): MethodFromKeypath {
@@ -161,10 +155,10 @@ export class FormBuilder {
         .map((segment, index) => {
           if (index - 1 >= 0) {
             const previousType = this.mergePathSegments[index - 1]?.pathType;
-            return previousType === VALUE_TYPES.ARRAY ? suffixArray : segment.pathKey;
+            return previousType === VALUE_TYPES.ARRAY ? suffixArray : segment.pathKeyNormalized;
           }
 
-          return segment.pathKey;
+          return segment.pathKeyNormalized;
         })
         .map((value) => this.capitalize(value as string))
         .join(''),
@@ -202,7 +196,7 @@ export class FormBuilder {
   }
 
   private getAttributeName(suffix: number = 1): string {
-    const baseName = camelCasedString(this.pathSegments.join('.'), true);
+    const baseName = camelCasedString(this.pathKeySegments.join('.'), true);
     return suffix > 0 ? `${baseName}${suffix}` : baseName;
   }
 
@@ -212,7 +206,7 @@ export class FormBuilder {
     return {
       ...accessors,
       attributeName: this.getAttributeName(accessors.paramCounter),
-      pathSegments: this.pathSegments,
+      pathSegments: this.pathKeySegments,
       previousValueType: this.previousValueType,
       currentValueType: this.currentValueType,
       ...this.generateMethodFromKeypath(),

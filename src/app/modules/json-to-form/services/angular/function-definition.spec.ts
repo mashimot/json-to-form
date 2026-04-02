@@ -8,10 +8,12 @@ describe('FormBuilder', () => {
       {
         pathKey: 'user',
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: 'user',
       },
       {
         pathKey: 'name',
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: 'name',
       },
     ]);
     expect(builder).toBeTruthy();
@@ -22,10 +24,12 @@ describe('FormBuilder', () => {
       {
         pathKey: 'user',
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: 'user',
       },
       {
         pathKey: 'name',
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: 'name',
       },
     ]);
 
@@ -45,14 +49,17 @@ describe('FormBuilder', () => {
       {
         pathKey: 'users',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'users',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'name',
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: 'name',
       },
     ]);
 
@@ -73,22 +80,27 @@ describe('FormBuilder', () => {
       {
         pathKey: 'companies',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'companies',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'departments',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'departments',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'name',
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: 'name',
       },
     ]);
 
@@ -106,22 +118,27 @@ describe('FormBuilder', () => {
       {
         pathKey: 'peoples',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'peoples',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'phones',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'phones',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'number',
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: 'number',
       },
     ]);
 
@@ -136,22 +153,27 @@ describe('FormBuilder', () => {
       {
         pathKey: 'peoples',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'peoples',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'phones',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'phones',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.STRING,
+        pathKeyNormalized: __ARRAY__,
       },
     ]);
 
@@ -169,14 +191,17 @@ describe('FormBuilder', () => {
       {
         pathKey: 'people',
         pathType: VALUE_TYPES.ARRAY,
+        pathKeyNormalized: 'people',
       },
       {
         pathKey: __ARRAY__,
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: __ARRAY__,
       },
       {
         pathKey: 'phones',
         pathType: VALUE_TYPES.OBJECT,
+        pathKeyNormalized: 'phones',
       },
     ]);
 
