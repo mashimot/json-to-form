@@ -23,6 +23,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { SplitterModule } from 'primeng/splitter';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { combineLatest, Observable, of } from 'rxjs';
@@ -56,6 +57,7 @@ import { LoadingService } from './../../../../shared/services/loading.service';
     OverlayPanelModule,
     MessageModule,
     ClipboardModule,
+    SplitterModule,
   ],
   animations: [
     trigger('fade', [
@@ -138,8 +140,34 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.initializeEditorStreams();
   }
 
+  public isEditorVisible = true;
+
+  public toggleEditor() {
+    this.isEditorVisible = !this.isEditorVisible;
+    // Opcional: Se o monaco bugar o tamanho ao voltar, use:
+    // window.dispatchEvent(new Event('resize'));
+  }
+
   public setTabPreview(index: number): void {
     this.applyOutputTab(index);
+  }
+
+  public loadExample(): void {
+    const example = {
+      "id": "user-001",
+      "name": "John Doe",
+      "email": "john.doe@email.com",
+      "age": 30,
+      "isActive": true,
+      "address": {
+        "street": "Main Street",
+        "city": "New York",
+        "zipCode": "10001"
+      },
+      "skills": ["Angular", "TypeScript"]
+    };
+
+    this.jsonControl?.setValue(JSON.stringify(example, null, 2));
   }
 
   private updateOutputLanguage(label: string): void {

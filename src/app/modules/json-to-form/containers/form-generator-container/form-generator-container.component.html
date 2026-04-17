@@ -1,138 +1,152 @@
 <section class="mb-4">
-  <div class="grid grid-nogutter align-items-start">
-    <div class="col-12 sm:col-6 md:col-4">
-      <form [formGroup]="form">
-        <div class="json-wrapper">
-          <div class="flex align-items-center justify-content-between" style="background-color: #252526; height: 35px; border-bottom: 1px solid #1e1e1e;">
-            <div class="flex h-full overflow-hidden">
-              @for (tab of tabs; track tab) {
-                <div 
-                  class="h-full px-3 flex align-items-center text-xs border-right-1 transition-colors" 
-                  style="background-color: #1e1e1e; color: #ffffff; border-top: 1px solid #007acc; border-right-color: #252526; min-width: 120px;"
-                >
-                  <i class="pi pi-file-code mr-2" style="color: #cbcb41; font-size: 0.9rem;"></i>
-                  <span style="letter-spacing: 0.5px;">{{ featureNameValue || 'input.json' }}</span>
-                </div>
-              }
-            </div>
-
-            <div class="flex align-items-center gap-1 px-2">
-              <p-button 
-                icon="pi pi-align-left" 
-                [text]="true" 
-                (click)="formatJson()"
-                styleClass="vs-icon-button"
-              ></p-button>
-
-              <p-button 
-                (click)="op.toggle($event)" 
-                [text]="true" 
-                [icon]="featureNameControl?.invalid ? 'pi pi-exclamation-triangle' : 'pi pi-cog'"
-                [style.color]="featureNameControl?.invalid ? '#f48771' : '#cccccc'"
-                styleClass="vs-icon-button"
-              ></p-button>
-            </div>
-          </div>
-          
-          <div class="editor-wrapper">
-            <ngx-monaco-editor
-              [options]="editorOptionsMap.input"
-              formControlName="json"
-              [style.height]="'100vh'"
-              (init)="onInputEditorInit($event)"
-            >
-            </ngx-monaco-editor>
-          </div>
-        </div>
-      </form>
-
-      <p-overlayPanel #op [showCloseIcon]="true">
-        <ng-template pTemplate="content">
-          <form [formGroup]="form">
-            <div class="mb-4">
-              <label class="block text-900 font-bold mb-1">Control Flow Syntax</label>
-
-              @for (option of formControlType; track $index) {
-                <p-radioButton
-                  [inputId]="'form-control-' + option.id"
-                  formControlName="structure"
-                  [value]="option.id"
-                ></p-radioButton>
-                <label [for]="'form-control-' + option.id">
-                  {{ option.description }}
-                </label>
-              }
-            </div>
-
-            <div class="mb-4">
-              <label for="input-feature-name" class="block text-900 font-bold mb-2">
-                Feature name
-              </label>
-
-              <input
-                type="text"
-                pInputText
-                id="input-feature-name"
-                formControlName="featureName"
-                [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
-                class="w-full"
-              />
-
-              @if (featureNameControl?.errors) {
-                <p-message severity="error" size="small" variant="simple" class="w-full">
-                  Must start with a letter, and must contain only alphanumeric characters or dashes.
-                  When adding a dash the segment after the dash must also start with a letter.
-                </p-message>
-              }
-            </div>
-
-            <ng-container formGroupName="options">
-              <div class="mb-4">
-                <label class="block text-900 font-bold mb-2">Select form build mode</label>
-
-                @for (mode of formBuildModes; track $index) {
-                  <p-radioButton
-                    [inputId]="'form-build-mode-' + mode.id"
-                    formControlName="formBuildMode"
-                    [value]="mode.id"
-                  ></p-radioButton>
-                  <label [for]="'form-build-mode-' + mode.id">
-                    {{ mode.label }}
-                  </label>
-                  <p class="text-500 mt-1">
-                    <small>{{ mode.description }}</small>
-                  </p>
+  <p-splitter 
+    [panelSizes]="isEditorVisible ? [33, 67] : [0, 100]" 
+    [minSizes]="[0, 30]"
+    styleClass="editor-output-splitter">
+    
+    <ng-template pTemplate>
+      <div class="w-full">
+        <form [formGroup]="form">
+          <div class="json-wrapper">
+            <div class="flex align-items-center justify-content-between" style="background-color: #252526; height: 35px; border-bottom: 1px solid #1e1e1e;">
+              <div class="flex h-full overflow-hidden">
+                @for (tab of tabs; track tab) {
+                  <div 
+                    class="h-full px-3 flex align-items-center text-xs border-right-1 transition-colors" 
+                    style="background-color: #1e1e1e; color: #ffffff; border-top: 1px solid #007acc; border-right-color: #252526; min-width: 120px;"
+                  >
+                    <i class="pi pi-file-code mr-2" style="color: #cbcb41; font-size: 0.9rem;"></i>
+                    <span style="letter-spacing: 0.5px;">{{ featureNameValue || 'input.json' }}</span>
+                  </div>
                 }
               </div>
-            </ng-container>
-          </form>
-        </ng-template>
-      </p-overlayPanel>
-    </div>
 
-    <div class="col-12 sm:col-6 md:col-8">
-      <div class="flex flex-column flex-1 border-right-1" style="border-color: #333;">
-        <div class="flex align-items-center overflow-x-auto" style="background-color: #252526; height: 35px;">
-          @for (tab of outputTabs; track tab; let i = $index) {
-            <div
-              (click)="setTabPreview(i)"
-              class="h-full px-3 flex align-items-center cursor-pointer text-xs transition-colors"
-              [style.background-color]="activeIndexPreviewTab === i ? '#1e1e1e' : '#2d2d2d'"
-              [style.color]="activeIndexPreviewTab === i ? '#fff' : '#969696'"
-              [style.border-top]="activeIndexPreviewTab === i ? '1px solid #007acc' : '1px solid transparent'"
-            >
-              {{ tab.label }}
+              <div class="flex align-items-center gap-1 px-2">
+                <p-button 
+                  icon="pi pi-align-left" 
+                  [text]="true" 
+                  (click)="formatJson()"
+                  styleClass="vs-icon-button"
+                ></p-button>
+
+                <p-button 
+                  (click)="op.toggle($event)" 
+                  [text]="true" 
+                  [icon]="featureNameControl?.invalid ? 'pi pi-exclamation-triangle' : 'pi pi-cog'"
+                  [style.color]="featureNameControl?.invalid ? '#f48771' : '#cccccc'"
+                  styleClass="vs-icon-button"
+                ></p-button>
+              </div>
             </div>
-          }
+
+            <div class="editor-container">
+              <ngx-monaco-editor
+                class="editor"
+                [options]="editorOptionsMap.input"
+                formControlName="json">
+              </ngx-monaco-editor>
+
+              <div class="empty-overlay" *ngIf="!form.get('json')?.value">
+                <p>Start typing...</p>
+                <p>
+                  or 
+                  <span class="link" (click)="loadExample()">load an example</span> · 
+                </p>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <p-overlayPanel #op [showCloseIcon]="true">
+          <ng-template pTemplate="content">
+            <form [formGroup]="form">
+              <div class="mb-4">
+                <label class="block text-900 font-bold mb-1">Control Flow Syntax</label>
+
+                @for (option of formControlType; track $index) {
+                  <p-radioButton
+                    [inputId]="'form-control-' + option.id"
+                    formControlName="structure"
+                    [value]="option.id"
+                  ></p-radioButton>
+                  <label [for]="'form-control-' + option.id">
+                    {{ option.description }}
+                  </label>
+                }
+              </div>
+
+              <div class="mb-4">
+                <label for="input-feature-name" class="block text-900 font-bold mb-2">
+                  Feature name
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  id="input-feature-name"
+                  formControlName="featureName"
+                  [ngClass]="{ 'p-invalid': featureNameControl?.errors }"
+                  class="w-full"
+                />
+
+                @if (featureNameControl?.errors) {
+                  <p-message severity="error" size="small" variant="simple" class="w-full">
+                    Must start with a letter, and must contain only alphanumeric characters or dashes.
+                    When adding a dash the segment after the dash must also start with a letter.
+                  </p-message>
+                }
+              </div>
+
+              <ng-container formGroupName="options">
+                <div class="mb-4">
+                  <label class="block text-900 font-bold mb-2">Select form build mode</label>
+
+                  @for (mode of formBuildModes; track $index) {
+                    <p-radioButton
+                      [inputId]="'form-build-mode-' + mode.id"
+                      formControlName="formBuildMode"
+                      [value]="mode.id"
+                    ></p-radioButton>
+                    <label [for]="'form-build-mode-' + mode.id">
+                      {{ mode.label }}
+                    </label>
+                    <p class="text-500 mt-1">
+                      <small>{{ mode.description }}</small>
+                    </p>
+                  }
+                </div>
+              </ng-container>
+            </form>
+          </ng-template>
+        </p-overlayPanel>
+    </div>
+  </ng-template>
+
+    <ng-template pTemplate>
+      <div class="w-full">
+        <div class="flex flex-column flex-1 border-right-1" style="border-color: #333;">
+          <div class="flex align-items-center overflow-x-auto" style="background-color: #252526; height: 35px;">
+            @for (tab of outputTabs; track tab; let i = $index) {
+              <div
+                (click)="setTabPreview(i)"
+                class="h-full px-3 flex align-items-center cursor-pointer text-xs transition-colors"
+                [style.background-color]="activeIndexPreviewTab === i ? '#1e1e1e' : '#2d2d2d'"
+                [style.color]="activeIndexPreviewTab === i ? '#fff' : '#969696'"
+                [style.border-top]="activeIndexPreviewTab === i ? '1px solid #007acc' : '1px solid transparent'"
+              >
+                {{ tab.label }}
+              </div>
+            }
+          </div>
+        </div>
+        <div class="editor-wrapper flex-1">
+          <ngx-monaco-editor
+            class="h-full"
+            [options]="editorOptionsMap.output"
+            [formControl]="output"
+          />
         </div>
       </div>
-      <div class="editor-wrapper flex-1">
-        <ngx-monaco-editor
-          class="h-full"
-          [options]="editorOptionsMap.output"
-          [formControl]="output"
-        />
-      </div>
-    </div>
-  </div>
+    </ng-template>
+  </p-splitter>
 </section>

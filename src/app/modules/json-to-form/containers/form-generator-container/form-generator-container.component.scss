@@ -8,3 +8,44 @@ ngx-monaco-editor, .monaco-editor {
   height: 100% !important;
   width: 100% !important;
 }
+
+.editor-container {
+  position: relative;
+  height: calc(100vh - 115px);
+  width: 100%;
+}
+
+.empty-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+
+  padding-top: 20px;    
+  padding-left: 65px; 
+  
+  background-color: transparent;
+  color: #888;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.empty-overlay h2 {
+  font-size: 14px; 
+  font-weight: normal;
+  margin: 0;
+  line-height: 1.5;   
+}
+
+.empty-overlay p {
+  font-size: 12px;
+  margin: 2px 0 0 0;
+}
+
+.empty-overlay .link {
+  pointer-events: auto;
+  color: #3794ff;
+  cursor: pointer;
+}
