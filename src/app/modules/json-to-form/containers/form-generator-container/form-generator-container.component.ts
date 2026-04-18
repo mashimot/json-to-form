@@ -144,8 +144,6 @@ export class FormGeneratorContainerComponent implements OnInit {
 
   public toggleEditor() {
     this.isEditorVisible = !this.isEditorVisible;
-    // Opcional: Se o monaco bugar o tamanho ao voltar, use:
-    // window.dispatchEvent(new Event('resize'));
   }
 
   public setTabPreview(index: number): void {
@@ -154,17 +152,17 @@ export class FormGeneratorContainerComponent implements OnInit {
 
   public loadExample(): void {
     const example = {
-      "id": "user-001",
-      "name": "John Doe",
-      "email": "john.doe@email.com",
-      "age": 30,
-      "isActive": true,
-      "address": {
-        "street": "Main Street",
-        "city": "New York",
-        "zipCode": "10001"
+      id: 'user-001',
+      name: 'John Doe',
+      email: 'john.doe@email.com',
+      age: 30,
+      isActive: true,
+      address: {
+        street: 'Main Street',
+        city: 'New York',
+        zipCode: '10001',
       },
-      "skills": ["Angular", "TypeScript"]
+      skills: ['Angular', 'TypeScript'],
     };
 
     this.jsonControl?.setValue(JSON.stringify(example, null, 2));

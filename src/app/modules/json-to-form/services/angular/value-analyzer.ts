@@ -35,9 +35,39 @@ export class ValueAnalyzer {
     const allObjects = value.every((item) => this.getValueType(item) === VALUE_TYPES.OBJECT);
 
     if (allObjects) {
-      return [Object.assign({}, ...value)];
+      return [this.deepMergeObject(value)];
     }
 
     return [first];
+  }
+
+  private static deepMergeObject(objects: any[]): any {
+    return objects.reduce((merged, obj) => {
+      return this.deepMerge(merged, obj);
+    }, {});
+  }
+
+  private static deepMerge(target: any, source: any): any {
+    const output = Object.assign({}, target);
+
+    if (this.isObject(target) && this.isObject(source)) {
+      Object.keys(source).forEach((key) => {
+        if (this.isObject(source[key])) {
+          if (!(key in output)) {
+            output[key] = source[key];
+          } else {
+            output[key] = this.deepMerge(output[key], source[key]);
+          }
+        } else {
+          output[key] = source[key];
+        }
+      });
+    }
+
+    return output;
+  }
+
+  private static isObject(item: any): boolean {
+    return item && typeof item === 'object' && !Array.isArray(item);
   }
 }
