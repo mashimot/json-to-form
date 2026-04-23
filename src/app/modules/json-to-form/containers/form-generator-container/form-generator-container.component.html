@@ -1,4 +1,23 @@
 <section class="mb-4">
+  <div class="vs-theme-wrapper">
+    <p-tabs [value]="activeIndexJsonTab">
+      <p-tablist>
+        @for (tab of tabs; track tab; let i = $index) {
+          <p-tab [value]="i">
+            <div class="vs-tab-item">
+              <span>{{ featureNameValue }}</span>
+              <i class="fas fa-times close-icon ml-2 fa-xs"></i>
+            </div>
+          </p-tab>
+        }
+
+        <!--<button class="vs-add-tab-btn" (click)="addTab()" title="Nova Aba">
+          <i class="fas fa-plus"></i>
+        </button>-->
+      </p-tablist>
+    </p-tabs>
+  </div>
+
   <p-splitter
     [panelSizes]="isEditorVisible ? [33, 67] : [0, 100]"
     [minSizes]="[0, 30]"
@@ -12,26 +31,6 @@
               class="flex align-items-center justify-content-between"
               style="background-color: #252526; height: 35px; border-bottom: 1px solid #1e1e1e"
             >
-              <div class="flex h-full overflow-hidden">
-                @for (tab of tabs; track tab) {
-                  <div
-                    class="h-full px-3 flex align-items-center text-xs border-right-1 transition-colors"
-                    style="
-                      background-color: #1e1e1e;
-                      color: #ffffff;
-                      border-top: 1px solid #007acc;
-                      border-right-color: #252526;
-                      min-width: 120px;
-                    "
-                  >
-                    <i class="pi pi-file-code mr-2" style="color: #cbcb41; font-size: 0.9rem"></i>
-                    <span style="letter-spacing: 0.5px">{{
-                      featureNameValue || 'input.json'
-                    }}</span>
-                  </div>
-                }
-              </div>
-
               <div class="flex align-items-center gap-1 px-2">
                 <p-button
                   icon="pi pi-align-left"
@@ -54,6 +53,7 @@
               <ngx-monaco-editor
                 class="editor"
                 [options]="editorOptionsMap.input"
+                (init)="onInputEditorInit($event)"
                 formControlName="json"
               >
               </ngx-monaco-editor>
@@ -142,19 +142,19 @@
             class="flex align-items-center overflow-x-auto"
             style="background-color: #252526; height: 35px"
           >
-            @for (tab of outputTabs; track tab; let i = $index) {
-              <div
-                (click)="setTabPreview(i)"
-                class="h-full px-3 flex align-items-center cursor-pointer text-xs transition-colors"
-                [style.background-color]="activeIndexPreviewTab === i ? '#1e1e1e' : '#2d2d2d'"
-                [style.color]="activeIndexPreviewTab === i ? '#fff' : '#969696'"
-                [style.border-top]="
-                  activeIndexPreviewTab === i ? '1px solid #007acc' : '1px solid transparent'
-                "
-              >
-                {{ tab.label }}
-              </div>
-            }
+            <div class="vs-theme-wrapper">
+              <p-tabs [value]="activeIndexPreviewTab">
+                <p-tablist>
+                  @for (tab of outputTabs; track tab; let i = $index) {
+                    <p-tab [value]="i" (click)="setTabPreview(i)">
+                      <div class="vs-tab-item">
+                        <span>{{ tab.label }}</span>
+                      </div>
+                    </p-tab>
+                  }
+                </p-tablist>
+              </p-tabs>
+            </div>
           </div>
         </div>
         <div class="editor-wrapper flex-1">

@@ -25,6 +25,7 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SplitterModule } from 'primeng/splitter';
 import { TabsModule } from 'primeng/tabs';
+import { TabViewModule } from 'primeng/tabview';
 import { ToolbarModule } from 'primeng/toolbar';
 import { combineLatest, Observable, of } from 'rxjs';
 import { map, startWith, switchMap } from 'rxjs/operators';
@@ -57,6 +58,7 @@ import { LoadingService } from './../../../../shared/services/loading.service';
     OverlayPanelModule,
     MessageModule,
     ClipboardModule,
+    TabViewModule,
     SplitterModule,
   ],
   animations: [
@@ -73,7 +75,6 @@ export class FormGeneratorContainerComponent implements OnInit {
   private jsonToFormService = inject(JsonToFormService);
   private route = inject(ActivatedRoute);
   private clipboard: Clipboard = inject(Clipboard);
-
   private baseOptions = {
     theme: 'vs-dark',
     automaticLayout: true,
@@ -84,6 +85,7 @@ export class FormGeneratorContainerComponent implements OnInit {
   private editorInputInstance!: monaco.editor.IStandaloneCodeEditor;
   private editorOutputInstance!: monaco.editor.IStandaloneCodeEditor;
 
+  public isEditorVisible = true;
   public formExamples$: Observable<any> = this.jsonToFormService.getExamples();
   public iconToggle: { [key: string]: string } = ['pi pi-copy', 'pi pi-copy'].reduce(
     (acc, icon, index) => {
@@ -140,9 +142,14 @@ export class FormGeneratorContainerComponent implements OnInit {
     this.initializeEditorStreams();
   }
 
-  public isEditorVisible = true;
+  public removeTab(index: number, event: MouseEvent): void {
+    event.stopPropagation();
+    this.tabs.splice(index, 1);
+  }
 
-  public toggleEditor() {
+  public addTab(): void {}
+
+  public toggleEditor(): void {
     this.isEditorVisible = !this.isEditorVisible;
   }
 

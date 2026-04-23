@@ -49,3 +49,39 @@ ngx-monaco-editor, .monaco-editor {
   color: #3794ff;
   cursor: pointer;
 }
+
+//vs-tab
+:host ::ng-deep .p-tablist-active-bar {
+    display: none !important;
+}
+
+:host ::ng-deep .p-tab {
+    background: #2d2d2d !important;
+    color: #969696 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    margin-right: 1px !important;
+    box-shadow: none !important;
+    position: relative;
+    border-top: 2px solid transparent !important; 
+    transition: none !important;
+}
+
+:host ::ng-deep .p-tab.p-tab-active {
+    background: #1e1e1e !important;
+    color: #ffffff !important;
+    border-top: 2px solid #007acc !important;
+    border-bottom: none !important;
+}
+
+:host ::ng-deep .p-tablist-content {
+    background: #252526 !important;
+    border-bottom: 1px solid #3e3e42 !important;
+}
+
+:host ::ng-deep .p-tabpanels {
+    background: #1e1e1e !important;
+    border: none !important;
+}
